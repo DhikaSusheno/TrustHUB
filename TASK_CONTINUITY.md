@@ -142,14 +142,14 @@ costs**. Jadi:
 
 | Jebakan | Gejala | Solusi yang dipakai |
 |---|---|---|
-| Frasaapproval terpotong baris | `"Rev 3 - ISSUED FOR\nOPERATION"` tidak terdeteksi | `_flat()` ratakan whitespace dulu |
+| Frasa approval terpotong antar baris | `"Rev 3 - ISSUED FOR\nOPERATION"` tidak terdeteksi | `_flat()` ratakan whitespace dulu |
 | Label & nilai terpisah baris | `"DWG No.\nTJC-LLD-GA-GA-1201A"` regex `[:\t]` gagal | izinkan `\s*` sebagai pemisah |
 | Tabel revision history bukan tab | kolom dipisah **spasi** | regex baris, bukan `split("\t")` |
 | Regex over-greedy | deskripsi jadi `"ISSUED FOR CONSTRUCTION RS"` (menelan kolom by) | jangan pakai `(?:\s+[A-Z]+)?` opsional |
 | Tanda tangan OPL di luar tabel | 6 dari 55 OPL: pdfplumber hanya dapat baris header | fallback: ambil 2 nama `(...EMP-\d+)` berurutan setelah `Date of Sharing` |
 | Sel tabel terpotong di sumber | `"seal dr"` `"v"` di OPL troubleshooting | **batas file asli**, bukan bug parser — jangan diklaim sebagai teks lengkap |
 | `FontBBox` warning dari pdfminer | muncul saat pdfplumber jalan | noise, aman diabaikan |
-| `Downtime_Hours`/`Cost` tersimpan sebagai string | `float()` langsung gagal | wajibkoersi + guard `isinstance` |
+| `Downtime_Hours`/`Cost` tersimpan sebagai string | `float()` langsung gagal | wajib koersi + guard `isinstance` |
 
 ---
 
@@ -191,132 +191,222 @@ costs**. Jadi:
 
 ```
 backend/
-  main.py                 2983 baris, 57 route. RAG lama (butuh API key) di 2812-2973
+  main.py                 57 route lama (Synapse) + mount /api/plant
   auth.py                 X-TrustHub-Token, CORS, Fernet
-  storage.py / database.py  SQLite trusthub_v2.db / trusthub.db
-  engine.py, cortex.py    ⚠️ domain KODE (tree-sitter) - belum diganti
-  guardian.py             propose/execute/rollback/approval (BAHKAN untuk human oversight)
-  settings.py, projects.py, github_sync.py, demo_*.py
-  trusthub.invariants.yaml
-  plant/                  ⬅️ BARU, sedang dikerjakan
-    __init__.py
-    extract.py            ✅ SELESAI & teruji ke 95/95 file, 0 error
-    dataset.py            ⬜(next)
-    registry.py           ⬜
-    retrieval.py          ⬜
-    trust.py              ⬜
-    conflicts.py          ⬜
-    failure_memory.py     ⬜
-    ask.py                ⬜
-  tests/                  469 pytest suite (yang masih hijau)
+                          middleware-level: PUBLIC_PATHS tepat 5 path, tidak
+                          ada route plant yang publik
+  storage.py / database.py  SQLite trusthub_v2.db / trusthub.db (Synapse, tidak
+                          disentuh plant/)
+  engine.py, cortex.py    domain KODE (tree-sitter) - TIDAK dipakai Case 1
+  guardian.py             propose/execute/rollback/approval
+  plant/                  ⬅️ SELURUH Case 1
+    extract.py            PDF → DocMeta; 95/95 file, 0 error
+    dataset.py            find_dataset_root, dataset_report, workbook reader
+    registry.py           skema SQLite + FTS5 + ingest_all
+    retrieval.py          FTS5 + rerank lokal, tanpa API key
+    trust.py              5 sinyal → badge TRUSTED/VERIFY/DO NOT EXECUTE
+    conflicts.py          parameter_groups + agreement_report
+    failure_memory.py     breakdown ↔ OPL
+    ask.py                klasifikasi pertanyaan + guardrail + komposisi jawaban
+    api.py                20 route, prefix /api/plant
+    evaluation.py         jalankan evaluation_set.json (63 kasus)
+    evaluation_set.json   63 kasus terkunci
+    fetch_dataset.py      unduh dataset (lisensi panitia, tidak di-commit)
+  tests/
+    plant/                835 test, semua jalan tanpa dataset resmi
+      conftest.py         synthetic_index + stub_dataset_root + api harness
+      test_extract.py         84
+      test_evaluation.py      81
+      test_dataset_contract.py 93
+      test_registry.py / test_ask.py / test_trust.py / test_conflicts.py /
+      test_failure_memory.py / test_api.py / test_retrieval.py
+    (seluruh backend/tests + security/tests = 1268 passed, 32 skipped)
 
 frontend/
-  app/page.tsx            shell 3 kolom + router client-side (?page=)
-  components/LeftNav.tsx  ⚠️ 9 halaman domain KODE - belum diganti
-  components/pages/       CodeGraphPage, GuardianPage, CortexPage, AgentsPage,
-                          SecurityPage, SettingsPage  ⚠️
-  components/TrustHubGraph.tsx  force-graph (bisa dipakai untuk equipment graph)
+  app/page.tsx            shell tipis: LeftNav + dispatch 9 halaman (?page=)
+  app/landing/page.tsx    about page English, angka terukur saja
+  app/backend/[...path]/  proxy Next.js; token tidak pernah sampai browser
+  components/LeftNav.tsx  9 page id baru
+  components/pages/       AskPage, EquipmentPage, DocumentsPage,
+                          KnowledgeGraphPage, VerificationPage, MaintenancePage,
+                          OverviewPage, AuditPage, PlantSettingsPage
+  components/shared/      PageShell (Panel/Stat/Tag), TrustBadge,
+                          BackendStatusBanner
+  hooks/                  usePlantResource, useBackendStatus
+  lib/plantApi.ts         typed client; semua panggilan /api/plant/*
+  54 file Synapse lama DIHAPUS (guardian/cortex/agents/SSE/LLM/GitHub/force-graph)
 ```
 
-### `extract.py` — yang sudah jadi & terverifikasi
-`DocMeta` (22 field) + `ExtractedDoc` (text, sections, tables).
-`split_sections()` memecah OPL jadi `purpose / safety / tools / procedure /
-troubleshooting / learning` — dipakai untuk sitasi menunjuk bagian.
-`_kv_from_tables()` membaca baris tanda tangan OPL.
-Terverifikasi: **95 file, 0 error, 87/87 equipment_tag, 79/87 approved.**
+### Yang sudah terverifikasi (bukan klaim)
+Jalankan dari repo root dengan `TRUSTHUB_API_TOKEN` disetel:
+
+- `python -m pytest backend/tests security/tests` → **1268 passed, 32 skipped**
+  (skip = butuh dataset resmi, dan alasannya tercetak)
+- `npm test` → 25 pass · `npm run typecheck` → bersih · `npm run build` → sukses
+- `GET /api/plant/evaluation` → **63/63, accuracy 100.0%**, refusal 27/27,
+  answer 36/36, ~0.9 s
+- Holdout 102 pertanyaan (di luar evaluation set) → **98.0%**
+- 20 route `/api/plant/*` dijawab 200 lewat proxy Next.js dengan data nyata
+- CI hijau di `main` (commit `0c55758`)
 
 ---
 
 ## 5. Progress Log
 
 ### ✅ DONE — 2 Okt 2026
-- **Clone & rebrand penuh.** `git archive` Synapse → folder TrustHUB (139 file
-  ter-track, tanpa venv/db/.env). 80 file di-rebrand (3 pass:
-  `SYNAPSE→TRUSTHUB`, `Synapse→TrustHub`, `synapse→trusthub`).
-  6 file di-rename: `SYNAPSE.md→TRUSTHUB.md`, `synapse-build-flow.html`,
-  `backend/synapse.invariants.yaml`, `SynapseGraph.tsx→TrustHubGraph.tsx`,
-  `GITHUB_LLM_INTEGRATION_*.md → LLM_RAG_*.md`.
-- **Nol kemunculan "synapse" tersisa** (dicek ulang dengan grep).
-- **469 pytest passed, 2 skipped** → rebrand terbukti non-breaking.
-- **Push ke `main`** (commit `1e3fa11`), branch `feat/caliber-case1` dibuat.
-- **`.gitignore`** diketat: dataset CALIBER tidak ikut repo.
-- **Audit dataset** → seluruh bagian 2 di atas.
-- **`backend/plant/extract.py`** selesai & teruji ke 95/95 file.
+**Rebrand & fondasi**
+- `git archive` Synapse → folder TrustHUB (139 file ter-track, tanpa venv/db/.env).
+  80 file di-rebrand (3 pass), 6 di-rename (`SYNAPSE.md→TRUSTHUB.md`,
+  `synapse-build-flow.html`, `backend/synapse.invariants.yaml`,
+  `SynapseGraph.tsx→TrustHubGraph.tsx`, `GITHUB_LLM_INTEGRATION_*.md →
+  LLM_RAG_*.md`).
+- Nol kemunculan "synapse" tersisa (dicek ulang dengan grep).
+- 469 pytest passed saat rebrand → terbukti non-breaking.
+- `.gitignore` diketat: dataset CALIBER tidak ikut repo.
+- Audit dataset → seluruh bagian 2 di atas.
+
+**Backend `plant/` — selesai & terverifikasi**
+- `extract.py` → 95/95 file, 0 error, 87/87 equipment_tag, 79 approved.
+- `dataset.py`, `registry.py`, `retrieval.py` (FTS5 lokal, tanpa API key),
+  `trust.py`, `conflicts.py`, `failure_memory.py`, `ask.py`.
+- `api.py` 20 route di `/api/plant`, auth `X-TrustHub-Token` lewat middleware app.
+- `evaluation.py` + `evaluation_set.json`: **63 kasus terkunci, 63/63 = 100.0%**
+  (refusal 27/27, answer 36/36). Holdout 102 pertanyaan → **98.0%**.
+- `GET /api/plant/evaluation` menjalankan set terkunci itu, jadi angka di UI dan
+  angka di deck tidak bisa berbeda.
+- 4 bug produksi ditemukan lewat test, semuanya diperbaiki (lihat bagian 8).
+
+**Test**
+- 835 test di `backend/tests/plant/`, seluruhnya jalan **tanpa** dataset resmi.
+- 3 modul baru: `test_extract.py` (84), `test_evaluation.py` (81),
+  `test_dataset_contract.py` (93).
+- Total suite: **1268 passed, 32 skipped** (skip = butuh dataset resmi).
+- `conftest.py` membangun skema lewat session fixture — bukan file `.db` sisa.
+
+**Frontend**
+- Shell Synapse (SSE live-ops, approval panel, GitHub OAuth, LLM provider
+  manager, force-graph) diganti 9 halaman CALIBER. 54 file orphan dihapus.
+- `lib/plantApi.ts` typed client; token tidak pernah sampai browser.
+- `npm test` 25 · `typecheck` bersih · `build` sukses.
+- `app/landing/page.tsx` ditulis ulang English, angka terukur saja.
+
+**CI**
+- `e01181d` skema dibangun di fixture, bukan file sisa.
+- `0c55758` 3 test butuh dataset yang bukan miliknya — CI merah sejak
+  penggantian frontend, baru ketahuan sekarang.
 
 ### 🔜 NEXT (urutan ini)
-1. `plant/dataset.py` — lokasi + validasi dataset, stats dataset-derived
-2. `plant/registry.py` — SQLite schema: `equipment`, `documents`, `doc_chunks`,
-   `equipment_documents`, `failure_events`, FTS5 virtual table
-3. `plant/retrieval.py` — FTS5 + filter tag + rerank (tanpa API)
-4. `plant/trust.py` — 5 sinyal, badge TRUSTED/VERIFY/DO NOT EXECUTE,
-   guardrail safety-critical verbatim
-5. `plant/failure_memory.py` — 31 breakdown ↔ 55 OPL
-6. `plant/conflicts.py` — nilai berbeda untuk parameter sama
-7. Route FastAPI `/api/plant/*` di `main.py`
-8. Test suite baru untuk `plant/` (wajib, CI sudah menolak susut)
-9. **Frontend: ganti 5 halaman + tambah 3 baru** (lihat bagian 6)
-10. **Evaluation set 20-30 pertanyaan** + angka akurasi (wajib, FAQ 8)
-11. Tulis ulang `README.md`, `TRUSTHUB.md`, `HANDOFF.md`
+1. **Verifikasi visual 9 halaman di browser.** Dicek lewat HTTP semua hijau
+   dengan data nyata, tapi panel Opportunity menilai tampilannya. Dev server
+   (`backend` :8000, `frontend` :3000) sudah bisa dijalankan ulang.
+2. Tulis ulang `README.md`, `TRUSTHUB.md`, `HANDOFF.md` ke English.
+3. Deck: pastikan `verified_groups: 7` — **BUKAN 15**. Angka 15 pernah diklaim
+   di dua docstring dan tidak pernah diukur.
+4. Sisakan waktu untuk video & link mockup publik.
 
 ---
 
-## 6. Peta UI/UX target (belum dikerjakan)
+## 6. Peta UI/UX — SELESAI
 
-| Halaman sekarang | Jadi | Isi |
-|---|---|---|
-| `code-graph` | `knowledge-graph` | graph equipment↔dokumen↔interlock↔work order |
-| `cortex` | `ask` | Q&A + **trust badge** + evidence panel + sitasi |
-| `agents`, `operations` | **hapus** | tidak relevan Case 1 |
-| `guardian` | `oversight` | approve/reject + audit log (human oversight) |
-| `security` | `sources` | 96 dokumen, status approval, provenance |
-| `settings` | `settings` | tetap (LLM provider) |
-| — | `equipment` | 8 unit + halaman per tag |
-| — | `failure-memory` | breakdown ↔ OPL + tindakan sebelumnya |
-| — | `evaluation` | angka akurasi dari test set |
+Sembilan halaman di `components/LeftNav.tsx` (id → page component):
 
-Semua copy masih Bahasa Indonesia dan menyebut "codebase"/"repository" —
-**wajib ditulis ulang ke English** (syarat submission).
+| id | Halaman | Isi | Sumber |
+|---|---|---|---|
+| `ask` | AskPage | Q&A + **trust badge** + evidence panel + sitasi | `/ask` |
+| `equipment` | EquipmentPage | 8 unit, dokumen per unit, parameter terukur | `/equipment`, `/equipment/{tag}` |
+| `documents` | DocumentsPage | 95 dokumen, revisi, approval status | `/documents` |
+| `graph` | KnowledgeGraphPage | equipment↔dokumen↔interlock↔work order, **SVG statis** | `/equipment` |
+| `verification` | VerificationPage | 57 group, 105 nilai, conflict | `/verification` |
+| `maintenance` | MaintenancePage | 211 WO, 31 breakdown, downtime, biaya | `/work-orders`, `/failure-memory` |
+| `overview` | OverviewPage | ringkasan + Integrity & Approval | `/audit`, `/trust/weights` |
+| `audit` | AuditPage | jejak provenance | `/audit` |
+| `dataset` | PlantSettingsPage | provenance dataset, berbisnis LLM, akurasi | `/dataset`, `/evaluation` |
+
+Semua copy sudah English. `app/page.tsx` tinggal shell + dispatch; graph pakai
+layout cincin SVG statis supaya panel melihat gambar yang sama tiap kali.
+Tidak ada route `/overview` di backend — halaman itu menyusun dari beberapa
+endpoint, bukan menambah route baru.
 
 ---
 
 ## 7. Command
 
+Semua perintah dijalankan dari **repo root** (`C:\Users\dhika\TrustHUB`).
+Variabel `$env:` tidak bertahan antar invokasi PowerShell, jadi setiap blok
+menyetel sendiri.
+
 ```powershell
-# test (WAJIB hijau sebelum commit)
+# test — WAJIB hijau sebelum commit
+$env:PYTHONPATH="C:\Users\dhika\TrustHUB\backend"
+$env:PYTHONIOENCODING="utf-8"
 $env:TRUSTHUB_API_TOKEN="ci-test-token-abcdefghijklmnop"
-& "C:\Users\dhika\Synapse\venv\Scripts\python.exe" -m pytest -q
+& "C:\Users\dhika\Synapse\venv\Scripts\python.exe" -m pytest backend/tests security/tests -q
+
+# sama seperti CI: dataset TIDAK ada (USERPROFILE ke folder kosong)
+Remove-Item Env:\PYTHONPATH -ErrorAction SilentlyContinue
+$env:USERPROFILE="$env:TEMP\fake-ci-home"
+& "C:\Users\dhika\Synapse\venv\Scripts\python.exe" -m pytest backend/tests security/tests -q
 
 # backend
-cd C:\Users\dhika\TrustHUB\backend
-uvicorn main:app --reload --port 8000
+$env:PYTHONPATH="C:\Users\dhika\TrustHUB\backend"
+$env:TRUSTHUB_PLANT_DB_PATH="$env:TEMP\th_api.db"      # index 95 dokumen
+& "C:\Users\dhika\Synapse\venv\Scripts\python.exe" -m uvicorn main:app --app-dir backend --port 8000
 
-# cek extractor cepat (tidak perlu server)
-python -c "import sys;sys.path.insert(0,'.');from plant import extract;print(len(extract.iter_dataset_files(r'<DATASET_ROOT>')))"
+# frontend (workdir = frontend\frontend)
+npm run dev
+
+# akurasi — angka yang dikutip di deck
+& "C:\Users\dhika\Synapse\venv\Scripts\python.exe" -m plant.evaluation
+
+# frontend gate
+cd frontend; npm test; npm run typecheck; npm run build
 ```
 
-Env var (semua sudah di-rebrand): `TRUSTHUB_API_TOKEN`, `TRUSTHUB_DB_PATH`,
-`TRUSTHUB_ALLOWED_ORIGINS`, `TRUSTHUB_SETTINGS_PATH`, `TRUSTHUB_PUBLIC_PATHS`,
-`TRUSTHUB_ALLOW_TARGET_ROOTS`. Header token: `X-TrustHub-Token`.
+Header token API: **`X-TrustHub-Token`** (bukan `X-API-Key`).
+`PUBLIC_PATHS` tepat 5 path; tidak ada route plant yang publik.
+
+Env var: `TRUSTHUB_API_TOKEN`, `TRUSTHUB_DB_PATH`, `TRUSTHUB_ALLOWED_ORIGINS`,
+`TRUSTHUB_SETTINGS_PATH`, `TRUSTHUB_PUBLIC_PATHS`, `TRUSTHUB_ALLOW_TARGET_ROOTS`,
+`TRUSTHUB_PLANT_DB_PATH`, `TRUSTHUB_DATASET_ROOT`,
+`TRUSTHUB_PLANT_LLM_MODE` (`off`|`local`|`external`),
+`TRUSTHUB_PLANT_ALLOW_EXTERNAL_LLM`.
+
+> **`TRUSTHUB_DATASET_ROOT`, bukan `TRUSTHUB_PLANT_DATASET_ROOT`.** Test yang
+> salah nama ini pernah lulus karena alasan yang salah — sudah dikoreksi di
+> `0c55758`.
 
 ---
 
 ## 8. Known Gaps & Risiko
 
+### Yang sudah ditangani (bug produksi, ditemukan lewat test)
+
+| Bug | Gejala | Status |
+|---|---|---|
+| `_looks_like_dataset` ambang 0 | 1 tag memberi `1//2 == 0`, jadi setiap folder yang ada dianggap dataset, dan `find_dataset_root` mengambil yang terurut lebih dulu | fixed: `max(1, ...)` |
+| `classify()` cek `"pid"` | 7 dari 8 file `P&ID_*.png` salah klas jadi `unknown` karena ampersand memutus substring. Tidak terlihat karena `extract_file` men-short-circuit image sebelum `classify` dipanggil | fixed |
+| phantom instrument `ZSO-9999` | instrument tak dikenal dijawab, bukan ditolak | fixed |
+| `known_instrument_tags` tak pernah diisi | guardrail instrument mati | fixed |
+| `mentions_known_entity` | pertanyaan dokumen ada tapi entitas tak dikenal lolos | fixed |
+| `/status` hardcode `ready: True` | UI menampilkan "siap" padahal indeks kosong | fixed |
+| 3 test butuh dataset yang bukan miliknya | CI merah sejak penggantian frontend | fixed |
+
+### Yang masih jadi gap / risiko
+
 | Gap | Dampak | Rencana |
 |---|---|---|
-| 8 Interlock Diagram tanpa status approval | trust score-nya turun, padahal itu safety-critical | tampilkan badge `VERIFY` + alasan "approval not stated"; **jangan** tebak |
-| OPL-GA-1201A-04 tidak ada di dataset | pertanyaan tentang itu tidak bisa dijawab | jadikan demo skenario "sistem menolak dengan jujur" |
-| Sel tabel OPL terpotong di file sumber | jawaban troubleshooting terpotong | tampilkan apa adanya + tandai `truncated in source` |
-| 6 OPL tanpa `Date of Sharing` terbaca | sinyal "revision currency" tidak tersedia | `null`, bukan default ke tanggal hari ini |
-| Kriteria & bobot penilaian resmi belum diketahui | strategi deck bisa meleset | cek ke panitia: caliber.2026@capcx.com |
-| **Boleh kirim dataset ke LLM API eksternal?** belum confirmed | menentukan apakah butuh model lokal | **tanya panitia**; retrieval sudah lokal (FTS5) jadi aman |
+| 8 Interlock Diagram tanpa status approval | trust score turun padahal safety-critical | badge `VERIFY` + alasan "approval not stated"; **jangan** tebak |
+| OPL-GA-1201A-04 tidak ada di dataset | 2 dari 63 kasus evaluated | justru dipakai sebagai demo "sistem menolak dengan jujur" |
+| 13 dari 36 kasus jawaban hanya cek "tidak ditolak" | bukti lebih tipis dari 23 kasus lain | **dipin** di `test_evaluation.py` (daftar id-nya); sengaja tidak diubah karena menggeser angka terkunci |
+| `verified_groups: 7` (bukan 15) | klaim lama salah | deck harus mengutip **7**; 7 group di 7–8 dokumen |
+| Nilai interlock = DUMMY training values | safety limit di P&ID bukan nilai operasi nyata | sebut apa adanya di deck, jangan dipakai sebagai safety argument |
+| Kriteria & bobot penilaian resmi belum diketahui | strategi deck bisa meleset | email `caliber.2026@capcx.com` sudah dikirim |
+| Dataset boleh dikirim ke LLM eksternal? belum confirmed | menentukan mode LLM | default `off`; `external` butuh `TRUSTHUB_PLANT_ALLOW_EXTERNAL_LLM=1` |
 | Dataset berlisensi panitia | tidak boleh di-commit | tetap di Downloads + `fetch_dataset.py` |
 
-### Pertanyaan yang harus ditanyakan ke panitia
-1. Bobot & kriteria penilaian resmi?
-2. Dataset boleh dikirim ke LLM API eksternal? (kalau tidak → model lokal/on-prem)
-3. Batas jumlah slide & durasi video?
-4. Nama dosen pembimbing yang harus tercantum?
+### Masih ditunggu dari panitia
+Bobot & kriteria penilaian · boleh kirim dataset ke LLM eksternal? · batas
+jumlah slide & durasi video · nama dosen pembimbing.
 
 ---
 
@@ -324,8 +414,10 @@ Env var (semua sudah di-rebrand): `TRUSTHUB_API_TOKEN`, `TRUSTHUB_DB_PATH`,
 - [ ] Semua 6 komponen Case Book tercakup, bagian simulasi dilabeli
 - [ ] Semua 3 Key Question terjawab eksplisit
 - [ ] 4 baseline data terpakai penuh (SOP/datasheet, P&ID, Maint History, tacit/OPL)
-- [ ] Output AI divalidasi + dievaluasi (FAQ 8 — set uji bukan opsional)
+- [ ] Output AI divalidasi + dievaluasi (FAQ 8 — set uji 63 kasus, bukan opsional)
 - [ ] Semua materi English
+- [ ] Deck mengutip `verified_groups: 7`, bukan 15
+- [ ] Tampilan 9 halaman sudah dilihat langsung di browser
 - [ ] Total ≤ 10MB; video & mockup berupa link publik yang bisa diakses
 - [ ] Dosen pembimbing tercantum
 - [ ] Angka dampak berlabel *dataset-derived* atau *illustrative assumption*
