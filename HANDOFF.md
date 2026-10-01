@@ -24,7 +24,7 @@ is a rewrite — the Synapse UI was deleted (54 files) rather than adapted.
 | Evaluation set, 63 locked cases | 63/63 = 100.0%, spec version 1.2 |
 | Holdout, 102 questions | 98.0%, 2 documented failures |
 | Frontend, 9 pages | done, 9/9 verified in headless Chrome |
-| Backend test suite | 1309 passed, 32 skipped |
+| Backend test suite | 1329 passed, 31 skipped, 1360 collected (CI/ubuntu) |
 | CI | green on both `feat/caliber-case1` and `main` |
 
 Everything measured is in `README.md` and `TRUSTHUB.md`. Do not add a number to

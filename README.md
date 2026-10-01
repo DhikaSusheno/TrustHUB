@@ -358,8 +358,11 @@ alter those numbers fails the build.
 
 | | |
 |---|---|
-| Full suite | **1268 passed, 32 skipped** (the skips need the real dataset) |
-| `backend/tests/plant/` | 835 tests |
+| Full suite | **1329 passed, 31 skipped** — 1360 collected, on CI (ubuntu) |
+| `backend/tests/plant/` | 896 tests |
+
+The skips are tests that genuinely need the real dataset, plus one that needs
+POSIX permissions and so only runs off Windows. Both environments collect 1360.
 
 Frontend:
 
