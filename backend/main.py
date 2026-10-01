@@ -70,6 +70,13 @@ import auth
 import settings as settings_store
 import projects
 
+# CALIBER 2026 Case 1. Import relatif supaya jalan baik dari `backend/` maupun
+# dari root repo (`uvicorn backend.main:app`).
+try:
+    from plant import api as plant_api
+except ImportError:  # pragma: no cover - hanya kalau dijalankan dari root repo
+    from backend.plant import api as plant_api  # type: ignore[no-redef]
+
 
 def _restore_active_target() -> None:
     """Terapkan target aktif dari registry ke storage + engine saat startup.
@@ -138,10 +145,22 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(
     title="TrustHub Backend",
-    description="Reversible, conflict-aware understanding layer for AI coding agents",
-    version="0.2.0",
+    description=(
+        "TrustHUB - CALIBER 2026 Case 1: Manufacturing Knowledge Hub. "
+        "Answers every question with a source, an approval status, and a "
+        "trust badge, and refuses rather than inventing."
+    ),
+    version="1.0.0",
     lifespan=lifespan,
 )
+
+# ---------------------------------------------------------------------------
+# CALIBER Case 1 - Plant Knowledge Hub
+# ---------------------------------------------------------------------------
+# Router-nya terpisah (backend/plant/api.py) supaya logika Case 1 tidak
+# tercampur dengan fitur Synapse lama. Yang paling penting: modul plant/
+# tidak mengimpor main.py, jadi bisa diuji tanpa menjalankan aplikasi.
+app.include_router(plant_api.router)
 
 # BUG-11 FIX: CORS tidak lagi memakai wildcard origin.
 # Wildcard membuat halaman web mana pun bisa membaca respons API kita
