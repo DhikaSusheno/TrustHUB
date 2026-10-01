@@ -1,0 +1,14 @@
+{
+  "name": "trusthub-deck-build",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Renders docs/deck/deck.html to the submission PDF. Not part of the product.",
+  "type": "module",
+  "scripts": {
+    "render": "node render.mjs",
+    "audit": "node audit.mjs"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^25.12.0"
+  }
+}

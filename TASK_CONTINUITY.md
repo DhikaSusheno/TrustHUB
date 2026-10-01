@@ -375,12 +375,64 @@ skor; semuanya baru terlihat karena guardrail mengubah dua jawaban.
   dilonggarkan demi deck: `deck.html` yang di-version-control, PDF-nya build
   output, dan harga yang dibayar adalah satu file binary tidak ikut repo.
 
+### 🐞 DUA KLAIM DEK YANG SALAH — SUDAH DIPERBAIKI
+Temuan dari build video, bukan dari review mata. Pelajaran: klaim yang tidak
+bisa direproduksi harus dianggap salah sampai dibuktikan.
+
+1. **Slide 9, angka `0.572` vs `0.357` — tidak bisa direproduksi sama sekali.**
+   Klaim itu bilang "How do I open a bank account?" Menguen memencet retrieval
+   lebih tinggi dari pertanyaan in-scope. Tapi respons `/api/plant/ask` **tidak
+   punya sinyal `relevance` sama sekali** untuk pertanyaan yang ditolak, karena
+   guardrail jalan sebelum scoring. `trust_score` = 0.00 (ditolak) dan 0.60
+   (jawab). Angka 0.572/0.357 berasal dari keadaan kode lama.
+   **Yang benar dan lebih kuat:** di lapisan retrieval, "How do I open a bank
+   account?" retrieve di **10.68** — skor tertinggi dari semua yang diuji,
+   di atas pertanyaan asli "What is the trip setpoint for VSHH-1201?" (7.56)
+   dan hampir dua kali "Which equipment fails most often?" (5.44). Jadi
+   threshold retrieval akan melepaskannya. Ia ditolak karena **topik**, di tahap
+   lebih awal. Ini argumen yang lebih kuat, dan bisa direproduksi.
+2. **Slide 6, "134 nodes" vs layar yang menulis `47 nodes, 39 relations shown`.**
+   API memang benar (134 = 8 equipment + 87 document + 8 interlock + 31
+   breakdown, 126 links). Cincin di halaman Graph sengaja hanya menggambar 47
+   node non-dokumen, karena 87 node dokumen dalam satu lingkaran tidak terbaca.
+   Sekarang slide menyebut keduanya dan menjelaskan bedanya, supaya panel yang
+   memakai video tidak mengira ada dua graf yang berbeda.
+   `deckverify.py` sudah punya assertion baru untuk angka 10.68 / 7.56 / 5.44,
+   dan **kelak memeriksa `0.572` tidak pernah muncul lagi**.
+
+### ✅ DONE — video demo
+- `docs/demo/TrustHUB-demo.mp4`: **2 menit 26 detik**, 1280x720, H.264 yuv420p,
+  4,1 MB. Requirement 2-3 menit. Tidak ada narasi; **caption yang jadi
+  narasi** (panel menonton tanpa suara).
+- **Dibangun, bukan direkam.** `capture.mjs` menjalankan UI asli di :3000
+  terhadap dataset asli, satu frame per beat (14 beat). Jadi tidak ada spinner
+  yang terpotong, dan semua frame bisa diperiksa sebelum ada yang menonton.
+- Setiap beat menyimpan **teks yang benar-benar ter-render** di `beats.json`.
+  `verify.py` lalu membandingkan tiap caption dengan teks frame-nya. Dua caption
+  terbongkar dan ditulis ulang karena tidak cocok dengan layarnya.
+- `verify.py` juga gagal kalau frame memuat `production data`, `real plant
+  data`, `15 verified`, atau `spec v1.1`.
+- Capture bersih: **0 console error, 0 page error, 0 failed request** di 5
+  putaran penuh.
+- `checkvideo.py`: `blackdetect` 0 stretch hitam, luminance 12 sampel stabil
+  (29,5-38,5). Aliasing di tengah video bukan frame hitam.
+- Tooling di `docs/demo/build/`, bukan di `frontend/`, dengan
+  `package.json` sendiri. Alasan sama seperti deck: `npm ci` di mesin panel
+  tidak perlu mengunduh browser untuk skrip yang tidak akan pernah mereka
+  jalankan. Path diturunkan dari `import.meta.url`, jadi tidak ada `C:\Users\...`
+  yang di-hardcode.
+
 ### 🔜 NEXT (urutan ini)
-1. **Video demo 2-3 menit** + link mockup publik. Ini masih kosong di slide 15
-   (`Link to be added on submission`).
-2. Nama supervisor masih `to be confirmed` di slide 1 dan 15 —committee belum
-   jawab. Jangan kirim dengan placeholder kalau sudah tahu.
-3. Rekam video dari `feat/caliber-case1` HEAD, bukan dari working tree.
+1. **Upload video ke YouTube** dan dapat link publiknya. MP4-nya sudah jadi di
+   `docs/demo/TrustHUB-demo.mp4`.
+2. **Link mockup publik.** Ini masih satu-satunya deliverable yang belum ada
+   sama sekali. Kandidat paling murah: deploy `frontend/` + backend ke Railway
+   atau Fly.io. Repo sudah siap deploy (CI hijau, build produksi lolos, token
+   lewat env).
+3. Nama supervisor masih `to be confirmed` di slide 1 dan 15.atoshi committee
+   belum jawab. Jangan kirim dengan placeholder kalau sudah tahu.
+4. Setelah link masuk, edit slide 15, render ulang PDF, lalu jalankan ulang
+   `deckverify.py`.
 
 ---
 

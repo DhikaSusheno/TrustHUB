@@ -79,3 +79,10 @@ backend/plant/evaluation_results.json
 # dengan `node docs/deck/build/render.mjs`, dan 1,1 MB untuk 15 PNG tidak
 # layak disimpan di git. PDF-nya sendiri ikut di-commit karena itu deliverable.
 docs/deck/shots/
+
+# Frame video demo, polos dan|captioned. Artefak build, ~3 MB, bisa dibuat
+# ulang dengan `npm run capture && npm run caption` di docs/demo/build.
+# Yang ikut di-commit: beats.json (teks yang benar-benar ter-render per frame,
+# bahan bukti verify.py) dan TrustHUB-demo.mp4 (deliverable).
+docs/demo/frames/
+docs/demo/captioned/

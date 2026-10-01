@@ -436,9 +436,16 @@
           <tr><td><b>Document</b></td><td style="text-align:right;"><b>87</b></td><td>Every source and its revision</td></tr>
           <tr><td><b>Interlock</b></td><td style="text-align:right;"><b>8</b></td><td>Cause/effect per unit</td></tr>
           <tr><td><b>Breakdown</b></td><td style="text-align:right;"><b>31</b></td><td>Failure Memory backbone</td></tr>
-          <tr><td colspan="2" style="text-align:right;"><b>Total links</b></td><td><b>126</b></td></tr>
+          <tr><td colspan="2" style="text-align:right;"><b>Total</b></td><td><b>134 nodes, 126 links</b></td></tr>
         </tbody>
       </table>
+      <p style="font-size:12.5px; color:var(--muted); margin:9px 0 0; line-height:1.45;">
+        The ring on the Graph page draws the 47 non-document nodes &mdash; 8 units, 8 interlocks,
+        31 breakdowns &mdash; because 87 document nodes in one circle is unreadable. The documents
+        are on screen as the relation counts beside it: 55 OPL, 8 each of datasheet, GA and plot plan.
+        The screen says <code>47 nodes, 39 relations shown</code>; that is the same graph, filtered
+        for legibility, not a smaller one.
+      </p>
     </div>
     <div class="col">
       <div class="card" style="height:100%;">
@@ -629,10 +636,12 @@
 
   <div class="callout warn">
     <p>
-      <b>A relevance threshold alone would not catch these.</b> "How do I open a bank account?"
-      scores <b>0.572</b> on retrieval strength — <i>higher</i> than the in-scope question
-      "Which equipment fails most often?", at 0.357. Those out-of-scope questions are rejected on
-      topic, not on score, which is why the vocabulary gate exists as a separate stage.
+      <b>A relevance threshold would not catch these.</b> At the retrieval layer,
+      "How do I open a bank account?" retrieves at <b>10.68</b> &mdash; the <i>highest</i> score of
+      any question we tested, above the real question "What is the trip setpoint for VSHH-1201?" at
+      7.56, and nearly twice "Which equipment fails most often?" at 5.44. A threshold tuned on
+      retrieval strength would wave it through. It is refused on <i>topic</i>, at an earlier stage,
+      which is why the vocabulary gate has to exist as a separate one.
     </p>
   </div>
 
