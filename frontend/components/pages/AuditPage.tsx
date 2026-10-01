@@ -14,7 +14,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
   plantApi,
   sourceList,
@@ -210,9 +210,15 @@ export default function AuditPage() {
                         const sources = sourceList(entry);
                         const open = expanded === entry.id;
                         return (
-                          <>
+                          // Key harus di fragment, bukan di <tr> di dalam.
+                          // Element larik yang dikembalikan `.map` adalah
+                          // fragment-nya, jadi React tidak pernah melihat key
+                          // tersebut - ia memperingatkan "each child should
+                          // have a unique key" dan meng identitasikan baris
+                          // secara posisional. Saat baris detail dibuka atau
+                          // ditutup, identitas posisional ikut bergeser.
+                          <Fragment key={entry.id}>
                             <tr
-                              key={entry.id}
                               onClick={() => setExpanded(open ? null : entry.id)}
                               className="border-t border-slate-800/50 cursor-pointer hover:bg-slate-800/30"
                             >
@@ -233,7 +239,7 @@ export default function AuditPage() {
                               </td>
                             </tr>
                             {open && (
-                              <tr key={`${entry.id}-detail`} className="bg-[#0a0e14]">
+                              <tr className="bg-[#0a0e14]">
                                 <td colSpan={5} className="px-3 py-2">
                                   {sources.length === 0 ? (
                                     <p className="text-[11px] text-slate-500">
@@ -245,7 +251,7 @@ export default function AuditPage() {
                                     <ul className="space-y-0.5">
                                       {sources.map((source, i) => (
                                         <li
-                                          key={i}
+                                          key={`${i}-${source}`}
                                           className="text-[11px] font-mono text-slate-400 break-words"
                                         >
                                           {source}
@@ -256,7 +262,7 @@ export default function AuditPage() {
                                 </td>
                               </tr>
                             )}
-                          </>
+                          </Fragment>
                         );
                       })}
                     </tbody>
