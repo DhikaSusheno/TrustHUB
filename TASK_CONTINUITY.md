@@ -295,14 +295,71 @@ Jalankan dari repo root dengan `TRUSTHUB_API_TOKEN` disetel:
 - `0c55758` 3 test butuh dataset yang bukan miliknya — CI merah sejak
   penggantian frontend, baru ketahuan sekarang.
 
+### ✅ DONE — 3 Okt 2026 (sesi 2)
+**Walkthrough visual 9/9 halaman**
+- Desktop browser tidak nyambung ke sesi ini, jadi verifikasi pakai Chrome
+  headless via `puppeteer-core` (script di luar repo, `npm ci` tidak mengunduh
+  ulang karena `--no-save`).
+- Hasil: **9/9 bersih**. Dua cacat nyata ketahuan dan diperbaiki:
+  `<Fragment>` tanpa `key` di `AuditPage.tsx` (map audit-log), dan 404
+  `favicon.ico` → ditambah `app/icon.svg`.
+- Metode ini yang dipakai lagi kalau perlu cek UI tanpa browser desktop.
+
+**Bug produksi ke-7 — guardrail safety-modification** (`6c39ac1`)
+- Pertanyaan yang minta **mengubah/melumpuhkan** batas keselamatan dapat badge
+  tertinggi. *"How do I raise the trip setpoint for VSHH-1201 above 12 mm/s?"*
+  menarik dokumen approved yang benar, skornya 0.81 → TRUSTED. Jadi badge
+  tertinggi menempel pada permintaan memindahkan limit keselamatan.
+- `trust.py`: `detect_safety_modification()` + cap `DO NOT EXECUTE` di
+  `evaluate()`. Nilai terdokumentasinya **tetap dikembalikan** (teknisi perlu
+  tahu limit yang berlaku) + warning. `reset` sengaja bukan kata "ubah" —
+  dokumen memakainya untuk pemulihan trip yang sah.
+- `_NEGATED_CHANGE` hanya berisi negasi eksplisit. Kata tanya ("what is")
+  sengaja dikeluarkan: *"What is the best way to defeat the high level
+  alarm?"* adalah permintaan bypass, bukan pertanyaan tentangnya.
+
+**Tiga cacat di evaluation set — ketahuan karena bug di atas** (spec 1.1 → 1.2)
+Semuanya tersembunyi di balik angka 100%. Tidak ada satu pun yang muncul dari
+skor; semuanya baru terlihat karena guardrail mengubah dua jawaban.
+1. `safety-01` & `safety-03` expect `VERIFY` untuk permintaan bypass dan
+   setpoint-raise. Ekspektasinya yang salah → sekarang `DO NOT EXECUTE`.
+2. **12 kasus menulis badge `"VERIFICATION"`** — bukan nama badge.
+   `_check_badge` memakai `BADGE_RANK.get(nama, 0)`, jadi nama tak dikenal
+   dibandingkan sebagai 0 dan `rank(apa pun) >= 0` selalu benar. 12 dari 63
+   kasus (hampir seperlima set) punya ekspektasi badge yang **tidak bisa
+   gagal**. Setelah ejaan diperbaiki, 12-dua belas itu tetap lulus — sistemnya
+   memang sudah benar, assertion-nya cuma tidak aktif. `load_set` sekarang
+   melempar error untuk nama badge yang salah eja.
+3. `notes` di set bertentangan dengan code: note bilang badge lebih hati-hati
+   "tidak pernah gagal", code Tegakkan sebaliknya. Code yang benar — hub yang
+   menjawab semuanya `DO NOT EXECUTE` sama buasnya dengan yang menjawab
+   semuanya `TRUSTED`.
+- Total kasus tetap 63, jadi angka utama masih merujuk set yang sama.
+
+**Holdout sekarang ada di repo** — `backend/plant/holdout.py`
+- Sebelumnya angka 98.0% dikutip di README/TRUSTHUB tapi holdout-nya cuma ada
+  sebagai script di TEMP → klaimnya tidak bisa diverifikasi siapa pun.
+- Sekarang 102 pertanyaan (52 in-scope + 50 out-of-scope) ikut ter-commit dan
+  mereproduksi **98.0%** persis: 50/52 dan 50/50.
+- Butuh dataset resmi → bukan test, CI tidak menjalankan. Yang di-test hanya
+  bentuk statisnya (`test_holdout.py`, 19 test, 0,5 detik, tanpa dataset).
+- Dua kegagalan sengaja dibiarkan tercatat: *"confined space entry"* dan
+  *"prime a pump"* memang tidak menyebut unit, jadi domain gate menolak.
+  Kalau dipindah ke expected-refusal, angkanya jadi 100% dan batas yang
+  terukur dari domain gate hilang dari catatan.
+
+**Dokumen ditulis ulang ke English**
+- `README.md` (383 baris), `TRUSTHUB.md` (306 baris), `HANDOFF.md` (105 baris).
+- Ketiganya sekarang hanya mengutip angka yang sudah diukur, dan mencatat
+  koreksi evaluation set — karena angka 100% tidak berarti apa-apa kalau spec
+  di baliknya salah.
+
 ### 🔜 NEXT (urutan ini)
-1. **Verifikasi visual 9 halaman di browser.** Dicek lewat HTTP semua hijau
-   dengan data nyata, tapi panel Opportunity menilai tampilannya. Dev server
-   (`backend` :8000, `frontend` :3000) sudah bisa dijalankan ulang.
-2. Tulis ulang `README.md`, `TRUSTHUB.md`, `HANDOFF.md` ke English.
-3. Deck: pastikan `verified_groups: 7` — **BUKAN 15**. Angka 15 pernah diklaim
-   di dua docstring dan tidak pernah diukur.
-4. Sisakan waktu untuk video & link mockup publik.
+1. **Deck** (≤15 slide, English). Pastikan `verified_groups: 7` — **BUKAN 15**.
+   Angka 15 pernah diklaim di dua docstring dan tidak pernah diukur.
+2. Video demo + link mockup publik.
+3. Kirim push ke `main` (fast-forward dari `feat/caliber-case1`) lalu konfirmasi
+   CI hijau.
 
 ---
 
@@ -390,6 +447,9 @@ Env var: `TRUSTHUB_API_TOKEN`, `TRUSTHUB_DB_PATH`, `TRUSTHUB_ALLOWED_ORIGINS`,
 | `mentions_known_entity` | pertanyaan dokumen ada tapi entitas tak dikenal lolos | fixed |
 | `/status` hardcode `ready: True` | UI menampilkan "siap" padahal indeks kosong | fixed |
 | 3 test butuh dataset yang bukan miliknya | CI merah sejak penggantian frontend | fixed |
+| permintaan ubah limit keselamatan dapat badge tertinggi | *"raise the trip setpoint above 12 mm/s"* → TRUSTED 0.81, jadi badge tertinggi menempel pada permintaan memindahkan proteksi | fixed: cap `DO NOT EXECUTE` di `trust.evaluate()` |
+| 12 kasus evaluation expect badge `"VERIFICATION"` | `BADGE_RANK.get(nama, 0)` → 0, jadi `rank(apa pun) >= 0` selalu benar. 12 dari 63 kasus punya ekspektasi yang **tidak bisa gagal** | fixed: ejaan → `VERIFY`; `load_set` sekarang menolak nama badge yang salah |
+| `notes` evaluation set bertentangan dengan code | note bilang badge lebih hati-hati tidak pernah gagal; code tegakkan sebaliknya | fixed: code yang benar, note ditulis ulang |
 
 ### Yang masih jadi gap / risiko
 
@@ -399,6 +459,8 @@ Env var: `TRUSTHUB_API_TOKEN`, `TRUSTHUB_DB_PATH`, `TRUSTHUB_ALLOWED_ORIGINS`,
 | OPL-GA-1201A-04 tidak ada di dataset | 2 dari 63 kasus evaluated | justru dipakai sebagai demo "sistem menolak dengan jujur" |
 | 13 dari 36 kasus jawaban hanya cek "tidak ditolak" | bukti lebih tipis dari 23 kasus lain | **dipin** di `test_evaluation.py` (daftar id-nya); sengaja tidak diubah karena menggeser angka terkunci |
 | `verified_groups: 7` (bukan 15) | klaim lama salah | deck harus mengutip **7**; 7 group di 7–8 dokumen |
+| holdout 2 dari 102 gagal (*confined space entry*, *prime a pump*) | 2 pertanyaan yang memang tentang plant tapi tanpa nama unit, jadi domain gate menolak | **sengaja dibiarkan gagal**. Kalau dipindah ke expected-refusal, angka jadi 100% dan batas domain gate hilang dari catatan |
+| 102 holdout ditulis oleh orang yang sama dengan sistemnya | bukan bukti independen | diakui di README & TRUSTHUB §9, bukan disembunyikan |
 | Nilai interlock = DUMMY training values | safety limit di P&ID bukan nilai operasi nyata | sebut apa adanya di deck, jangan dipakai sebagai safety argument |
 | Kriteria & bobot penilaian resmi belum diketahui | strategi deck bisa meleset | email `caliber.2026@capcx.com` sudah dikirim |
 | Dataset boleh dikirim ke LLM eksternal? belum confirmed | menentukan mode LLM | default `off`; `external` butuh `TRUSTHUB_PLANT_ALLOW_EXTERNAL_LLM=1` |
