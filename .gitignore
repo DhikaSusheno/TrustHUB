@@ -57,3 +57,20 @@ workspace/
 
 projects_registry.json
 backend/projects_registry.json
+
+# ---------------------------------------------------------------------------
+# CALIBER Case 1 - dataset dan hasil indeks
+# ---------------------------------------------------------------------------
+# Dataset CALIBER ("Case 1_ Manufacturing Knowledge Hub") TIDAK BOLEH ikut
+# commit. Lisensinya milik panitia dan hanya boleh dipakai untuk submission
+# final ini. Yang di-commit sebagai gantinya adalah fetch_dataset.py, yang
+# memberi tahu reviewer cara mendapatkannya, dan seluruh hasil ekstraksi
+# metadata yang bisa direproduksi ulang dari dataset aslinya.
+backend/dataset/
+backend/plant/trusthub_plant.db
+backend/plant/trusthub_plant.db-journal
+backend/plant/trusthub_plant.db-wal
+backend/plant/trusthub_plant.db-shm
+# Log evaluasi yang berisi potongan isi dokumen (berkas bisa besar dan
+# berasal dari dataset yang tidak boleh disalin)
+backend/plant/evaluation_results.json
