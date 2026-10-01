@@ -115,13 +115,16 @@ def add_parameter(
     operator: str,
     *,
     kind: str = "trip_setpoint",
+    source: str = "linear",
 ) -> None:
+    """`source` diisi karena parameter_inventory mengelompokkan menurut asal."""
     conn.execute(
         """INSERT OR IGNORE INTO document_parameters
-           (doc_id, equipment_tag, parameter, value, unit, operator, kind, raw)
-           VALUES (?,?,?,?,?,?,?,?)""",
+           (doc_id, equipment_tag, parameter, value, unit, operator, kind, raw,
+            source)
+           VALUES (?,?,?,?,?,?,?,?,?)""",
         (doc_id, equipment_tag, parameter, value, unit, operator, kind,
-         f"{parameter} {operator} {value} {unit}"),
+         f"{parameter} {operator} {value} {unit}", source),
     )
 
 

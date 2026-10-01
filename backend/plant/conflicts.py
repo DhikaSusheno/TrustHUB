@@ -260,17 +260,32 @@ INSTRUMENT_TAG = re.compile(r"\b([A-Z]{2,4}-[A-Z]?\d{3,4}[A-Z]?)\b")
 #:             milik PSLL-1201 akan tercatat milik SEQ-1201, dan setpoint yang
 #:             benar jadi salah.
 #:   TJC-xxxx  nomor dokumen.
-NON_INSTRUMENT_PREFIXES = ("SEQ-", "TJC-", "CAL-", "DOC-", "REF-")
+#:   WPN-xxxx  referensi workbook ("WPN-MAT-001" muncul di related_docs).
+#:             Bentuknya tidak cocok INSTRUMENT_TAG sehingga tidak pernah
+#:             sampai ke sini dari jalur ekstraksi, tapi tetap didaftarkan
+#:             supaya fungsi ini benar untuk pemanggil yang memanggil
+#:            nya secara langsung.
+NON_INSTRUMENT_PREFIXES = ("SEQ-", "TJC-", "CAL-", "DOC-", "REF-", "WPN-")
 
 
 def is_instrument_tag(candidate: str, equipment_tags: set[str] | None = None) -> bool:
     """Apakah kandidat ini tag instrumen sungguhan, bukan ID lain.
 
-    Tag equipment seperti GA-1201A juga cocok dengan pola instrumen, jadi harus
-    dikecualikan lewat daftar tag yang diketahui - kalau tidak, nilai setpoint
-    akan tercatat milik nama equipment.
+    Tiga lapis, berurutan dari yang paling jelas:
+
+      1. bentuknya harus seperti tag instrumen sama sekali. Tanpa lapis ini
+         fungsi mengembalikan True untuk apa pun yang tidak masuk daftar
+         pengecualian - termasuk string kosong dan angka polos. Itu karena
+         asumsi dasarnya "bukan instrumen" = "instrumen", dan asumsi itu hanya
+         berlaku kalau pemanggil selalu menyaring lebih dulu dengan
+         INSTRUMENT_TAG. Fungsi ini publik dan dipanggil dari test langsung,
+         jadi asumsi itu tidak boleh jadi syarat tersembunyi.
+      2. prefix yang memang ID lain, bukan instrumen (SEQ, TJC, ...).
+      3. tag equipment yang kebetulan cocok dengan pola instrumen.
     """
-    upper = candidate.upper()
+    upper = (candidate or "").strip().upper()
+    if not INSTRUMENT_TAG.fullmatch(upper):
+        return False
     if upper.startswith(NON_INSTRUMENT_PREFIXES):
         return False
     if equipment_tags and upper in equipment_tags:
@@ -346,7 +361,19 @@ def extract_table_parameters(
                     continue
                 parameter, forced_unit = DATASHEET_LABELS[label]
                 value_text = cells[i + 1]
-                m = re.search(r"(-?\d+(?:[.,]\d+)?)", value_text)
+                # Angka harus MEMULAI sel, bukan sekadar ada di dalamnya.
+                #
+                # "see note 7" menghasilkan rated head = 7 m, dan kalau dua
+                # dokumen menulis "see note 3" dan "see note 7" untuk label yang
+                # sama, sistem melaporkan konflik antara dua rujukan catatan.
+                # Angka yang ditemukan di dalam teks bukan nilai terukur.
+                #
+                # Diperiksa terhadap 26 sel nilai di datasheet CALIBER: semua
+                # diawali angka ("45 m3/h", "0.31 cP", "380 V / 3 Ph / 50 Hz"),
+                # jadi aturan ini tidak kehilangan apa pun dari dataset ini.
+                m = re.match(
+                    r"^\s*(?:[<>]=?|\u00b1|\+/-)?\s*(-?\d+(?:[.,]\d+)?)", value_text
+                )
                 if not m:
                     continue
                 value = _to_float(m.group(1))
