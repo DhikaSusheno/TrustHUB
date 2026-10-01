@@ -21,17 +21,6 @@ import re
 import sqlite3
 from typing import Any, NamedTuple
 
-# Kata kunci yang menandai pertanyaan safety-critical. Kalau muncul di
-# pertanyaan, guardrail verbatim di trust.py diaktifkan.
-SAFETY_PATTERNS = re.compile(
-    r"\b("
-    r"interlock|trip|lockout|lock-out|loto|isolation|isolate|permit|"
-    r"start-?up|startup|shut-?down|shutdown|emergency stop|e-?stop|"
-    r"pressure|vent|bleed|drain|purge|energy|hazard|nitrogen|inert"
-    r")\b",
-    re.IGNORECASE,
-)
-
 # Istilah yang sering diketik engineer tapi tidak persis muncul di dokumen.
 # Padanan ini membantu recall tanpa mengubah dokumen.
 SYNONYMS = {
@@ -49,11 +38,6 @@ SYNONYMS = {
     "packing": ["packing", "ptfe", "v-ring"],
     "alignment": ["alignment", "misalignment", "laser"],
 }
-
-
-def is_safety_critical(question: str) -> bool:
-    """True kalau pertanyaan menyentuh prosedur yang berbahaya."""
-    return bool(SAFETY_PATTERNS.search(question or ""))
 
 
 def _expand(query: str) -> list[str]:
@@ -86,31 +70,38 @@ def _fts_query(query: str) -> str:
     return " OR ".join(f'"{t}"' for t in tokens)
 
 
-# Pola tag equipment: satu sampai empat huruf, tanda hubung, digit, opsional
-# huruf (GA-1201A, DC-3401A, YD-2301, dan juga P-8802 yang tidak ada di
-# dataset). Dipakai untuk MENDETEKSI tag yang disebut user tapi tidak ada di
-# dataset - kasus yang harus ditolak, bukan dijawab dengan dokumen unit lain.
-#
-# Batas `\b` di depan penting dan bukan hiasan: tanpa itu "ISO-9001" akan
-# cocok sebagai "SO-9001" dan pertanyaan tentang standar mutu ditolak sebagai
-# equipment asing. Huruf sebelum tanda hubung juga tidak boleh dipotong.
+#: Pola tag equipment: satu sampai empat huruf, tanda hubung, digit, opsional
+#: huruf (GA-1201A, DC-3401A, YD-2301, dan juga P-8802 yang tidak ada di
+#: dataset). Dipakai untuk MENDETEKSI tag yang disebut user.
 TAG_PATTERN = re.compile(r"\b[A-Z]{1,4}-\d{2,5}[A-Z]?\b")
 
-#: Nama equipment kadangkala disebut orang dengan kata-katanya, bukan
-#: dengan tag: "the catalyst reduction reactor", bukan "DC-3401A". Tanpa
-#: ini, pertanyaan yang sah tetap dijawab tanpa difilter ke unit yang benar
-#: dan badge-nya tetap dapat tinggi karena retrieval tidak gagal - hanya
-#: jadi kurang tajam.
-EQUIPMENT_NAME_ALIASES: dict[str, str] = {
-    "GA-1201A": ("hexane feed pump",),
-    "YD-2301": ("polymer fluid bed dryer", "fluid bed dryer"),
-    "DC-3401A": ("catalyst reduction reactor",),
-    "KC-4501": ("recycle gas compressor",),
-    "EA-5601": ("solvent heater",),
-    "LV-6701": ("separator level control valve",),
-    "CT-7801": ("cooling tower cell fan", "cooling tower fan"),
-    "FA-8901": ("reflux accumulator drum", "accumulator drum"),
-}
+#: Bentuk tag EQUIPMENT, bukan tag instrumen. Yang membedakannya adalah jumlah
+#: huruf sebelum tanda hubung: equipment di domain ini 1-2 huruf (GA, DC, EA,
+#: FA, LV, YD, CT, KC), sedangkan instrumen 3-4 (PSLL, TSHH, VSHH, LSHH, ZSO,
+#: FSLL, LSLL).
+#:
+#: Dipisah karena TAG_PATTERN sendiri tidak bisa membedakan keduanya, dan
+#: mencampur keduanya menghasilkan dua kesalahan yang sama buruknya:
+#:
+#:   * "what is the trip setpoint for VSHH-1201?" ditolak sebagai "equipment
+#:     not in dataset", padahal VSHH-1201 itu nilai terukur, bukan equipment.
+#:     Jalur structured masih punya baris untuk tag itu, jadi sistem diam-diam
+#:     menjawab dengan angka yang benar dan tanpa satu pun sumber dokumen - mode
+#:     kegagalan yang paling ingin dihindari.
+#:   * "do we comply with ISO-9001?" ditolak karena "ISO" terbaca sebagai
+#:     prefix equipment. Itu pertanyaan tentang standar mutu, bukan tentang
+#:     unit, dan pesannya tidak pernah membayangkan jalannya yang benar.
+#:
+#: Catatan koreksi: klaim lama di file ini mengatakan batas `\b` sudah
+#: mencegah "ISO-9001" cocok. Pernyataan itu salah. Dengan `[A-Z]{1,4}` pola itu mulai
+#: cocok di sebelum "I" dan capturing "ISO", lalu "-9001". Batas `\b`
+#: mencegah pencocokan di tengah kata, bukan pencocokan dengan awalan lebih
+#: dari dua huruf.
+#:
+#: Tag instrumen yang tidak dikenal TIDAK jadi alasan penolakan: kalau nilainya
+#: tidak ada di document_parameters, retrieval tidak akan menemukan apa pun dan
+#: check "no source" yang menolaknya, dengan pesan yang benar.
+EQUIPMENT_TAG_SHAPE = re.compile(r"^[A-Z]{1,2}-\d{4}[A-Z]?$")
 
 
 # Pertanyaan yang memang lintas equipment. Untuk pertanyaan seperti ini, tidak
@@ -137,10 +128,21 @@ def is_cross_unit_question(question: str) -> bool:
 
 
 def unknown_tags_mentioned(question: str, known_tags: list[str]) -> list[str]:
-    """Tag berformat equipment yang disebut user tapi di luar dataset."""
+    """Tag berformat EQUIPMENT yang disebut user tapi di luar dataset.
+
+    Hanya tag berbentuk equipment yang dihitung, bukan semua yang cocok
+    TAG_PATTERN. Alasannya ada di komentar EQUIPMENT_TAG_SHAPE: "VSHH-1201"
+    adalah nilai terukur dan "ISO-9001" adalah standar, dan menolak
+    pertanyaan tentang keduanya sebagai "equipment not in dataset" adalah
+    jawaban yang tidak akan pernah membuat orang membayangkan jalannya yang
+    benar.
+    """
     known = {t.upper() for t in known_tags}
-    found = {m.group(0).upper() for m in TAG_PATTERN.finditer((question or "").upper())}
-    return sorted(found - known)
+    found = {
+        m.group(0).upper()
+        for m in TAG_PATTERN.finditer((question or "").upper())
+    }
+    return sorted(t for t in found - known if EQUIPMENT_TAG_SHAPE.match(t))
 
 
 # Identitas dokumen yang bisa disebut user. Ini penting karena dataset punya
@@ -151,10 +153,30 @@ def unknown_tags_mentioned(question: str, known_tags: list[str]) -> list[str]:
 #   TJC-LLD-DS-GA-1201A    nomor dokumen (datasheet, GA, interlock)
 #   TJC-LLD-PID-1201       referensi P&ID
 #   SEQ-1201               nomor logika interlock
+#: Prefix dokumen known, dipakai sebagai batas agar pola tidak melebar tanpa
+#: batas. Semuanya diukur dari nilai yang benar-benar ada di dataset, bukan
+#: dari tebakan: TJC (doc_no dan P&ID ref), SEQ (nomor logika interlock),
+#: WPN (workbook terkait), OPL (nomor one point lesson).
+KNOWN_DOC_PREFIXES = ("TJC", "SEQ", "WPN", "OPL", "CAL", "REF", "DOC")
+
+#: Pola diukur terhadap 32 `doc_no` dan 8 `functional_location` di dataset.
+#:
+#: Versi sebelumnya tidak mencocokkan SATU PUN dari 32 `doc_no`. Pola TJC-nya
+#: menuntut segmen terakhir berbentuk `[A-Z0-9]{3,4}`, sementara `doc_no`
+#: berakhir dengan TAG EQUIPMENT yang mengandung tanda hubung -
+#: `TJC-LLD-DS-GA-1201A`. Akibatnya "what does TJC-LLD-DS-GA-1201A say?"
+#: tidak menghasilkan referensi dokumen sama sekali, dan panel dokumen yang
+#: seharusnya tampil justru kosong.
+#:
+#: Polanya sekarang dibuat cukup longgar untuk semua bentuk TJC yang diukur,
+#: tapi prefix-nya tetap dikunci ke daftar di atas supaya tidak ikut menelan
+#: tag equipment biasa.
 DOC_REF_PATTERNS = (
-    re.compile(r"\bOPL-[A-Z]{2}-\d{4}[A-Z]?-\d{2}\b"),
-    re.compile(r"\bTJC-[A-Z]{2,4}-[A-Z]{2,3}-[A-Z0-9]{3,4}[A-Z]?\b"),
-    re.compile(r"\bSEQ-\d{4}\b"),
+    re.compile(r"\bOPL-[A-Z]{1,2}-\d{4}[A-Z]?-\d{2}\b"),
+    re.compile(r"\bTJC-[A-Z]{2,4}-[A-Z0-9]+(?:-[A-Z0-9]+)*\b"),
+    re.compile(
+        r"\b(?:" + "|".join(KNOWN_DOC_PREFIXES[1:]) + r")-[A-Z0-9]+(?:-[A-Z0-9]+)*\b"
+    ),
 )
 
 
@@ -169,7 +191,10 @@ def extract_document_refs(question: str) -> list[str]:
 
 
 def detect_equipment_tag(
-    question: str, known_tags: list[str], doc_hits: list[dict[str, Any]] | None = None
+    question: str,
+    known_tags: list[str],
+    doc_hits: list[dict[str, Any]] | None = None,
+    aliases: dict[str, tuple[str, ...]] | None = None,
 ) -> str | None:
     """Resolusi tag equipment dari pertanyaan.
 
@@ -190,6 +215,10 @@ def detect_equipment_tag(
     dengan keyakinan penuh.
 
     Parameter `doc_hits` diterima demi kompatibilitas pemanggil lama, diabaikan.
+
+    Parameter `aliases` adalah hasil `name_aliases(conn)`. Kalau None, resolusi
+    lewat nama dilewati seluruhnya - lebih baik tidak mengenali unit daripada
+    mengenali yang salah.
     """
     upper = (question or "").upper()
     mentioned = [t for t in known_tags if t.upper() in upper]
@@ -198,34 +227,95 @@ def detect_equipment_tag(
     if len(mentioned) > 1:
         return None
 
-    by_name = resolve_by_equipment_name(question, known_tags)
+    by_name = resolve_by_equipment_name(question, known_tags, aliases)
     if by_name:
         return by_name
     return None
 
 
-def resolve_by_equipment_name(question: str, known_tags: list[str]) -> str | None:
+def name_aliases(conn: sqlite3.Connection) -> dict[str, tuple[str, ...]]:
+    """Padanan nama equipment, diturunkan dari tabel `equipment`.
+
+    Dulu ini dict hardcode. Itu salah untuk dua alasan, dan keduanya nyata:
+
+      * tidak akan bekerja kalau committee mengganti dataset, karena nama
+        unit ikut berubah sementara kodenya tidak;
+      * ia mengikat logika ke tag dataset CALIBER, padahal `plant/` ditulis
+        supaya bisa diuji tanpa dataset itu.
+
+    Yang dikembalikan hanya kata-kata dari `equipment_name` yang benar-benar
+    membedakan: kata yang muncul di SEMUA nama equipment dibuang. "HEAT
+    EXCHANGER" ada di dua nama, jadi menyebut "exchanger" tidak menentukan
+    unit mana dan tidak boleh dipakai sebagai padanan.
+    """
+    rows = conn.execute(
+        "SELECT equipment_tag, equipment_name FROM equipment "
+        "WHERE equipment_name IS NOT NULL AND equipment_name <> ''"
+    ).fetchall()
+
+    names: dict[str, list[str]] = {}
+    for r in rows:
+        tag = (r["equipment_tag"] or "").upper()
+        if tag:
+            names[tag] = [
+                w for w in re.findall(r"[a-z0-9]+", r["equipment_name"].lower())
+                if len(w) > 2
+            ]
+
+    shared: set[str] = set()
+    seen: dict[str, int] = {}
+    for words in names.values():
+        for w in set(words):
+            seen[w] = seen.get(w, 0) + 1
+    for w, n in seen.items():
+        if n > 1:
+            shared.add(w)
+
+    aliases: dict[str, tuple[str, ...]] = {}
+    for tag, words in names.items():
+        distinctive = [w for w in words if w not in shared]
+        # butuh minimal dua kata pembeda supaya "reactor" atau "pump" polos
+        # tidak pernah menentukan unit
+        if len(distinctive) >= 2:
+            aliases[tag] = (" ".join(distinctive),)
+    return aliases
+
+
+def resolve_by_equipment_name(
+    question: str,
+    known_tags: list[str],
+    aliases: dict[str, tuple[str, ...]] | None = None,
+) -> str | None:
     """Tag equipment dari penyebutan namanya, bukan tag-nya.
 
     Operator lapangan memang bicara "the catalyst reduction reactor", bukan
     "DC-3401A". Tanpa ini, pertanyaan yang benar tetap dijawab tapi tidak
     difilter ke unit yang benar, sehingga dokumen unit lain ikut masuk
-    retrieval dan badge-nya ikut Naik.
+    retrieval dan badge-nya ikut naik.
 
-    Aturan SENGAJA ketat: seluruh kata yang membedakan nama unit itu harus
-    ada di pertanyaan. "cooler" tidak cukup untuk COOLING TOWER CELL FAN -
-    harus ada "tower" atau "cell fan". Longgar sedikit akan membuat
-    "vacuum pump"_shopfloor queria dianggap RECYCLE GAS COMPRESSOR.
+    Aturan SENGAJA ketat, dua lapis:
+
+      * hanya padanan dari `name_aliases()`, yaitu hanya kata yang tidak
+        muncul di nama equipment lain. "cooler" tidak cukup untuk COOLING
+        TOWER CELL FAN karena "cooler" juga ada di CONDITIONER COOLER.
+      * seluruh kata pembeda harus ada di pertanyaan. Longgar sedikit akan
+        membuat "vacuum pump" dianggap RECYCLE GAS COMPRESSOR.
+
+    Kalau `aliases` None atau kosong, hasilnya None: mode lintas unit. Itu
+    pilihan yang benar karena equipment yang salah adalah kegagalan yang
+    jauh lebih mahal daripada equipment yang tidak dikenali.
     """
+    if not aliases:
+        return None
     q = (question or "").lower()
     if not q:
         return None
     known = {t.upper() for t in known_tags}
     best: tuple[int, str] | None = None
-    for tag, aliases in EQUIPMENT_NAME_ALIASES.items():
+    for tag, options in aliases.items():
         if tag.upper() not in known:
             continue
-        for alias in aliases:
+        for alias in options:
             if alias in q and (best is None or len(alias) > best[0]):
                 best = (len(alias), tag)
     return best[1] if best else None
@@ -452,8 +542,8 @@ DOC_TYPE_INTENTS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "interlock",
         re.compile(
-            r"\b(interlock|trip ?logic|cause ?/? ?effect|shutdown ?logic|safety ?logic|"
-            r"logic ?diagram|trip ?condition|shutdown ?cause)\b",
+            r"\b(interlock|trip ?logic|shutdown ?logic|safety ?logic|"
+            r"logic ?diagram|trip ?condition|shutdown ?cause|cause (?:and |/|or )?effect)\b",
             re.IGNORECASE,
         ),
     ),
@@ -555,14 +645,24 @@ def search(
         return []
 
     args: list[Any] = [match]
+    # JOIN ke documents karena tabel FTS tidak punya kolom doc_type.
+    #
+    # `doc_type` sebelumnya hanya jadi bonus di rerank, bukan filter. Jadi
+    # pemanggil yang meminta doc_type="interlock" tetap menerima chunk OPL,
+    # dan filter di UI tidak pernah benar-benar menyaring apa pun - kelihatannya
+    # bekerja, tidak pernah berlaku.
     sql = (
         "SELECT f.doc_id, f.equipment_tag, f.section, f.content, "
         "       bm25(doc_fts) AS rank "
-        "FROM doc_fts f WHERE doc_fts MATCH ?"
+        "FROM doc_fts f JOIN documents d ON d.doc_id = f.doc_id "
+        "WHERE doc_fts MATCH ?"
     )
     if equipment_tag:
         sql += " AND f.equipment_tag = ?"
         args.append(equipment_tag)
+    if doc_type:
+        sql += " AND d.doc_type = ?"
+        args.append(doc_type)
     sql += " ORDER BY rank LIMIT ?"
     args.append(max(top_k * 4, 20))  # ambil lebih banyak untuk rerank di Python
 

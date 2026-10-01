@@ -715,8 +715,12 @@ def answer(
     known_refs = registry.known_references(conn)
     kind = classify(question)
 
-    # Cakupan equipment: hanya dari penyebutan eksplisit.
-    tag = retrieval.detect_equipment_tag(question, tags)
+    # Cakupan equipment: hanya dari penyebutan eksplisit. Alias nama diambil
+    # dari database, bukan dari daftar hardcode, supaya berlaku untuk dataset
+    # apa pun yang committee berikan.
+    tag = retrieval.detect_equipment_tag(
+        question, tags, None, retrieval.name_aliases(conn)
+    )
     cross_unit = retrieval.is_cross_unit_question(question)
 
     # ---- 1. Sumber terstruktur ------------------------------------------------
