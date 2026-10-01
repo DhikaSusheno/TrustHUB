@@ -103,6 +103,15 @@ TAG_PATTERN = re.compile(r"\b[A-Z]{1,4}-\d{2,5}[A-Z]?\b")
 #: check "no source" yang menolaknya, dengan pesan yang benar.
 EQUIPMENT_TAG_SHAPE = re.compile(r"^[A-Z]{1,2}-\d{4}[A-Z]?$")
 
+#: Bentuk tag INSTRUMEN, kebalikan dari EQUIPMENT_TAG_SHAPE: prefix 3-4 huruf.
+#: Diukur pada dataset CALIBER - instrumen PSLL, TSHH, VSHH, LSHH, FSLL, LSLL
+#: (4 huruf) dan ZSO (3); equipment GA, DC, YD, CT, KC, LV, EA, FA (2).
+#:
+#: Dua bentuk itu tidak bisa tumpang tindih, jadi tag instrumen bisa dikenali
+#: dari bentuknya tanpa perlu melihat daftar tag yang ada. Itu yang dipakai
+#: untuk membatalkan tag instrumen yang tidak ada di index.
+INSTRUMENT_TAG_SHAPE = re.compile(r"^[A-Z]{3,4}-\d{2,5}[A-Z]?$")
+
 
 # Pertanyaan yang memang lintas equipment. Untuk pertanyaan seperti ini, tidak
 # adanya tag BUKAN kekurangan - justru pengelompokan per unit adalah substansi
@@ -125,6 +134,33 @@ CROSS_UNIT_CUES = re.compile(
 def is_cross_unit_question(question: str) -> bool:
     """True kalau pertanyaannya memang bersifat lintas equipment."""
     return bool(CROSS_UNIT_CUES.search(question or ""))
+
+
+def unknown_instruments_mentioned(
+    question: str, known_tags: list[str], known_instruments: set[str] | None = None
+) -> list[str]:
+    """Tag instrumen yang disebut user tapi tidak ada di index.
+
+    Bedanya dengan `unknown_tags_mentioned` deliberate: fungsi itu hanya
+    menghitung equipment, fungsi ini hanya menghitung instrumen, dan keduanya
+    tidak saling menimpa karena EQUIPMENT_TAG_SHAPE dan INSTRUMENT_TAG_SHAPE
+    tidak bisa cocok pada string yang sama (1-2 huruf vs 3-4 huruf).
+
+    Tanpa fungsi ini, "what is the trip setpoint for ZSO-9999?" dijawab
+    VERIFY dengan potongan dokumen milik GA-1201A, YD-2301, FA-8901, dan
+    KC-4501. Tidak ada angka yang dikarang, tapi substansinya salah subjek,
+    dan badge VERIFY membuatnya terlihat seperti jawaban yang sahih.
+    """
+    known_equipment = {t.upper() for t in known_tags}
+    known = {t.upper() for t in (known_instruments or set())}
+    found = {
+        m.group(0).upper() for m in TAG_PATTERN.finditer((question or "").upper())
+    }
+    return sorted(
+        t
+        for t in found
+        if t not in known and t not in known_equipment and INSTRUMENT_TAG_SHAPE.match(t)
+    )
 
 
 def unknown_tags_mentioned(question: str, known_tags: list[str]) -> list[str]:
@@ -514,12 +550,24 @@ def domain_terms(question: str, vocabulary: DomainVocabulary) -> list[str]:
 
 
 def mentions_known_entity(
-    question: str, known_tags: list[str], known_refs: frozenset[str] | set[str]
+    question: str,
+    known_tags: list[str],
+    known_refs: frozenset[str] | set[str],
+    known_instruments: set[str] | None = None,
 ) -> str | None:
     """Tag atau nomor dokumen yang disebut user dan memang ada di dataset.
 
     Kalau ada, pertanyaan sudah pasti tentang plant ini, jadi pemeriksaan
     kosakata tidak perlu dijalankan untuk kasus itu.
+
+    Tag instrumen ikut dihitung. Docstring check 4 di `trust.should_refuse`
+    menjanjikan check itu dilewati kalau pertanyaan menyebut tag atau nomor
+    dokumen yang ADA, dan tag instrumen termasuk entitas yang ada - PSLL-1201
+    ada di `document_parameters` sama seperti GA-1201A ada di `equipment`.
+    Tanpa itu, "what is the flow trip for FSLL-1201?" ditolak dengan "this
+    question is not about any equipment, document, work order, or maintenance
+    record" padahal FSLL-1201 = > 9 m3/h sudah ada di index dan dijawab
+    dengan benar saat pertanyaannya memakai kata "setpoint".
     """
     upper = (question or "").upper()
     for tag in known_tags:
@@ -528,6 +576,9 @@ def mentions_known_entity(
     for ref in known_refs:
         if str(ref).upper() in upper:
             return str(ref).upper()
+    for instrument in known_instruments or ():
+        if str(instrument).upper() in upper:
+            return str(instrument).upper()
     return None
 
 
@@ -741,13 +792,28 @@ def context_for_answer(hits: list[dict[str, Any]], max_chars: int = 6000) -> str
     parts: list[str] = []
     used = 0
     for i, hit in enumerate(hits, 1):
+        # `hit.get("content")`, bukan `hit["content"]`. Panggilan ini dibuat dari
+        # dictionary yang bentuknya ditentukan pemanggil, dan dictionary yang
+        # tidak punya kunci "content" harus berarti "sumber ini kosong", bukan
+        # KeyError yang melempar seluruh permintaan 500.
+        content = (hit.get("content") or "").strip()
+        if not content:
+            continue
+
+        title = hit.get("title") or hit.get("filename") or "untitled document"
+        # Nama dokumen ikut ditampilkan, bukan hanya title. Tanpa ini, model
+        # tidak pernah melihat nomor dokumen, sehingga jawaban yang dihasilkan
+        # hanya bisa ditelusuri lewat panel sumber - dan panel itu tidak ada
+        # kalau jawaban disalin ke tempat lain.
+        filename = hit.get("filename")
+        identity = title if not filename or filename == title else f"{title} [{filename}]"
         header = (
-            f"[SOURCE {i}] {hit.get('title') or hit.get('filename')} "
+            f"[SOURCE {i}] {identity} "
             f"({hit.get('doc_type')}, rev {hit.get('revision') or 'n/a'}, "
             f"approval: {hit.get('approval_status')})"
             + (f", section: {hit['section']}" if hit.get("section") else "")
         )
-        block = f"{header}\n{hit['content']}\n"
+        block = f"{header}\n{content}\n"
         if used + len(block) > max_chars:
             break
         parts.append(block)

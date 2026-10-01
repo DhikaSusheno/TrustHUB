@@ -120,6 +120,27 @@ def registry_approved_hits() -> list[dict[str, object]]:
     ]
 
 
+def approved_hit(content: str) -> dict[str, object]:
+    """Satu hit dari dokumen approved, dengan konten yang relevan.
+
+    Dibuat inline supaya test bisa menguji check tertentu tanpa tersesat oleh
+    check 6 (relevance floor). Pakai `registry_approved_hits()` kalau memang
+    mau dua hit dengan status persetujuan berbeda.
+    """
+    return {
+        "doc_id": "d1a",
+        "equipment_tag": "EQ-0001",
+        "doc_type": "opl",
+        "filename": "OPL-EQ-0001-01 - Seal_Flush.pdf",
+        "revision": "A",
+        "approval_status": "approved",
+        "approved_by": "EMP-0001",
+        "is_safety_critical": 0,
+        "score": 12.0,
+        "content": content,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Sinyal individual
 # ---------------------------------------------------------------------------
@@ -493,14 +514,49 @@ class TestShouldRefuse:
         assert "P-8802" in reason
 
     def test_unknown_instrument_tag_is_not_an_equipment_refusal(self) -> None:
-        # VSHH-1201 bukan equipment. Menolak sebagai equipment yang tidak
-        # dikenal akan salah dan memalukan.
+        # VSHH-9999 bukan equipment. Menolak sebagai "equipment not in this
+        # dataset" akan salah dan memalukan: tag equipment di domain ini 1-2
+        # huruf, instrumen 3-4, dan keduanya cocok dengan pola tag yang sama.
+        #
+        # Perhatikan bahwa pertanyaannya tetap DITOLAK, tapi sebagai instrumen
+        # yang tidak ada - bukan sebagai equipment asing. Sebelum check
+        # instrumen ini ada, "pertanyaan dijawab VERIFY dengan potongan dokumen milik unit lain.
+        # Pertanyaan dijawab VERIFY dengan potongan dokumen milik unit lain.
         refused, reason = refuse(
             "what is the trip setpoint for VSHH-9999?",
             instruments=frozenset({"PSLL-0001"}),
         )
-        assert "VSHH-9999" not in (reason or ""), reason
+        assert refused is True
+        assert "VSHH-9999" in (reason or "")
+        assert "Equipment" not in (reason or ""), reason
+        assert "Instrument" in (reason or ""), reason
 
+    def test_a_known_instrument_is_never_refused_for_absent_instrument(
+        self,
+    ) -> None:
+        # PSLL-0001 ada di daftar instrumen, jadi check instrumen harus lolos
+        # dan pertanyaan boleh dijawab. Isi hit harus menyebut PSLL-0001
+        # supaya yang diuji memang check instrumen: kalau tidak, check 6
+        # (relevance floor) yang menolak dan test ini lulus untuk alasan salah.
+        refused, reason = refuse(
+            "what is the trip setpoint for PSLL-0001?",
+            instruments=frozenset({"PSLL-0001"}),
+            hits=[approved_hit("Establish the seal flush flow for PSLL-0001.")],
+        )
+        assert refused is False, reason
+
+    def test_known_equipment_mention_suppresses_the_instrument_refusal(self) -> None:
+        # Kalau pertanyaan menyebut equipment yang ADA, tag instrumen yang
+        # salah ketik ikut diabaikan. "adjust the ZSO-9999 alarm on GA-1201A"
+        # jelas tentang GA-1201A, dan menolaknya karena typo tag akan
+        # mengganggu - orang salah ketik, bukan sedang mengarang.
+        refused, reason = refuse(
+            "adjust the ZSO-9999 alarm on GA-1201A",
+            tags=["GA-1201A"],
+            instruments=frozenset({"ZSO-1201"}),
+            hits=[approved_hit("Set the ZSO-1201 alarm for GA-1201A.")],
+        )
+        assert refused is False, reason
     def test_non_knowledge_intent(self) -> None:
         refused, _ = refuse("write me a poem about hexane")
         assert refused is True

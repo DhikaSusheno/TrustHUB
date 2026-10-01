@@ -400,6 +400,40 @@ requires_official_dataset = pytest.mark.skipif(
 )
 
 
+@pytest.fixture(scope="session")
+def official_dataset_root() -> Path:
+    """Root dataset CALIBER, atau skip dengan alasan yang terbaca."""
+    if not official_dataset_available():
+        pytest.skip(
+            "Dataset CALIBER tidak ada di mesin ini; lihat "
+            "requires_official_dataset untuk cara mengaktifkannya."
+        )
+    return dataset_mod.find_dataset_root()
+
+
+@pytest.fixture(scope="session")
+def official_dataset(official_dataset_root: Path, tmp_path_factory):
+    """Index yang dibangun dari dataset CALIBER sungguhan.
+
+    Session-scoped karena membangunnya memakan sekitar 45 detik: 87 PDF
+    satu halaman dibaca satu per satu, karena label dan nilai pada tabel
+    datasheet berpasangan secara posisional. Linearisasi seluruh dokumen sekali
+    jalan membuat metadata satu dokumen hilang kalau ada satu yang gagal.
+
+    Database-nya di direktori sementara milik pytest, bukan di database
+    pengembangan, jadi test ini tidak pernah mengubah indeks yang sedang
+    dipakai demo dan tidak pernah menulis ke dalam repo.
+    """
+    tmp_dir = tmp_path_factory.mktemp("official_dataset")
+    conn = registry.connect(tmp_dir / "official_test.db")
+    try:
+        registry.ingest_all(conn, official_dataset_root)
+        yield conn
+    finally:
+        conn.close()
+        _clear_caches()
+
+
 # ---------------------------------------------------------------------------
 # HTTP
 # ---------------------------------------------------------------------------

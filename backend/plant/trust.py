@@ -27,6 +27,7 @@ from .retrieval import (
     extract_document_refs,
     mentions_known_entity,
     non_knowledge_intent,
+    unknown_instruments_mentioned,
     unknown_tags_mentioned,
 )
 
@@ -529,9 +530,12 @@ def should_refuse(
        mirip, dan itu kesalahan yang paling merusak kepercayaan.
     2. Equipment yang disebut user di luar dataset. Contoh: "procedure for
        ZX-9999". Tidak ada dokumen yang bisa jadi sumber sama sekali.
-       Tag instrumen (PSLL-1201) dikecualikan di sini - formatnya sama
-       dengan tag equipment, dan salah memperlakukannya sebagai equipment
+       Tag instrumen (PSLL-1201) dikecualikan dicabang equipment - formatnya
+       sama dengan tag equipment, dan salah memperlakukannya sebagai equipment
        asing akan menolak pertanyaan yang sah jawabannya sudah diketahui.
+       Cabang kedua dari check yang sama menangani instrumen yang TIDAK ADA
+       (ZSO-9999): formatnya dikenali dari EQUIPMENT_TAG_SHAPE vs
+       INSTRUMENT_TAG_SHAPE, yang tidak bisa tumpang tindih.
     3. Niat bukan pencarian pengetahuan. "write me a poem about hexane"
        bukan pertanyaan yang bisa dijawab dari dokumen, dan memaksakan
        jawaban hanya menghasilkan potongan yang tidak menjawab apa pun.
@@ -559,9 +563,16 @@ def should_refuse(
                 "I will not substitute a different document for it."
             )
 
+    # Dihitung di luar `if known_tags:` karena dipakai lagi di check 4.
+    # Kalau hanya dihitung di dalam blok itu, `known_tags` yang kosong
+    # (index tanpa equipment - persis keadaan saat startup atau saat dataset
+    # gagal di-ingest) akan membuat check 4 naik ke baris yang memanggil
+    # variabel yang belum dibuat, jadi penolakan yang seharusnya
+    # justru jadi UnboundLocalError.
+    instruments = {str(t).upper() for t in (known_instruments or set())}
+
     if known_tags:
         mentioned = [t for t in known_tags if t.upper() in (question or "").upper()]
-        instruments = {str(t).upper() for t in (known_instruments or set())}
         unknown = [
             t
             for t in unknown_tags_mentioned(question, known_tags)
@@ -573,6 +584,27 @@ def should_refuse(
                 "so I have no document to answer from."
             )
 
+        # Instrumen yang TIDAK ADA, dipisah dari equipment yang tidak ada.
+        # Pengecualian tag instrumen di cabang atas tetap perlu: pola tag tidak
+        # bisa membedakan GA-1201A (equipment) dari PSLL-1201 (instrumen), dan
+        # memperlakukan instrumen sah sebagai equipment asing akan menolak
+        # pertanyaan yang jawabannya sudah diketahui.
+        #
+        # Yang ditolak di sini bukan "instrumen", melainkan instrumen yang tidak
+        # ada. Tanpa cabang ini "what is the trip setpoint for ZSO-9999?"
+        # dijawab VERIFY dengan potongan Interlock GA-1201A, LLD YD-2301, dan
+        # OPL KC-4501: tidak ada angka yang dikarang, tapi isinya milik unit
+        # lain dan bentuknya persis seperti jawaban yang benar.
+        phantom = unknown_instruments_mentioned(question, known_tags, instruments)
+        if phantom and not mentioned:
+            listed = ", ".join(sorted(instruments)[:6])
+            more = " among others" if len(instruments) > 6 else ""
+            return True, (
+                f"Instrument {', '.join(phantom)} does not appear in the "
+                "indexed dataset, so I have no measured value for it. "
+                f"The instruments that do appear are: {listed}{more}."
+            )
+
     if non_knowledge_intent(question):
         return True, (
             "This knowledge hub answers questions from the indexed plant "
@@ -581,7 +613,9 @@ def should_refuse(
         )
 
     if vocabulary is not None:
-        entity = mentions_known_entity(question, known_tags or [], known_refs or set())
+        entity = mentions_known_entity(
+            question, known_tags or [], known_refs or set(), instruments
+        )
         if entity is None:
             terms = domain_terms(question, vocabulary)
             if not terms:

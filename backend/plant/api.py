@@ -110,43 +110,31 @@ def _open_index() -> sqlite3.Connection:
 
 @router.get("/status")
 def plant_status() -> dict[str, Any]:
-    """Kesiapan sistem: dataset ditemukan, indeks dibangun, mode LLM aktif."""
-    conn = _require_dataset_index()
-    try:
-        equipment = conn.execute("SELECT COUNT(*) AS n FROM equipment").fetchone()["n"]
-        documents = conn.execute("SELECT COUNT(*) AS n FROM documents").fetchone()["n"]
-        chunks = conn.execute("SELECT COUNT(*) AS n FROM doc_chunks").fetchone()["n"]
-        work_orders = conn.execute("SELECT COUNT(*) AS n FROM work_orders").fetchone()["n"]
-        links = conn.execute("SELECT COUNT(*) AS n FROM failure_links").fetchone()["n"]
-        parameters = conn.execute(
-            "SELECT COUNT(*) AS n FROM document_parameters"
-        ).fetchone()["n"]
-        approved = conn.execute(
-            "SELECT COUNT(*) AS n FROM documents WHERE approval_status = 'approved'"
-        ).fetchone()["n"]
-        by_status = {
-            r["approval_status"]: r["n"]
-            for r in conn.execute(
-                "SELECT approval_status, COUNT(*) AS n FROM documents GROUP BY 1"
-            )
-        }
-    finally:
-        conn.close()
+    """Kesiapan sistem: dataset ditemukan, indeks dibangun, mode LLM aktif.
 
+    Rute INI yang harus tetap bisa dibaca saat indeks belum ada - itu
+    seluruh fungsinya. Sebelumnya rute ini memanggil `_require_dataset_index()`,
+    yang melempar 503 dengan pesan "run fetch_dataset", jadi frontend tidak
+    pernah sempat menampilkan "indeks belum dibangun": permintaannya gagal
+    dengan pesan yang sama persis dengan yang seharusnya ditampilkan, tapi
+    sebagai error, bukan sebagai status. Field `ready` juga selalu `True`,
+    jadi tidak pernah ada yang membacanya.
+    """
     mode = _llm_mode()
-    return {
-        "ready": True,
+    base: dict[str, Any] = {
+        "ready": False,
         "database": str(registry.db_path()),
+        "problem": None,
         "counts": {
-            "equipment": equipment,
-            "documents": documents,
-            "chunks": chunks,
-            "work_orders": work_orders,
-            "failure_links": links,
-            "measured_parameters": parameters,
-            "approved_documents": approved,
+            "equipment": 0,
+            "documents": 0,
+            "chunks": 0,
+            "work_orders": 0,
+            "failure_links": 0,
+            "measured_parameters": 0,
+            "approved_documents": 0,
         },
-        "approval_breakdown": by_status,
+        "approval_breakdown": {},
         "llm": {
             "mode": mode,
             "external_allowed": _external_allowed(),
@@ -160,6 +148,39 @@ def plant_status() -> dict[str, Any]:
             "labelled by its authors as sample data."
         ),
     }
+
+    try:
+        conn = _open_index()
+    except HTTPException as exc:
+        base["problem"] = str(exc.detail)
+        return base
+
+    try:
+        for key, table in (
+            ("equipment", "equipment"),
+            ("documents", "documents"),
+            ("chunks", "doc_chunks"),
+            ("work_orders", "work_orders"),
+            ("failure_links", "failure_links"),
+            ("measured_parameters", "document_parameters"),
+        ):
+            base["counts"][key] = int(
+                conn.execute(f"SELECT COUNT(*) AS n FROM {table}").fetchone()["n"]
+            )
+        base["approval_breakdown"] = {
+            r["approval_status"]: r["n"]
+            for r in conn.execute(
+                "SELECT approval_status, COUNT(*) AS n FROM documents GROUP BY 1"
+            )
+        }
+        base["counts"]["approved_documents"] = base["approval_breakdown"].get(
+            "approved", 0
+        )
+    finally:
+        conn.close()
+
+    base["ready"] = True
+    return base
 
 
 @router.get("/dataset")
@@ -182,7 +203,15 @@ def plant_reindex() -> dict[str, Any]:
         raise HTTPException(status_code=503, detail=str(exc))
     conn = registry.connect()
     try:
+        # Panggilan kedua yang bisa gagal dengan cara yang sama. Root dataset
+        # bisa ada sementara workbook maintenance di dalamnya hilang atau
+        # rusak, dan tanpa catch di sini hasilnya 500 plus traceback - yang
+        # tidak memberi tahu apa pun soal apa yang harus diperbaiki. Pesan
+        # DatasetNotFound menyebut file yang dicari, jadi 503 jauh lebih
+        # berguna.
         stats = registry.ingest_all(conn, root)
+    except dataset_mod.DatasetNotFound as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
     finally:
         conn.close()
     return {"reindexed": True, "stats": stats}
@@ -252,6 +281,14 @@ def equipment_work_orders(
 ) -> list[dict[str, Any]]:
     conn = _require_dataset_index()
     try:
+        # Cek keberadaan equipment, sama seperti /documents dan
+        # /failure-memory di sebelahnya. Tanpa ini, "ZX-9999" membalas 200
+        # dengan daftar kosong - yang terbaca sebagai "unit ini tidak punya
+        # riwayat maintenance", padahal unit itu tidak ada sama sekali.
+        # Dua bentuk itu menghasilkan kesimpulan yang berlawanan dan keduanya
+        # terlihat seperti jawaban, jadi hanya satu yang boleh di sini.
+        if not registry.get_equipment(conn, tag.upper()):
+            raise HTTPException(status_code=404, detail=f"Unknown equipment {tag}")
         return registry.list_work_orders(
             conn, equipment_tag=tag.upper(), breakdown_only=breakdown_only
         )
@@ -263,6 +300,12 @@ def equipment_work_orders(
 def equipment_failure_memory(tag: str) -> dict[str, Any]:
     conn = _require_dataset_index()
     try:
+        # Sama seperti /documents dan /work-orders di sebelahnya. Tanpa cek
+        # ini, tag yang salah ketik membalas 200 dengan nol-nol yang terlihat
+        # seperti "unit ini tidak pernah punya breakdown" - padahal nol itu
+        # berarti "tidak ada yang bisa dijawab karena unitnya tidak ada".
+        if not registry.get_equipment(conn, tag.upper()):
+            raise HTTPException(status_code=404, detail=f"Unknown equipment {tag}")
         rows = fm_mod.failure_memory(conn, equipment_tag=tag.upper())
         linked = [r for r in rows if r.get("linked_opls")]
         return {

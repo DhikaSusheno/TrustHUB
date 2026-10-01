@@ -91,8 +91,6 @@ COUNT_CUE = re.compile(r"\b(how many|number of|count|total|tally|sum)\b", re.IGN
 STRUCTURED_NO_CITATION_SCORE = 0.60
 
 #: agregat, karena "total downtime for LV-6701" mengandung kata total dan
-#: downtime, sementara "what is the rated flow" mengandung kata rated - dan
-#: yang lebih khusus harus menang.
 FACT_PARAMETER = re.compile(
     # "capacity" sengaja tidak ada: kata itu muncul di percakapan biasa
     # ("battery capacity of the UPS") dan memunculkannya di sini membuat
@@ -102,11 +100,30 @@ FACT_PARAMETER = re.compile(
     r"flow rates?|rated flows?|rated heads?|rated currents?|"
     r"design (pressures?|temperatures?)|"
     r"operating (pressures?|temperatures?)|pumping temps?|"
-    # "vibration" polos TIDAK Asking nilai: "vibration alarm on KC-4501"
+    # "vibration" polos TIDAK meminta nilai: "vibration alarm on KC-4501"
     r"vibration (limit|setpoint|trip|threshold)s?|"
     r"npsh|shaft speeds?|motor speeds?|viscosit\w*)\b",
     re.IGNORECASE,
 )
+
+#: Kata batas yang HANYA berarti nilai terukur kalau tag instrumen disebut.
+#:
+#: "limit" dan "threshold" sendiri tidak cukup: "what are the limits of the
+#: plot plan?" bukan pertanyaan nilai, dan "the cost limit" bukan setpoint.
+#: Tapi "what is the VSHH-1201 limit?" jelas-jelas tentang satu instrumen, dan
+#: diukur pada index CALIBER: tag itu ADA di document_parameters dengan nilai
+#: "> 7.1 mm/s". Tanpa cue ini pertanyaan itu ditolak sebagai
+#: "not about any equipment, document, work order". Penolakan yang salah untuk
+#: pertanyaan yang bisa dijawab persis adalah kegagalan paling mahal yang ada
+#: di sistem ini - lebih buruk daripada jawaban yang belum sempurna.
+#: Bentuk TAG INSTRUMEN, dibalik dari EQUIPMENT_TAG_SHAPE di retrieval.py:
+#: prefix 3-4 huruf. Diukur pada dataset CALIBER - instrumen PSLL, TSHH, VSHH,
+#: LSHH, FSLL, LSLL (4 huruf) dan ZSO (3); equipment GA, DC, YD, CT, KC, LV,
+#: EA, FA (2). Aturan yang sama dipakai conflicts.INSTRUMENT_TAG, jadi
+#: klasifikasi dan deteksi konflik tidak bisa berbeda pendapat soal apa itu
+#: instrumen.
+INSTRUMENT_TAG_SHAPE = re.compile(r"\b[A-Z]{3,4}-\d{3,4}[A-Z]?\b")
+LIMIT_CUE = re.compile(r"\b(limits?|thresholds?|alarm points?)\b", re.IGNORECASE)
 
 
 def classify(question: str) -> str:
@@ -127,6 +144,16 @@ def classify(question: str) -> str:
     q = question or ""
 
     if FACT_PARAMETER.search(q):
+        return "parameter_value"
+
+    # "limit" hanya dibaca sebagai nilai kalau ada tag INSTRUMEN yang disebut.
+    # Bentuk tag instrumen, bukan tag equipment: "what are the limits of the
+    # plot plan for GA-1201A" menyebut "limits" dan sebuah tag, tapi tag itu
+    # equipment dan jawabannya ada di dokumen plot plan, bukan di tabel nilai.
+    # Tag instrumen yang salah ketik juga ikut tertangkap, dan di sana
+    # jawabannya "tidak ada dokumen yang menyatakan nilai itu" - jauh lebih
+    # jujur daripada penolakan "tidak tentang equipment".
+    if LIMIT_CUE.search(q) and INSTRUMENT_TAG_SHAPE.search(q.upper()):
         return "parameter_value"
 
     # Shortcut tag instrumen DIHAPUS. Versi sebelumnya mengembalikan
@@ -238,6 +265,8 @@ def answer_from_maintenance(
             metric = "work_order_count"
         elif "breakdown" in q or "fail" in q or "failure" in q:
             metric = "breakdown_count"
+        if not rows:
+            return None
         ranked = sorted(rows, key=lambda r: -r[metric])
         top = ranked[0]
         metric_label = {
@@ -268,6 +297,18 @@ def answer_from_maintenance(
             ),
         )
 
+    # Equipment yang TIDAK ADA di dataset tidak boleh dilaporkan sebagai "0 work
+    # orders". Nol adalah fakta - fakta itu menyatakan tidak ada work order
+    # untuk unit itu - sedangkan P-8802 tidak ada di sini sama sekali, jadi
+    # "0" adalah karangan. Bedanya besar: yang satu bisa dipercaya, yang lain
+    # tidak, dan keduanya terlihat sama di baris ringkasan.
+    #
+    # Dikembalikan None supaya pemanggil jatuh ke jalur penolakan, yang
+    # menyebut tag tersebut tidak dikenal dan memuat daftar unit yang ada.
+    known_tags = {e["equipment_tag"] for e in registry.list_equipment(conn)}
+    if tag and tag.upper() not in known_tags:
+        return None
+
     if kind == "count":
         if tag:
             row = conn.execute(
@@ -293,6 +334,13 @@ def answer_from_maintenance(
                       COALESCE(SUM(total_cost_idr),0) AS cost
                FROM work_orders"""
         ).fetchone()
+        # Nol work order di SELURUH index berarti tidak ada yang bisa dijawab,
+        # bukan "jawabannya nol". Tanpa guard ini, index yang gagal di-ingest
+        # akan menjawab semua pertanyaan agregat dengan angka yang benar secara
+        # aritmetika dan salah secara faktual - pola yang paling berbahaya
+        # karena tidak terlihat.
+        if not total["wo"]:
+            return None
         return StructuredAnswer(
             kind="count",
             summary=(

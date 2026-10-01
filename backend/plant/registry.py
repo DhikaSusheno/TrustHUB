@@ -694,10 +694,23 @@ def known_instrument_tags(conn: sqlite3.Connection) -> set[str]:
     pun sumber dokumen, yang persis mode kegagalan yang paling ingin
     dihindari.
     """
+    # Kolom `parameter` di document_parameters tidak hanya berisi tag. Ia juga
+    # memuat label parameter bernama - "DESIGN PRESSURE", "DIFFERENTIAL
+    # PRESSURE" - yang tercatat bersama nilainya karena keduanya adalah
+    # "nilai terukur yang ada di dokumen". Kata-kata itu tidak pernah menjadi
+    # kandidat penolakan equipment (TAG_PATTERN tidak memotongnya), jadi
+    # penyaringan ini tidak mengubah perilaku apa pun; yang diperbaiki adalah
+    # pesan penolakan yang tadinya mencantumkan kata-kata itu sebagai "tag
+    # instrumen yang ada".
+    #
+    # Bentuk tag diambil dari retrieval, bukan ditulis ulang di sini, supaya
+    # "apa itu tag instrumen" punya satu jawaban di seluruh kode.
+    from .retrieval import INSTRUMENT_TAG_SHAPE
+
     return {
         str(row["parameter"]).upper()
         for row in conn.execute("SELECT DISTINCT parameter FROM document_parameters")
-        if row["parameter"]
+        if row["parameter"] and INSTRUMENT_TAG_SHAPE.match(str(row["parameter"]).upper())
     }
 
 
