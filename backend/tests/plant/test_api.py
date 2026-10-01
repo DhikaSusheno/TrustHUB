@@ -106,13 +106,20 @@ class TestMissingIndex:
     """
 
     @pytest.fixture
-    def broken_api(self, tmp_path, monkeypatch: pytest.MonkeyPatch):
-        """App dengan database yang tidak ada sama sekali."""
+    def broken_api(self, tmp_path, monkeypatch: pytest.MonkeyPatch, stub_dataset_root):
+        """App dengan database yang tidak ada sama sekali.
+
+        Datasetnya tetap ada (dataset palsu dari conftest), karena justru itu
+        yang diuji: `index` hilang tapi `dataset` terbaca, jadi `/dataset`
+        harus tetap 200 sementara yang lain 503. Kalau dataset ikut hilang,
+        test ini tidak lagi membedakan "butuh index" dari "butuh dataset".
+        """
         monkeypatch.setenv("TRUSTHUB_API_TOKEN", "ci-test-token-abcdefghijklmnop")
         monkeypatch.setenv(
             "TRUSTHUB_PLANT_DB_PATH", str(tmp_path / "does-not-exist.db")
         )
         monkeypatch.setenv("TRUSTHUB_PLANT_LLM_MODE", "off")
+        monkeypatch.setenv("TRUSTHUB_DATASET_ROOT", str(stub_dataset_root))
         from conftest import _clear_caches
 
         _clear_caches()

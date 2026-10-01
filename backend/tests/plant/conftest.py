@@ -36,6 +36,7 @@ from typing import Any
 import pytest
 
 from plant import dataset as dataset_mod
+from plant import extract as extract_mod
 from plant import registry
 
 #: Jumlah equipment, dokumen, dan work order di fixture.
@@ -435,6 +436,65 @@ def official_dataset(official_dataset_root: Path, tmp_path_factory):
 
 
 # ---------------------------------------------------------------------------
+# Stub dataset untuk route `/dataset`
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def stub_dataset_root(tmp_path: Path) -> Path:
+    """Dataset CALIBER palsu yang cukup untuk route `/dataset`.
+
+    Rute `/dataset` membaca filesystem, bukan index, jadi tidak bisa diuji di
+    atas indeks sintetis. Tanpa stub ini, test-nya hanya bisa lulus di mesin
+    yang punya dataset resmi - persis pola "hijau lokal, merah di CI" yang
+    sudah pernah menimpa repo ini.
+
+    Yang dipin stub ini: 8 unit, masing-masing satu datasheet, dan satu baris
+    work order. Cukup untuk `/dataset` mengembalikan 200 dengan angka yang
+    bisa diperiksa, dan cukup kecil untuk tidak mengaburkan test.
+    """
+    from openpyxl import Workbook
+
+    # Dibaca lewat modul, bukan alias: daftar tag harus sama persis dengan
+    # yang dipakai ekstraktor, bukan salinan yang bisa basi.
+    tags = extract_mod.EQUIPMENT_TAGS
+
+    root = tmp_path / "stub-dataset"
+    docs = root / "Set_01"
+    docs.mkdir(parents=True)
+
+    for tag in tags:
+        (docs / f"Equipment Datasheet - {tag}.pdf").write_bytes(b"%PDF-1.4")
+        for n in (1, 2, 3, 4, 5, 6, 7):
+            (docs / f"OPL-{tag}-{n:02d} - Lesson_{n}.pdf").write_bytes(b"%PDF-1.4")
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Maintenance History"
+    ws.append(
+        [
+            "WO_Number", "Report_Date", "Equipment_Tag", "Equipment_Name",
+            "Area_Name", "Criticality", "Functional_Location",
+            "Related_Interlock", "Work_Type", "Discipline", "Breakdown",
+            "Downtime_Hours", "Labor_Hours", "Total_Cost_IDR",
+            "Labor_Cost_IDR", "Material_Cost_IDR", "Problem_Description",
+            "Root_Cause", "Corrective_Action",
+        ]
+    )
+    ws.append(
+        [
+            "WO-STUB-1", "2025-01-15", "GA-1201A", "STUB PUMP", "AREA ONE",
+            "HIGH CRITICAL", "FL-GA-1201A", "TJC-LLD-IL-GA-1201A", "Corrective",
+            "Mechanical", "Yes", 3.5, 1.0, 7_500_000.0, 1_000_000.0,
+            6_500_000.0, "Stub problem", "Stub cause", "Stub action",
+        ]
+    )
+    wb.save(root / "Maintenance History (All Equipment).xlsx")
+    wb.close()
+    return root
+
+
+# ---------------------------------------------------------------------------
 # HTTP
 # ---------------------------------------------------------------------------
 
@@ -458,12 +518,19 @@ class ApiHarness:
 
 
 @pytest.fixture
-def api(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def api(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, stub_dataset_root: Path):
     """TestClient untuk /api/plant/* di atas indeks sintetis.
 
     Token dan path database disetel lewat environment karena `plant.api`
     membacanya saat modul di-import. Import dicache di level interpreter,
     jadi patch dilakukan sebelum import pertama.
+
+    `TRUSTHUB_DATASET_ROOT` juga disetel, ke dataset palsu milik test. Rute
+    `/dataset` membaca filesystem dan tidak punya index sebagai pengganti, jadi
+    tanpa ini tiga test-nya hanya lulus di mesin yang punya dataset resmi dan
+    gagal di CI. Namanya `TRUSTHUB_DATASET_ROOT` - itu yang dibaca
+    `dataset.find_dataset_root`; `TRUSTHUB_PLANT_DATASET_ROOT` tidak pernah
+    dibaca sama sekali.
     """
     db = tmp_path / "plant_api_test.db"
     build_synthetic_index(registry.connect(db))
@@ -473,6 +540,7 @@ def api(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("TRUSTHUB_PLANT_DB_PATH", str(db))
     monkeypatch.setenv("TRUSTHUB_PLANT_LLM_MODE", "off")
     monkeypatch.setenv("TRUSTHUB_PLANT_ALLOW_EXTERNAL_LLM", "0")
+    monkeypatch.setenv("TRUSTHUB_DATASET_ROOT", str(stub_dataset_root))
 
     from fastapi import FastAPI
     from fastapi.testclient import TestClient

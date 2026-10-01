@@ -782,40 +782,97 @@ class TestMain:
         )
         assert result.returncode == 0, result.stderr
 
-    def test_missing_dataset_exits_two_not_zero(self, tmp_path):
-        # Exit 2, bukan 0. `main()` mengembalikan 2 saat dataset tidak ada, dan
-        # itu tidak boleh berubah jadi 0 karena "tidak ada yang gagal" -
-        # dataset yang hilang berarti test set tidak dijalankan sama sekali,
-        # yang berbeda jauh dari lulus.
+    def _cli_env(self, tmp_path, **extra):
+        """Environment minimum yang cukup untuk menjalankan CLI.
+
+        `TRUSTHUB_DATASET_ROOT` adalah nama yang dibaca
+        `dataset.find_dataset_root`, bukan `TRUSTHUB_PLANT_DATASET_ROOT` -
+        nama kedua hanya dipakai untuk path database. Salah nama di sini
+        berarti dataset sungguhan di mesin ini tetap ditemukan, dan test
+        yang dimaksudnya menguji jalur yang salah.
+
+        `USERPROFILE`/`HOMEDRIVE`/`HOMEPATH` ikut dipasang karena
+        `pathlib.Path.home()` membacanya di Windows, dan beberapa import
+        mencari direktori rumah saat import - tanpa itu interpreter gagal
+        sebelum `main()` dijalankan sama sekali.
+        """
         import os
-        import subprocess
-        import sys
 
         env = {
             "PATH": os.environ.get("PATH", ""),
             "SYSTEMROOT": os.environ.get("SYSTEMROOT", "C:\\Windows"),
             "PYTHONPATH": _BACKEND_DIR,
-            # On Windows, pathlib.Path.home() reads USERPROFILE (and falls back
-            # to HOMEDRIVE+HOMEPATH). Without them the interpreter raises
-            # "Could not determine home directory" before main() is even
-            # reached, which would make this test assert the wrong exit code.
             "USERPROFILE": os.environ.get("USERPROFILE", ""),
             "HOMEDRIVE": os.environ.get("HOMEDRIVE", ""),
             "HOMEPATH": os.environ.get("HOMEPATH", ""),
-            # A path that cannot exist, so find_dataset_root() raises even if a
-            # real dataset is present on this machine.
-            "TRUSTHUB_PLANT_DATASET_ROOT": str(tmp_path / "no-such-dataset"),
-            "TRUSTHUB_PLANT_DB_PATH": str(tmp_path / "unused.db"),
         }
+        env.update(extra)
+        return env
+
+    def test_missing_dataset_exits_two_not_zero(self, tmp_path):
+        """Exit 2 saat dataset tidak ditemukan.
+
+        Bukan 0. `main()` mengembalikan 2 di sini, dan tidak boleh berubah
+        jadi 0 karena "tidak ada yang gagal" - dataset yang hilang berarti
+        test set tidak dijalankan sama sekali, yang berbeda jauh dari lulus.
+        """
+        import subprocess
+        import sys
+
+        env = self._cli_env(
+            tmp_path,
+            # Path yang memang tidak ada, jadi find_dataset_root() gagal
+            # walaupun ada dataset sungguhan di Downloads mesin ini.
+            TRUSTHUB_DATASET_ROOT=str(tmp_path / "no-such-dataset"),
+            TRUSTHUB_PLANT_DB_PATH=str(tmp_path / "unused.db"),
+        )
         result = subprocess.run(
             [sys.executable, "-m", "plant.evaluation", "--json"],
             capture_output=True, text=True, timeout=300, env=env,
         )
         assert result.returncode == 2, (
             f"harus keluar dengan 2, bukan {result.returncode}. "
-            f"stdout={result.stdout[:300]} stderr={result.stderr[:300]}"
+            f"stderr={result.stderr[:300]}"
         )
-        assert "error:" in result.stderr.lower() or "dataset" in result.stderr.lower()
+        # Pesan harus menyebut dataset secara spesifik. Exit 2 yang sama juga
+        # dipakai untuk "index kosong", jadi kalau test ini tidak memeriksa
+        # pesannya, ia bisa lulus karena alasan yang salah - seperti yang
+        # terjadi pada versi pertama test ini.
+        assert "dataset" in result.stderr.lower(), result.stderr[:300]
+
+    def test_empty_index_exits_two(self, tmp_path):
+        """Exit 2 juga untuk index yang ada tapi kosong.
+
+        Kasus berbeda dari dataset hilang: datasetnya ada, tapi database belum
+        pernah di-build. Tanpa test ini, `return 2` di cabang kedua bisa
+        dihapus dan tidak ada yang sadar, karena test di atas sudah hijau dari
+        cabang pertama.
+        """
+        import subprocess
+        import sys
+
+        from plant import extract as extract_mod
+
+        dataset = tmp_path / "dataset"
+        dataset.mkdir()
+        for tag in extract_mod.EQUIPMENT_TAGS:
+            (dataset / f"Equipment Datasheet - {tag}.pdf").write_bytes(b"%PDF-1.4")
+
+        env = self._cli_env(
+            tmp_path,
+            TRUSTHUB_DATASET_ROOT=str(dataset),
+            TRUSTHUB_PLANT_DB_PATH=str(tmp_path / "empty-index.db"),
+        )
+        result = subprocess.run(
+            [sys.executable, "-m", "plant.evaluation", "--json"],
+            capture_output=True, text=True, timeout=300, env=env,
+        )
+        assert result.returncode == 2, result.stderr[:300]
+        # Pesan harus menyebut index, bukan dataset - kalau tidak, kedua
+        # cabang hanya bisa dibedakan oleh isi pesan, dan tes ini kembali
+        # bercampur.
+        assert "index" in result.stderr.lower(), result.stderr[:300]
+        assert "fetch_dataset" in result.stderr, result.stderr[:300]
 
 
 # ---------------------------------------------------------------------------
