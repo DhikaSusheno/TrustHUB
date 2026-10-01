@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ponytail: --font-inter comes from next/font/local via `inter.variable` on <html>.
+   Do NOT redeclare it here — a `:root` copy shadows the hashed family name and
+   silently falls back to system-ui. */
+html, body {
+  height: 100%;
+  background-color: #080d14;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* Native <select>, scrollbar, and input popups render dark instead of flashing white. */
+  color-scheme: dark;
+}
+
+:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Scrollbar halus */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Pulse ring — node pending */
+@keyframes pulse-ring {
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.5); }
+  70%  { transform: scale(1);    box-shadow: 0 0 0 8px rgba(251, 191, 36, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+}
+
+/* Blink merah untuk rolled_back */
+@keyframes blink-red {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+/* Fade in untuk panel */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+}
+
+.animate-blink-red {
+  animation: blink-red 0.5s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out both;
+}
+
+/* Prevent layout shifts on graph load */
+.graph-container {
+  contain: layout style;
+}

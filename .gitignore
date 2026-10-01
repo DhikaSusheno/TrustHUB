@@ -1,0 +1,59 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# SQLite
+*.db
+*.db.bak.*
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# Settings platform yang di-generate runtime (backend/settings.py)
+trusthub_settings.json
+
+# Dataset CALIBER 2026 Case 1 (lisensi panitia, TIDAK ikut repo).
+# Ambil lewat backend/plant/fetch_dataset.py, bukan di-commit.
+dataset/
+data/
+backend/data/
+*.pdf
+*.png
+!docs/**/*.png
+*.xlsx
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Fernet key untuk encrypt credential (llm_providers.api_key,
+# github_connections.access_token). Dibuat otomatis oleh backend/auth.py kalau
+# FERNET_KEY tidak disetel di env. Isinya setara password - membocorkanya
+# membuat semua credential tersimpan bisa didekripsi siapa saja.
+backend/.fernet_key
+
+# Scratch file debugging lokal - jangan pernah ikut commit
+backend/test_bugfix.py
+backend/test_debug.py
+backend/test_debug2.py
+
+.DS_Store
+Thumbs.db
+
+workspace/
+
+projects_registry.json
+backend/projects_registry.json
