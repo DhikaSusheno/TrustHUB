@@ -74,3 +74,8 @@ backend/plant/trusthub_plant.db-shm
 # Log evaluasi yang berisi potongan isi dokumen (berkas bisa besar dan
 # berasal dari dataset yang tidak boleh disalin)
 backend/plant/evaluation_results.json
+
+# Screenshot per-slide hasil render deck. Artefak build: bisa dibuat ulang
+# dengan `node docs/deck/build/render.mjs`, dan 1,1 MB untuk 15 PNG tidak
+# layak disimpan di git. PDF-nya sendiri ikut di-commit karena itu deliverable.
+docs/deck/shots/

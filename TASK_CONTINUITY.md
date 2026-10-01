@@ -354,12 +354,33 @@ skor; semuanya baru terlihat karena guardrail mengubah dua jawaban.
   koreksi evaluation set — karena angka 100% tidak berarti apa-apa kalau spec
   di baliknya salah.
 
+### ✅ DONE — deck
+- `docs/deck/deck.html` → **PDF 15 slide, English, 323 KB** (batas 10 MB).
+  Render via headless Chrome (`docs/deck/build/render.mjs`), jadi teksnya vektor
+  dan **bisa dicari** — panel bisa copy-paste, tidak akan puzzled.
+- 960x540 pt, rasio persis 16:9. `@page` mengunci ukuran halaman.
+- Struktur: title → problem → idea → KQ1 data → ingestion → graph+retrieval →
+  trust engine → "score bukan keputusan" → refusal → bukti demo → KQ3 failure
+  memory → evaluasi → **honesty page** → impact → next. Semua 6 komponen wajib
+  dan 3 KQ ada, dan komponen 5 dinyatakan **NOT BUILT** di slide 13.
+- Audit layout otomatis (`audit.mjs`): 15/15 slide, **0 overflow**, 0 tumpang
+  tindih dengan footer. Slide tersempit (14) clearance 74px.
+- **Angka deck diverifikasi mesin terhadap API yang sedang jalan.** Script
+  mengekstrak teks PDF lalu cocokkan tiap klaim dengan `GET /api/plant/*`, plus
+  3 frasa terlarang yang harus **absen**: `15 verified groups`, `production
+  data`, `real plant data`. Semua lulus.
+- `verified_groups: 7` yang dipakai. Angka 15 tidak muncul di mana pun.
+- PDF **tidak** di-commit. `.gitignore` punya aturan `*.pdf` sebagai pagar
+  agar 87 PDF dataset berlisensi panitia tidak ikut terpush. Aturan itu tidak
+  dilonggarkan demi deck: `deck.html` yang di-version-control, PDF-nya build
+  output, dan harga yang dibayar adalah satu file binary tidak ikut repo.
+
 ### 🔜 NEXT (urutan ini)
-1. **Deck** (≤15 slide, English). Pastikan `verified_groups: 7` — **BUKAN 15**.
-   Angka 15 pernah diklaim di dua docstring dan tidak pernah diukur.
-2. Video demo + link mockup publik.
-3. Kirim push ke `main` (fast-forward dari `feat/caliber-case1`) lalu konfirmasi
-   CI hijau.
+1. **Video demo 2-3 menit** + link mockup publik. Ini masih kosong di slide 15
+   (`Link to be added on submission`).
+2. Nama supervisor masih `to be confirmed` di slide 1 dan 15 —committee belum
+   jawab. Jangan kirim dengan placeholder kalau sudah tahu.
+3. Rekam video dari `feat/caliber-case1` HEAD, bukan dari working tree.
 
 ---
 
