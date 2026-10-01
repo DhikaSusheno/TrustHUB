@@ -51,6 +51,7 @@ INDEX_ROUTES = [
     ("GET", "/search?q=seal+flush"),
     ("GET", "/conflicts"),
     ("GET", "/verification"),
+    ("GET", "/evaluation"),
     ("GET", "/failure-memory"),
     ("GET", "/work-orders"),
     ("GET", "/audit"),
@@ -70,6 +71,7 @@ ALL_ROUTES = [
     ("GET", "/trust/weights"),
     ("GET", "/conflicts"),
     ("GET", "/verification"),
+    ("GET", "/evaluation"),
     ("GET", "/failure-memory"),
     ("GET", "/work-orders"),
     ("GET", "/audit"),
@@ -187,6 +189,18 @@ class TestMissingIndex:
             "approved_documents",
         }
         assert all(v == 0 for v in counts.values())
+
+    def test_evaluation_returns_503_not_a_zero_percent(self, broken_api) -> None:
+        # Tanpa index tidak ada yang bisa dievaluasi. Harus 503 dengan perintah
+        # yang bisa dijalankan - bukan 200 dengan accuracy 0%, yang akan
+        # terbaca di UI sebagai "sistemnya salah" padahal sistemnya belum
+        # dibangun sama sekali.
+        response = broken_api.get(
+            f"{PREFIX}/evaluation",
+            headers={"X-TrustHub-Token": "ci-test-token-abcdefghijklmnop"},
+        )
+        assert response.status_code == 503
+        assert "fetch_dataset" in response.json()["detail"]
 
     def test_ask_returns_503_not_500(self, broken_api) -> None:
         response = broken_api.post(
@@ -574,6 +588,57 @@ class TestVerificationShape:
     def test_conflicts_counts_are_consistent(self, api) -> None:
         body = api.get(f"{PREFIX}/conflicts").json()
         assert body["needs_sme"] <= body["total"]
+
+
+class TestEvaluation:
+    """Set evaluasi dijalankan, bukan dibaca dari konstanta.
+
+    Test ini menolak keras pada dua kegagalan yang mahal: angka akurasi yang
+    ditulis manual di frontend, dan `results` penuh yang bocor ke browser.
+    """
+
+    def test_reports_a_locked_spec_version(self, api) -> None:
+        body = api.get(f"{PREFIX}/evaluation").json()
+        assert body["spec_version"], "the set must declare which version ran"
+
+    def test_accuracy_is_computed_as_a_ratio(self, api) -> None:
+        body = api.get(f"{PREFIX}/evaluation").json()
+        assert body["total"] > 0
+        assert 0 <= body["passed"] <= body["total"]
+        expected = round(100.0 * body["passed"] / body["total"], 1)
+        assert body["accuracy_pct"] == expected
+
+    def test_refusals_and_answers_are_reported_separately(self, api) -> None:
+        # Angka yang paling penting justru bukan accuracy: berapa dari kasus
+        # yang seharusnya DITOLAK, dan berapa dari yang harus dijawab, yang
+        # berperilaku seperti seharusnya. Knowledge hub yang menjawab
+        # semua pertanyaan terlihat seperti sistem yang fasih, bukan yang
+        # bisa dipercaya.
+        body = api.get(f"{PREFIX}/evaluation").json()
+        assert body["refusal"]["expected"] > 0, "set must contain refusal cases"
+        assert body["answer"]["expected"] > 0, "set must contain answerable cases"
+        assert body["refusal"]["expected"] + body["answer"]["expected"] == body["total"]
+        assert body["refusal"]["correct"] <= body["refusal"]["expected"]
+        assert body["answer"]["correct"] <= body["answer"]["expected"]
+
+    def test_every_category_reports_its_own_totals(self, api) -> None:
+        # Tidak boleh ada kasus yang tidak masuk kategori mana pun: kalau ada,
+        # total per kategori akan lebih kecil dari total keseluruhan, dan
+        # accuracy 100% bisa achievement dari kasus yang tidak pernah diuji.
+        body = api.get(f"{PREFIX}/evaluation").json()
+        categories = body["by_category"]
+        assert categories
+        assert sum(c["total"] for c in categories.values()) == body["total"]
+        assert sum(c["passed"] for c in categories.values()) == body["passed"]
+        for name, bucket in categories.items():
+            assert bucket["passed"] <= bucket["total"], name
+
+    def test_per_case_results_are_not_returned(self, api) -> None:
+        # 63 kasus x jawaban + sitasi = ratusan kilobyte untuk data yang tidak
+        # pernah ditampilkan. Halaman Evaluation butuh lima angka dan satu
+        # histogram per kategori, bukan transkrip.
+        raw = api.get(f"{PREFIX}/evaluation").text
+        assert "results" not in raw or '"results":[]' in raw.replace(" ", "")
 
 
 class TestAuditShape:

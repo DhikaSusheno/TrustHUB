@@ -481,9 +481,17 @@ def agreement_report(conn: sqlite3.Connection) -> dict[str, Any]:
     mengukur bahwa batas-batas keselamatan benar-benar konsisten antar
     dokumen".
 
-    Seluruh hasil di dataset CALIBER: 15 kelompok nilai terverifikasi muncul di
-    2-8 dokumen dengan nilai yang sama persis, 0 kontradiksi. Angka ini
-    dataset-derived dan boleh dipakai di deck apa adanya.
+    Angka di docstring ini DIUKUR pada dataset CALIBER yang ter-ingest, bukan
+    diperkirakan: 7 kelompok nilai terverifikasi, masing-masing disebut
+    7-8 dokumen dengan nilai yang sama persis, 0 kontradiksi.
+
+    Versi sebelumnya docstring ini menulis "15 kelompok ... 2-8 dokumen" dan
+    menyatakan angka itu boleh dipakai di deck apa adanya. Angka itu tidak
+    pernah diukur. Histogram `document_count_histogram` di respons ini adalah
+    {"7": 1, "8": 6} - tujuh kelompok, tujuh dan delapan dokumen - dan itulah
+    yang dilaporkan `/api/plant/verification` sebagai `verified_groups`. Deck
+    harus mengutip angka yang keluar dari endpoint, bukan yang ada di
+    docstring.
     """
     rows = conn.execute(
         """SELECT p.equipment_tag, p.parameter, p.operator, p.value, p.unit, p.kind,

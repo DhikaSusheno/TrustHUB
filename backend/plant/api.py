@@ -49,6 +49,21 @@ from . import registry, retrieval, trust
 
 router = APIRouter(prefix="/api/plant", tags=["Plant Knowledge Hub"])
 
+#: Ringkasan evaluasi yang dikirim ke browser. `results` sengaja dibuang:
+#: 63 kasus x seluruh jawaban dan sitasinya membuat respons jadi ratusan
+#: kilobyte untuk data yang tidak pernah ditampilkan. Halaman Evaluation
+#: butuh empat angka dan satu histogram per kategori, bukan transkrip.
+_EVALUATION_RESULT_KEYS = (
+    "spec_version",
+    "total",
+    "passed",
+    "accuracy_pct",
+    "refusal",
+    "answer",
+    "by_category",
+    "elapsed_seconds",
+)
+
 
 # ---------------------------------------------------------------------------
 # Status & konfigurasi
@@ -559,8 +574,16 @@ def cross_source_verification() -> dict[str, Any]:
 
     Ini sisi positif dari pemeriksaan konflik: bukan hanya mencari
     pertentangan, tapi juga membuktikan bahwa batas-batas keselamatan
-    konsisten. Pada dataset CALIBER: 15 kelompok nilai terverifikasi lintas
-    2-8 dokumen, 0 kontradiksi.
+    konsisten.
+
+    Angka di docstring ini diukur, bukan diperkirakan. Pada dataset CALIBER
+    yang ter-ingest: 7 kelompok nilai terverifikasi lintas 7-8 dokumen, 0
+    kontradiksi. Versi sebelumnya docstring ini menyebut 15 kelompok; angka itu
+    tidak pernah diukur dan tidak bisa direproduksi, jadi dibuang.
+
+    Jangan menulis angka "N kelompok" di sini tanpa menjalankannya lebih
+    dulu. Angka yang salah di docstring lebih berbahaya daripada tidak ada
+    angka sama sekali, karena orang akan mengutipnya.
     """
     conn = _require_dataset_index()
     try:
@@ -569,6 +592,29 @@ def cross_source_verification() -> dict[str, Any]:
         return report
     finally:
         conn.close()
+
+
+@router.get("/evaluation")
+def run_accuracy_evaluation() -> dict[str, Any]:
+    """Jalankan set evaluasi terkunci dan kembalikan ringkasannya.
+
+    Angka akurasi ini adalah klaim yang sama persis dengan klaim di deck dan
+    di halaman about. Dieksekusi di sini, bukan ditulis sebagai konstanta di
+    frontend, supaya tidak mungkin berbeda dari perilaku sistem yang sedang
+    berjalan. Kalau suatu saat hasilnya turun, angkanya ikut turun di semua
+    tempat sekaligus.
+
+    Butuh ~1 detik untuk 63 kasus, jadi ini bukan sesuatu yang dipanggil di
+    setiap render: frontend memanggilnya saat halaman Evaluation dibuka.
+    """
+    from . import evaluation as evaluation_mod
+
+    conn = _require_dataset_index()
+    try:
+        report = evaluation_mod.evaluate(conn)
+    finally:
+        conn.close()
+    return {key: report[key] for key in _EVALUATION_RESULT_KEYS if key in report}
 
 
 @router.get("/failure-memory")
