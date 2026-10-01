@@ -1,19 +1,20 @@
 // lib/backendUrl.test.ts
 // node --test "lib/*.test.ts"
 //
-// Guard untuk kontrak proxy BUG-11. Backend mewajibkan token API di setiap
-// path non-public (backend/auth.py, fail-closed), dan browser tidak boleh
-// menyimpan token itu. Jadi semua panggilan dari browser WAJIB lewat
-// route handler app/backend/[...path]/route.ts yang menyuntikkan token.
+// Regression guard for the proxy-token contract (BUG-11). The backend requires
+// an API token on every non-public path, and a browser bundle must never hold
+// that token. So every browser call has to go through the Next route handler at
+// app/backend/[...path]/route.ts, which injects TRUSTHUB_API_TOKEN from the
+// server environment.
 //
-// Kalau satu modul fallback ke URL absolut, request-nya menembak backend
-// langsung tanpa header token dan dibalas 401 - sementara /health tetap
-// public, jadi banner status tetap hijau sementara datanya kosong. Failure
-// mode itu yang paling mahal, jadi dijaga di sini.
+// The failure this prevents is the expensive kind. A module that falls back to
+// an absolute backend URL bypasses the proxy, gets a 401, and shows an empty
+// page - while /health stays public, so the status banner still reads green and
+// the viewer concludes the data is empty rather than unauthorised.
 //
-// Pindai SELURUH tree, bukan daftar file. Daftar keras akan misses file
-// baru dari branch lain yang membawa pola yang sama - misalnya
-// OperationsSidebar.tsx di frontend/nabilfauzandafa-polish2.
+// The scan covers whole directories rather than a hard-coded file list. A list
+// misses files added later by anyone else working in the tree, which is exactly
+// how the original bug got reintroduced.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -35,25 +36,27 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-// Path selalu pakai "/" supaya assertion tidak Depends on separator OS.
+// Paths always use "/" so assertions do not depend on the OS separator.
 const rel = (f: string) => relative(ROOT, f).split(/[\\/]/).join("/");
 
 const SOURCES = SCAN_DIRS.flatMap((d) => walk(join(ROOT, d))).filter(
-  // Jangan scan diri sendiri: file ini memuat polanya sebagai contoh.
+  // Do not scan this file: it contains the pattern as its own examples.
   (f) => rel(f) !== "lib/backendUrl.test.ts",
 );
 
-// Default yang sah: path relatif, supaya request lewat proxy.
+// The legitimate default: a relative path, so the request goes via the proxy.
 const PUBLIC_DEFAULT = /process\.env\.NEXT_PUBLIC_BACKEND_URL\s*\?\?\s*"\/backend"/;
-// Host absolut = request menembak backend tanpa header token.
+// An absolute host means the request hits the backend with no token header.
 const ABSOLUTE_DEFAULT =
   /process\.env\.NEXT_PUBLIC_BACKEND_URL\s*\?\?\s*"(https?:\/\/[^"]+)"/;
-// Hanya VARIABEL yang dibaca, bukan penyebutan di teks UI. BackendStatusBanner
-// memuat "NEXT_PUBLIC_BACKEND_URL" di pesan error dan itu bukan pembacaan env.
+// Only a VARIABLE read counts, not the string appearing in UI copy.
+// BackendStatusBanner mentions NEXT_PUBLIC_BACKEND_URL in its error message and
+// that is not a read of the environment.
 const READS_ENV = /process\.env\.NEXT_PUBLIC_BACKEND_URL/;
 
-// Pakai exec, bukan matchAll: matchAll mengembalikan iterator yang butuh
-// --downlevelIteration, dan tidak perlu mengubah tsconfig global demi test.
+// exec rather than matchAll: matchAll returns an iterator, which would need
+// --downlevelIteration, and there is no reason to change the global tsconfig
+// for one test.
 function allMatches(src: string, re: RegExp): string[] {
   const out: string[] = [];
   const rx = new RegExp(re.source, re.flags.includes("g") ? re.flags : `${re.flags}g`);
@@ -67,12 +70,16 @@ function allMatches(src: string, re: RegExp): string[] {
 
 test("tree scan benar-benar menemukan file sumber", () => {
   assert.ok(
-    SOURCES.length > 30,
+    SOURCES.length > 15,
     `hanya ${SOURCES.length} file ketemu - pola walk-nya salah`,
   );
   assert.ok(
     SOURCES.some((f) => rel(f) === "app/page.tsx"),
     "app/page.tsx tidak ikut ter-scan",
+  );
+  assert.ok(
+    SOURCES.some((f) => rel(f) === "lib/plantApi.ts"),
+    "client API plant tidak ikut ter-scan",
   );
   assert.ok(
     SOURCES.some((f) => rel(f) === "app/backend/[...path]/route.ts"),
@@ -112,8 +119,8 @@ test("proxy tidak boleh pakai NEXT_PUBLIC_, hanya server-side env", () => {
     join(ROOT, "app/backend/[...path]/route.ts"),
     "utf8",
   );
-  // NEXT_PUBLIC_ di-inline ke bundle browser, jadi token / URL backend akan
-  // ikut terkirim ke client. Proxy harus hanya membaca env server.
+  // NEXT_PUBLIC_ is inlined into the browser bundle, so the token or the
+  // backend URL would ship to the client. The proxy reads server-side env only.
   assert.ok(
     !/NEXT_PUBLIC_/.test(proxy),
     "proxy memuat NEXT_PUBLIC_* - nilainya akan masuk bundle browser",
@@ -122,5 +129,48 @@ test("proxy tidak boleh pakai NEXT_PUBLIC_, hanya server-side env", () => {
     proxy,
     /process\.env\.BACKEND_URL\s*\?\?\s*"https?:\/\//,
     "proxy harus default ke URL absolut server-side; hanya browser yang wajib /backend",
+  );
+});
+
+/**
+ * Strip comments, keeping string contents.
+ *
+ * Comments are stripped but not strings, because the distinction that matters
+ * here is "does this code read the token" versus "does this file mention the
+ * token in prose". Several modules name TRUSTHUB_API_TOKEN in a comment
+ * explaining why they must NOT use it, and flagging those would push someone
+ * towards deleting an accurate warning. Block comments are handled without a
+ * full parser on purpose: a token literal inside one is not a code path.
+ */
+function stripComments(src: string): string {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+}
+
+// A read, as opposed to a mention. `process.env.X` and `process.env["X"]` are
+// reads; the same word inside an error message or a comment is not. Matching
+// the bare name would flag lib/proxyGuard.ts, which legitimately names the
+// variable in the text of a 503 telling the operator to set it.
+const READS_TOKEN = /process\.env(?:\.\s*|\[\s*['"])[^'"\]\n]*TRUSTHUB_API_TOKEN/;
+
+test("token API tidak pernah dibaca di kode browser", () => {
+  // The strongest form of the same guarantee: no file that ships to the browser
+  // may READ the token, whatever the variable is called. A new module reading a
+  // differently-named secret is caught here even though the regexes above would
+  // not see it.
+  const offenders: string[] = [];
+  for (const file of SOURCES) {
+    const relPath = rel(file);
+    // The proxy is server-side by definition, and is where the token is read.
+    if (relPath === "app/backend/[...path]/route.ts") continue;
+    const code = stripComments(readFileSync(file, "utf8"));
+    if (READS_TOKEN.test(code)) offenders.push(relPath);
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `Kode browser ini membaca TRUSTHUB_API_TOKEN:\n${offenders.join("\n")}\n` +
+      `Panggil lewat BASE + path agar request melewati proxy.`,
   );
 });

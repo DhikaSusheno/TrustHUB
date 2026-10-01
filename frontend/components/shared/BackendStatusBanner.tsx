@@ -1,47 +1,63 @@
 "use client";
-// components/shared/BackendStatusBanner.tsx
-// Banner visual yang mencolok untuk menunjukkan status backend (live/mock/offline)
-// Mencegah kebingungan "kenapa fitur ga jalan?" saat mode MOCK.
 
-import { useBackendStatus, BackendStatus } from "@/hooks/useBackendStatus";
+// components/shared/BackendStatusBanner.tsx
+// Says whether the pages behind it are showing real indexed data.
+//
+// This banner exists because "why is this page empty?" is the first question a
+// viewer asks, and the honest answer needs to be visible before they ask it.
+// Three states, all distinguishable:
+//
+//   live      no banner. Real data, nothing to warn about.
+//   empty     the backend is up but the plant index is not built. The exact
+//             command to build it is shown, not a generic error.
+//   offline   the backend is not reachable at all.
+//
+// `empty` and `offline` were previously collapsed into one "DEMO DATA" state,
+// which was worse than useless: the backend working is good news, and telling
+// someone it is not while their pages are about to load correctly loses their
+// trust in everything else on screen.
+
+import { useBackendStatus } from "@/hooks/useBackendStatus";
 
 const ICONS = {
   live: "●",
-  mock: "▲",
+  empty: "▲",
   checking: "◌",
   offline: "✕",
-};
+} as const;
 
 const COLORS = {
   live: "bg-green-500/20 text-green-400 border-green-500/30",
-  mock: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+  empty: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
   checking: "bg-blue-500/20 text-blue-400 border-blue-500/30",
   offline: "bg-red-500/20 text-red-400 border-red-500/30",
-};
+} as const;
 
 const LABELS = {
   live: "LIVE DATA",
-  mock: "DEMO DATA",
+  empty: "INDEX NOT BUILT",
   checking: "CHECKING",
-  offline: "OFFLINE",
-};
+  offline: "BACKEND OFFLINE",
+} as const;
 
 const MESSAGES = {
-  live: "Connected to backend — real data active",
-  mock: "Sample operations, not real runs — start the backend and set NEXT_PUBLIC_USE_LIVE_SSE=true for live data",
-  checking: "Checking backend availability…",
-  offline: "Backend unreachable — check NEXT_PUBLIC_BACKEND_URL",
-};
+  live: "",
+  empty:
+    "The backend is running, but no plant documents are indexed yet. Everything below will stay empty until the index exists.",
+  checking: "Checking whether the plant index is available…",
+  offline:
+    "The backend is not reachable. Start it, then reload. If it runs on another port, set NEXT_PUBLIC_BACKEND_URL.",
+} as const;
 
 export default function BackendStatusBanner() {
-  const status = useBackendStatus();
+  const { mode, problem } = useBackendStatus();
 
-  // Don't show banner if live (user already sees real data)
-  if (status.mode === "live") return null;
+  // Nothing to warn about when the index is live.
+  if (mode === "live") return null;
 
   return (
     <div
-      className={`shrink-0 px-4 py-2.5 ${COLORS[status.mode]} border-b border-solid`}
+      className={`shrink-0 px-4 py-2.5 ${COLORS[mode]} border-b border-solid`}
       role="status"
       aria-live="polite"
     >
@@ -50,23 +66,30 @@ export default function BackendStatusBanner() {
           <span
             aria-hidden="true"
             className={`text-sm leading-none shrink-0 ${
-              status.mode === "checking" ? "animate-pulse" : ""
+              mode === "checking" ? "animate-pulse" : ""
             }`}
           >
-            {ICONS[status.mode]}
+            {ICONS[mode]}
           </span>
           <span className="text-xs font-semibold uppercase tracking-wide shrink-0">
-            {LABELS[status.mode]}
+            {LABELS[mode]}
           </span>
-          <span className="text-xs text-slate-300/80 truncate">{MESSAGES[status.mode]}</span>
+          <span className="text-xs text-slate-300/80 truncate">{MESSAGES[mode]}</span>
         </div>
-        {(status.mode === "mock" || status.mode === "offline") && (
-          <button
-            onClick={() => window.location.reload()}
-            className="text-xs px-3 py-1.5 bg-slate-900/50 border border-slate-700/50 rounded-lg hover:bg-slate-800/50 transition-colors whitespace-nowrap shrink-0"
-          >
-            {status.mode === "mock" ? "Reload after fixing .env.local" : "Retry"}
-          </button>
+
+        {mode === "empty" ? (
+          <code className="text-[11px] font-mono text-slate-200 bg-slate-900/60 border border-slate-700/60 rounded px-2 py-1 whitespace-nowrap shrink-0">
+            {problem?.match(/python -m [\w.]+/)?.[0] ?? "python -m plant.fetch_dataset"}
+          </code>
+        ) : (
+          (mode === "offline" || mode === "checking") && (
+            <button
+              onClick={() => window.location.reload()}
+              className="text-xs px-3 py-1.5 bg-slate-900/50 border border-slate-700/50 rounded-lg hover:bg-slate-800/50 transition-colors whitespace-nowrap shrink-0"
+            >
+              Retry
+            </button>
+          )
         )}
       </div>
     </div>

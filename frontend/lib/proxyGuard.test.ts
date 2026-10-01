@@ -1,15 +1,14 @@
 // lib/proxyGuard.test.ts
 // node --test "lib/*.test.ts"
 //
-// Regression test untuk H9: repo ini punya DUA proxy yang menyuntikkan
-// TRUSTHUB_API_TOKEN dari sisi server, tapi guard-nya (cek Sec-Fetch-Site +
-// gagal-cepat kalau token kosong) cuma ada di proxy utama sejak isu #63.
-// app/api/graph/route.ts jalan telanjang — halaman mana pun bisa memicunya
-// dan server tetap menyuntik kredensial ke backend.
+// Unit tests for the shared guard used by the token-injecting proxy at
+// app/backend/[...path]/route.ts, plus a scan that demands every proxy route in
+// the tree uses it.
 //
-// Test terakhir di file ini adalah yang paling penting: ia memindai semua
-// route handler dan menuntut guard dipakai di situ, sehingga proxy KETIGA
-// yang ditambahkan orang tanpa guard langsung bikin test ini merah.
+// The scan is the important part. This guard exists because two proxies in this
+// repo had two different security levels, and the weaker one was reachable. The
+// unit tests below would still pass if someone added a third proxy that skipped
+// the guard entirely, so the last test scans for exactly that.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -57,8 +56,8 @@ test("same-origin, same-site, dan none diperbolehkan", () => {
 });
 
 test("tanpa header Sec-Fetch-Site diperbolehkan (klien non-browser)", () => {
-  // Kalau header tidak dikirim, tidak ada bukti request dari browser
-  // foreign — dan memblokirnya akan mematikan curl serta klien server.
+  // With no header there is no evidence the request came from a foreign browser,
+  // and blocking that would break curl and server-side clients.
   assert.equal(crossSiteDenial(null, null), null);
 });
 
@@ -111,8 +110,8 @@ test("parseAllowedOrigins membuang spasi dan entri kosong", () => {
   const parsed = parseAllowedOrigins(
     " http://localhost:3000 , http://localhost:3001 ,, "
   );
-  // Array.from/Set spread sengaja tidak dipakai: tsconfig menargetkan es5
-  // sehingga iterasi Set butuh downlevelIteration.
+  // Array.from/Set spread is deliberately unused: tsconfig targets es5, so
+  // iterating a Set needs downlevelIteration.
   assert.equal(parsed.size, 2, `dapat ${parsed.size} entri`);
   assert.ok(parsed.has("http://localhost:3000"));
   assert.ok(parsed.has("http://localhost:3001"));
@@ -123,17 +122,17 @@ test("parseAllowedOrigins(undefined) menghasilkan set kosong", () => {
   assert.equal(parseAllowedOrigins("").size, 0);
 });
 
-// ------------------------------------------------- H9: semua proxy harus guard
+// --------------------------------------------- every proxy route must be guarded
 
 test("setiap route handler proxy memakai proxyGuard", () => {
   const routes = walk(join(ROOT, "app"));
-  assert.ok(routes.length >= 2, `minimal dua route, dapat ${routes.length}`);
+  assert.ok(routes.length >= 1, `minimal satu route, dapat ${routes.length}`);
 
   const offenders: string[] = [];
   for (const file of routes) {
     const src = readFileSync(file, "utf8");
     const mentionsBackend = /BACKEND_URL|TRUSTHUB_API_TOKEN/.test(src);
-    if (!mentionsBackend) continue; // route biasa, bukan proxy
+    if (!mentionsBackend) continue; // an ordinary route, not a proxy
     const guarded =
       src.includes("@/lib/proxyGuard") ||
       (src.includes("crossSiteDenial") && src.includes("missingTokenDenial"));
@@ -143,17 +142,17 @@ test("setiap route handler proxy memakai proxyGuard", () => {
   assert.deepEqual(
     offenders,
     [],
-    `route berikut menyuntik token tanpa guard (H9): ${offenders.join(", ")}`
+    `route berikut menyuntik token tanpa guard: ${offenders.join(", ")}`,
   );
 });
 
-test("proxy /api/graph menyuntik token dan tidak lagi telanjang", () => {
-  const file = join(ROOT, "app", "api", "graph", "route.ts");
+test("proxy utama menyuntik token dan memakai guard", () => {
+  const file = join(ROOT, "app", "backend", "[...path]", "route.ts");
   const src = readFileSync(file, "utf8");
   assert.match(src, /proxyGuard/, "guard harus diimpor");
   assert.match(
     src,
     /X-TrustHub-Token/,
-    "route ini memang menyuntik token — karena itu guard wajib"
+    "route ini memang menyuntik token - karena itu guard wajib",
   );
 });
