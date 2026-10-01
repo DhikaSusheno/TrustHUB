@@ -26,6 +26,45 @@ TEST_TOKEN = "test-suite-token-0123456789abcdef"
 auth.API_TOKEN = TEST_TOKEN
 
 
+@pytest.fixture(scope="session", autouse=True)
+def schema_exists():
+    """Bangun skema sebelum test pertama yang menyentuh main.py.
+
+    DI TEMUKAN karena test ini lulus di mesin saya dan gagal di CI:
+
+        test_valid_token_returns_200 -> sqlite3.OperationalError:
+        no such table: llm_providers
+
+    Penyebabnya bukan route-nya. `main.app` membangun skema di `lifespan`, dan
+    lifespan hanya jalan kalau app dijalankan sebagai context manager:
+
+        with TestClient(app) as client:   # lifespan jalan
+        client = TestClient(app)          # lifespan TIDAK jalan
+
+    `httpx.ASGITransport` yang dipakai test token-tanpa-header juga tidak
+    menjalankan lifespan. Test yang mengembalikan 401 tetap hijau karena
+    gerbang token menolak di middleware, sebelum route dieksekusi - jadi
+    hanya test yang token-nya valid yang sampai ke body route dan baru saat
+    itu tabelnya dibutuhkan.
+
+    Di mesin saya `backend/trusthub.db` sudah ada dari run sebelumnya, jadi
+    tabelnya kebetulan ada dan test-nya hijau. Di CI repo bersih tidak punya
+    file itu (`.gitignore:8` menutup `*.db`), jadi tabelnya tidak ada dan test
+    gagal. Test yang bergantung pada file sisa di mesin adalah test yang
+    salah, jadi skema dibangun di sini.
+
+    Isinya meniru `lifespan` di main.py: legacy `database.init_db()` dan v2
+    `storage.init_db()`. `_restore_active_target()` sengaja tidak dipanggil -
+    ia memulihkan state dari registry yang bukan bagian dari apa yang diuji.
+    """
+    import database
+    import storage
+
+    database.init_db()
+    storage.init_db()
+    yield
+
+
 @pytest.fixture(autouse=True)
 def inject_api_token(monkeypatch):
     from starlette.testclient import TestClient
