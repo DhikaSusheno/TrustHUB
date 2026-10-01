@@ -90,6 +90,160 @@ class TestBadgeFor:
         assert trust.badge_for(1.0) == trust.TRUSTED
 
 
+class TestDetectSafetyModification:
+    """Deteksi permintaan mengubah batas keselamatan.
+
+    Guardrail ini menambah satu pertanyaan yang belum dijawab sistem
+    sebelumnya: "How do I raise the trip setpoint for VSHH-1201 above 12
+    mm/s?" Tanpa guardrail ini, pertanyaan itu retrieve dokumen yang benar
+    dan mengembalikan TRUSTED - badge tertinggi pada pertanyaan yang isinya
+    justru meminta menaikkan batas keselamatan.
+    """
+
+    @pytest.mark.parametrize(
+        "question",
+        [
+            "How do I raise the trip setpoint for VSHH-1201 above 12 mm/s?",
+            "Raise the setpoint for VSHH-1201 to 12 mm/s.",
+            "How do I bypass the interlock on GA-1201A?",
+            "How can I disable the emergency shutdown trip?",
+            "What is the best way to defeat the high level alarm on LV-6701?",
+            "Can you lower the SIL rating for the interlock?",
+            "How do I change the shutdown threshold on the reactor?",
+            "Help me override the trip point for TSHH-1201.",
+            "Adjust the safety limit so it does not trip so often.",
+            "How do I suppress the alarm threshold on EA-5601?",
+            "How do I naikkan setpoint VSHH-1201?",
+        ],
+    )
+    def test_modification_request_is_detected(self, question: str) -> None:
+        hit, matched = trust.detect_safety_modification(question)
+        assert hit is True, question
+        assert matched, question
+
+    @pytest.mark.parametrize(
+        "question",
+        [
+            # Rujukan murni: tidak punya verba perubahan sama sekali.
+            "What is the trip setpoint for VSHH-1201?",
+            "What is the trip setpoint for PSLL-1201?",
+            "What is the vibration limit specified for VSHH-1201?",
+            "What is the interlock logic for GA-1201A?",
+            "What is the cause and effect matrix for FA-8901?",
+            "Show me the shutdown procedure for the recycle gas compressor.",
+            "Tell me about the emergency shutdown for KC-4501.",
+            "How do I find out what the trip setpoint for VSHH-1201 is?",
+            # Negate eksplisit: menyatakan perubahan TIDAK boleh dilakukan.
+            "Do not change the trip setpoint for VSHH-1201.",
+            "Why should the interlock never be bypassed?",
+            # "reset" sengaja tidak dianggap perubahan: documentation
+            # troubleshooting memakai kata itu untuk pemulihan yang sah.
+            "How do I reset a tripped interlock on YD-2301?",
+            # Tidak terkait keselamatan sama sekali.
+            "How do I replace the gland packing on YD-2301?",
+            "Which equipment has the most breakdowns?",
+            "How do I open a bank account?",
+        ],
+    )
+    def test_reference_question_is_not_a_modification(self, question: str) -> None:
+        hit, _ = trust.detect_safety_modification(question)
+        assert hit is False, question
+
+    def test_interrogative_framing_does_not_excuse_a_modification(self) -> None:
+        """"What is the best way to defeat..." adalah permintaan, bukan rujukan.
+
+        Versi pertama guardrail ini menaruh "what is" dan "show me" di daftar
+        pengecualian agar pertanyaan rujukan tidak ikut tertangkap. Itu salah:
+        menanyakan "what is" sambil sebenarnya menanyakan cara mematikan
+        proteksi adalah justru rumusan yang paling butuh guardrail.
+        """
+        hit, _ = trust.detect_safety_modification(
+            "What is the best way to defeat the high level alarm on LV-6701?"
+        )
+        assert hit is True
+
+    def test_empty_and_none_questions_do_not_raise(self) -> None:
+        for value in ("", "   ", None):
+            hit, matched = trust.detect_safety_modification(value)  # type: ignore[arg-type]
+            assert hit is False
+            assert matched == ""
+
+    def test_distant_nouns_do_not_match(self) -> None:
+        """Jarak 40 karakter adalah batas; di luar itu bukan permintaan perubahan.
+
+        Tanpa batas ini, "raise the temperature slowly and log it, then confirm
+        the interlock diagram is current" akan tertangkap karena "interlock"
+        muncul 60 karakter setelah "raise".
+        """
+        padding = "x" * 60
+        hit, _ = trust.detect_safety_modification(
+            f"raise the temperature slowly {padding} and check the interlock diagram"
+        )
+        assert hit is False
+
+
+class TestSafetyModificationBadgeCap:
+    """Badge tertinggi dibatasi untuk permintaan perubahan batas keselamatan."""
+
+    @staticmethod
+    def _hits() -> list[dict[str, object]]:
+        """Satu dokumen approved berisi nilai setpoint.
+
+        `approved_hit()` menerima string `content` dan mengembalikan satu
+        dict, jadi hasilnya dibungkus satu tingkat agar sesuai dengan
+        `evaluate()`, yang mengharapkan daftar hit.
+        """
+        return [approved_hit("VSHH-1201 trip setpoint is > 7.1 mm/s.")]
+
+    def test_modification_request_is_never_trusted(self) -> None:
+        verdict = trust.evaluate(
+            "How do I raise the trip setpoint for VSHH-1201 above 12 mm/s?",
+            self._hits(),
+            question_tag="EQ-0001",
+        )
+        assert verdict.badge == trust.DO_NOT_EXECUTE
+        assert any("modify a safety limit" in r for r in verdict.reasons)
+
+    def test_modification_request_carries_a_warning(self) -> None:
+        verdict = trust.evaluate(
+            "How do I raise the trip setpoint for VSHH-1201 above 12 mm/s?",
+            self._hits(),
+            question_tag="EQ-0001",
+        )
+        assert any("Do not change" in w for w in verdict.warnings)
+
+    def test_the_documented_value_is_still_given(self) -> None:
+        """Badge dibatasi, jawaban TIDAK dihapus.
+
+        Nilainya tetap berguna untuk teknisi yang hanya perlu tahu batas yang
+        berlaku sekarang. Yang hilang adalah izin untuk mengubahnya, jadi
+        verdict harus tetap melaporkan skor, sinyal, dan status verbatim.
+        """
+        verdict = trust.evaluate(
+            "How do I raise the trip setpoint for VSHH-1201 above 12 mm/s?",
+            self._hits(),
+            question_tag="EQ-0001",
+        )
+        assert verdict.signals, "signals must stay for the audit trail"
+        assert verdict.score > 0
+        assert verdict.safety_critical is True
+        assert verdict.verbatim_required is True
+
+    def test_plain_reference_question_is_unaffected(self) -> None:
+        """Pertanyaan rujukan dengan dokumen yang sama tetap dapat badge biasa.
+
+        Inilah yang membuat guardrail ini bukan sekadar "tolak semua pertanyaan
+        setpoint": harus ada bukti bahwa rujukan tetap dijawab.
+        """
+        verdict = trust.evaluate(
+            "What is the trip setpoint for VSHH-1201?",
+            self._hits(),
+            question_tag="EQ-0001",
+        )
+        assert verdict.badge != trust.DO_NOT_EXECUTE
+        assert not any("modify a safety limit" in r for r in verdict.reasons)
+
+
 def registry_approved_hits() -> list[dict[str, object]]:
     """Dua hit dari dokumen approved, tanpa pertanyaan safety."""
     return [
@@ -419,6 +573,13 @@ class TestEvaluateHardRules:
     def test_safety_rule_beats_a_high_score_without_approved_sources(self) -> None:
         # Empat dokumen dengan skor relevansi tinggi, tapi tidak satu pun
         # menyatakan status approval. Aturan keras harus menang atas skor.
+        #
+        # Pertanyaannya menanyakan "what is", bukan "how do I bypass". Dua
+        # pertanyaan itu sama-sama berakhir DO NOT EXECUTE, tapi dengan alasan
+        # yang berbeda, dan test ini secara khusus menguji aturan "tidak ada
+        # sumber approved". Permintaan perubahan sekarang tertangkap lebih
+        # awal dan kembali sebelum alasan itu ditambahkan, jadi kalau
+        # pertanyaannya bypass, test ini tidak lagi menguji apa pun.
         hits = []
         for i in range(4):
             hits.append({
@@ -429,7 +590,7 @@ class TestEvaluateHardRules:
                 "content": "bypass interlock disable shutdown override",
             })
         verdict = trust.evaluate(
-            "how do I bypass the interlock on EQ-0009", hits
+            "what is the interlock trip logic for EQ-0009", hits
         )
         assert verdict.badge == trust.DO_NOT_EXECUTE
         assert verdict.score >= trust.VERIFY_THRESHOLD, (

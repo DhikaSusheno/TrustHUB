@@ -104,6 +104,90 @@ SETPOINT_QUERY = re.compile(
     re.IGNORECASE,
 )
 
+# Permintaan untuk MENGUBAH atau MENONJOLKAN sebuah batas keselamatan, bukan
+# untuk menanyakannya. Ini bukan variasi dari SETPOINT_QUERY: "What is the trip
+# setpoint for VSHH-1201?" adalah rujukan dan boleh dijawab TRUSTED, sedangkan
+# "How do I raise the trip setpoint for VSHH-1201 above 12 mm/s?" adalah
+# permintaan perubahan, dan sistem ini tidak berwenang mengotorisasinya.
+#
+# Dua bentuk, karena urutan kata di kalimat Inggris tidak bisa diasumsikan:
+#   1. verba perubahan mendahului kata bendera  -> "raise the trip setpoint"
+#   2. kata bendera mendahului verba penonjolan -> "bypass the interlock"
+_CHANGE_VERB = (
+    r"rais(?:e|ing)|increas(?:e|ing)|lower(?:ing|s)?|decreas(?:e|ing)|"
+    r"reduc(?:e|ing)|chang(?:e|ing|ed)|modif(?:y|ying|ied)|adjust(?:ing|ed)?|"
+    r"edit(?:ing|ed)?|updat(?:e|ing|ed)|overrid(?:e|ing|den)|"
+    r"bypass(?:ing|ed)?|disabl(?:e|ing|ed)|"
+    r"ignor(?:e|ing|ed)|"
+    r"suppress(?:ing|ed)?|inhibit(?:ing|ed)?|relax(?:ing|ed)?|"
+    r"loosen(?:ing|ed)?|extend(?:ing|ed)?|widen(?:ing|ed)?|"
+    r"turn(?:ing)? off|switch(?:ing)? off|get ?rid of|do ?away with|"
+    # "defeat" hanya berarti "mematahkan" di sini. Ia ditambahkan karena
+    # "defeat the interlock" adalah cara baku untuk menyatakan bypass, dan
+    # kosakata teknik lebih sering memakai kata ini daripada "bypass".
+    r"defeat(?:ing|ed)?"
+)
+# Kata yang menandai sesuatu yang dilindungi. "limit" dan "threshold" masuk
+# "raise the alarm threshold" tetap permintaan mengubah proteksi.
+_PROTECTED_NOUN = (
+    r"set-?points?|trip (?:points?|limits?|values?)|sil\b|safety integrity|"
+    r"interlock|cause (?:and|&) effect|"
+    r"(?:safety |alarm |high |low |high-?level |low-?level )?limits?|"
+    r"thresholds?|alarms?|"
+    r"shutdown|emergency|e-?stop|protection|guard|relay|trip"
+)
+
+SAFETY_MODIFICATION = re.compile(
+    # Bentuk 1: verba perubahan, lalu kata yang dilindungi.
+    rf"\b(?:{_CHANGE_VERB})\b[^?.]{{0,40}}?\b(?:{_PROTECTED_NOUN})\b"
+    # Bentuk 2: kata yang dilindungi, lalu verba penonjolan.
+    rf"|\b(?:{_PROTECTED_NOUN})\b[^?.]{{0,40}}?\b(?:{_CHANGE_VERB})\b"
+    # Bentuk 3: variasi Indonesia yang tertulis di dokumen OPL.
+    r"|\b(?:naikkan|turunkan|ubah|modifikasi|setting)\b"
+    rf"[^?.]{{0,40}}?\b(?:{_PROTECTED_NOUN})\b",
+    re.IGNORECASE,
+)
+
+# Kalimat yang benar-benar MENYATAKAN bahwa perubahan tidak boleh dilakukan.
+# Hanya negate eksplisit yang masuk daftar ini.
+#
+# Bentuk kata tanya ("what is", "show me", "tell me") sengaja TIDAK ada di sini.
+# Versi pertama memakai daftar itu, dan itu salah: "What is the best way to
+# defeat the high level alarm?" bertanya "what is" padahal yang ditanyakan
+# adalah cara mematikan sebuah proteksi. Justru rumusan itulah yang paling
+# membutuhkan guardrail.
+#
+# Pertanyaan rujukan tidak butuh pengecualian karena tidak punya verba
+# perubahan sama sekali: "What is the trip setpoint for VSHH-1201?" tidak cocok
+# dengan `SAFETY_MODIFICATION` sama sekali, jadi tidak pernah sampai ke sini.
+_NEGATED_CHANGE = re.compile(
+    r"\b(do not|don't|do n't|never|without|no need to|should not|shouldn't|"
+    r"must not|mustn't|cannot|can't|won't|will not)\b",
+    re.IGNORECASE,
+)
+
+
+def detect_safety_modification(question: str) -> tuple[bool, str]:
+    """Apakah pertanyaan meminta perubahan batas keselamatan?
+
+    Mengembalikan `(True, matched_text)` kalau iya. Pertanyaan rujukan -
+    "what is the trip setpoint for VSHH-1201?" - mengembalikan `False` dan
+    boleh dijawab TRUSTED seperti biasa.
+
+    Yang membuat ini berbeda dari deteksi biasa: `SETPOINT_QUERY` menyalakan
+    flag safety untuk KEDUA bentuk, sehingga jawaban atas permintaan
+    perubahan mendapat badge tinggi persis seperti rujukan. Yang perlu
+    dipisahkan adalah niatnya, bukan topiknya.
+    """
+    text = question or ""
+    if _NEGATED_CHANGE.search(text):
+        return False, ""
+    m = SAFETY_MODIFICATION.search(text)
+    if not m:
+        return False, ""
+    return True, m.group(0).strip()
+
+
 # Niat bertindak, bukan sekadar rujukan. "What is nitrogen blanketing?" adalah
 # rujukan; "How do I replace the gland packing?" adalah instruksi.
 ACTION_INTENT = re.compile(
@@ -427,6 +511,42 @@ def evaluate(
     if unknown_sources and safety:
         warnings.append(
             "safety-critical answer whose source does not state approval status"
+        )
+
+    # Permintaan mengubah batas keselamatan tidak boleh mendapat badge tinggi
+    # meski dokumennya approved dan skornya bagus. "How do I raise the trip
+    # setpoint for VSHH-1201 above 12 mm/s?" retrieve dokumen yang benar dan
+    # menghasilkan TRUSTED 0.81 - badge tertinggi pada pertanyaan yang
+    # isinya justru meminta menaikkan batas keselamatan. Badge ada untuk
+    # mengarahkan tindakan manusia; di sini arahnya akan salah.
+    #
+    # Catatan: ini bukan penolakan. Jawaban tetap diberikan, karena
+    # dokumennya memang menyertakan nilai yang tercatat dan menyajatinya
+    # berguna. Yang dibatasi adalah badge-nya, dan disertai peringatan,
+    # karena sistem ini berwenang mencari nilai, tidak berwenang
+    # mengizinkan perubahan.
+    modified, matched = detect_safety_modification(question)
+    if modified:
+        badge = DO_NOT_EXECUTE
+        reasons.append(
+            f"question asks to modify a safety limit ('{matched}') -> "
+            "DO NOT EXECUTE regardless of score; a change to a safety limit "
+            "is approved through the document's own authority, not by this system"
+        )
+        warnings.append(
+            "This reads as a request to change a safety-critical value. The "
+            "value above is what the documents currently state. Do not change "
+            "it based on this answer."
+        )
+        return TrustVerdict(
+            badge=badge,
+            score=score,
+            signals=signals,
+            reasons=reasons,
+            safety_critical=True,
+            verbatim_required=True,
+            conflicts=conflicts,
+            warnings=warnings,
         )
 
     # Badge: prosedur safety-critical tanpa sumber approved DILARANG

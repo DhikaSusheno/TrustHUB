@@ -1,84 +1,105 @@
-# HANDOFF — TrustHub Frontend (konteks lanjutan)
+# HANDOFF
 
-Brief asli proyek ada di [`TRUSTHUB.md`](TRUSTHUB.md) dan
-[`frontend/MASTER_PROMPT.md`](frontend/MASTER_PROMPT.md). Dokumen ini bukan brief —
-ini catatan state pekerjaan untuk sesi berikutnya.
+Work-state notes for the next session. This file is not a brief — the brief is
+[`TRUSTHUB.md`](TRUSTHUB.md), the Case Book mapping. See also
+[`README.md`](README.md) for how to run it and [`TASK_CONTINUITY.md`](TASK_CONTINUITY.md)
+for the full chronological log.
 
-## Peran
-Kamu senior dev yang lazy dan teliti. Bahasa: Indonesia gaya caveman (fragment ok,
-tanpa filler, istilah teknis persis). Kode, commit, PR, dan komentar issue ditulis
-normal. Gate dulu: apakah ini perlu ada sama sekali.
+## What this repository is
 
-## Tugas
-Lanjutkan job FE-1 `@nabilfauzandafa` dan FE-2 `@ShannWasHere` di folder `frontend/`.
-Sumber: issue GitHub #37, #38, #39, #40 (repo DhikaSusheno/TrustHub).
+CALIBER 2026 Case 1, *Manufacturing Knowledge Hub*. A plant knowledge hub for
+8 units of a polyolefin plant: it indexes the official document set, answers
+questions with a source citation, and attaches a trust verdict to every answer.
 
-## Repo
-- Path lokal: `C:\Users\Nabil Fauzan Daffa\trusthub-repo-clone`
-- Branch: `frontend/live-data` (push sudah sinkron dengan `origin/frontend/live-data`)
+Rebranded in place from `DhikaSusheno/Synapse`. The frontend under `frontend/`
+is a rewrite — the Synapse UI was deleted (54 files) rather than adapted.
 
-Struktur: `backend/` (FastAPI, `guardian.py`, `cortex.py`, `engine.py`),
-`security/tests/` (pytest, 6 file), `frontend/` (Next.js app router).
+## State: the deliverable is complete and verified
 
-Sebelum kerja: `git fetch --all --prune`, baca `main`, cek PR + issue terbuka,
-baca kontrak API backend, lalu jalankan ulang test.
+| Area | Status |
+|---|---|
+| Backend, 20 routes under `/api/plant` | done, verified against the real dataset |
+| Trust Engine | done, weights fixed and documented |
+| Dataset ingestion | done, 95 documents / 362 chunks / 211 work orders |
+| Evaluation set, 63 locked cases | 63/63 = 100.0%, spec version 1.2 |
+| Holdout, 102 questions | 98.0%, 2 documented failures |
+| Frontend, 9 pages | done, 9/9 verified in headless Chrome |
+| Backend test suite | 1309 passed, 32 skipped |
+| CI | green on both `feat/caliber-case1` and `main` |
 
-## Commit yang sudah push (jangan di-rework tanpa alasan)
-- `8c75932` bug FE-2: `res.json()` lalu `res.clone()` (fix #37), deny `failed`→`denied`,
-  false success, stale/mock list, mojibake, fake Cortex insight.
-- `8003b68` ignore sqlite `*.db-wal` / `*.db-shm`.
-- `0b0f8f6` hapus `OperationsSidebar.tsx` dead code, History approvals dari `/operations`.
-- `603ed7a` merge `origin/main` (PR #42 engine-knowledge-graph) + resolve konflik.
-- `4d0335b` satu request `/operations?limit=100`, conflict dari backend, hapus `withConflicts()`.
-- `bc0d2f9` #38 SSE singleton, #39 `decideOperation`, #40 animasi TrustHubGraph tanpa re-render.
+Everything measured is in `README.md` and `TRUSTHUB.md`. Do not add a number to
+either file that you have not just measured.
 
-## Keputusan arsitektur (sudah dipakai, jangan diubah tanpa alasan)
-- **Satu sumber data**: pending + history + conflict banner dari satu
-  `GET /operations?limit=100` (`hooks/useOperations.ts`, filter `requires_approval === 1`).
-- `/list_pending_approvals` **tidak dipakai**: endpoint itu tidak mengirim `conflicts`.
-- **Kontrak**: `/approve_operation` → `{ ok, status, new_status }`.
-  Execute hanya boleh setelah approve `ok`. Implementasinya di `lib/operations.ts`
-  (`decideOperation`), dipakai GuardianPage, GuardianPanel, ApprovalCard. Jangan tulis
-  approve/execute inline lagi.
-- **Satu koneksi SSE**: `lib/sseStream.ts` (transport tunggal: fanout, refcount, exponential
-  backoff BUG-08) + `hooks/useSSEStream.ts` (wrapper React). Agents, CodeGraph, Security,
-  TrustHubGraph semua lewat hook itu. Jangan `new EventSource` di komponen.
-- Animasi TrustHubGraph pakai ref (`animTimeRef`), bukan `setState` per frame.
+## Working rules that were learned the hard way
 
-## Status issue
-- #37 double `res.json()` → **fixed** di `8c75932`, belum ditutup.
-- #38 4 koneksi `/stream` → **fixed** di `bc0d2f9` + `lib/sseStream.test.ts`, belum ditutup.
-- #39 approve/execute inline 3 tempat → **fixed** di `bc0d2f9` + 6 test, belum ditutup.
-- #40 re-render 60fps → **fixed** di `bc0d2f9`, belum ditutup.
-- README `frontend/README.md` sudah diperbarui (endpoint, struktur file, tabel mitigasi).
+**Never fabricate a number.** If a figure is not in the measured list below,
+measure it before writing it. The dataset is sample data; the interlock
+setpoints say so themselves, and the workbook costs are dummy IDR values. Quote
+them as what they are.
 
-## Verifikasi terakhir (semua hijau)
-- `cd frontend; npm test` → 27/27
-- `npm run typecheck` (tsc --noEmit) → clean
-- `npm run lint` (next lint) → No ESLint warnings or errors
-- FE `http://localhost:3000` → 200, backend `http://localhost:8000` → 200
-- `python -m pytest security/tests -q` → 86 passed (JALAN dari repo root, bukan `backend/`)
+**Never commit the dataset.** It is under the committee's licence. `.gitignore`
+plus `python -m plant.fetch_dataset`. Confirm no `.db` or `.sqlite` file is
+tracked before pushing.
 
-## Sisa pekerjaan
-1. Buka PR `frontend/live-data` → `main` dengan ringkasan fix #37–#40 + hasil test.
-2. Comment + tutup issue #37, #38, #39, #40 dengan bukti (commit hash, 27/27 test).
-3. Visual check manual di browser biasa (headless Chrome gagal: GCM/updater access denied).
-4. Audit integrasi endpoint baru `backend/engine.py` (PR #42) — belum dicek sisi FE.
+**Tests must pass without the dataset.** CI has no dataset, so a
+dataset-dependent test is a defect, not a coverage gap. Use the
+`stub_dataset_root` / `requires_official_dataset` helpers in
+`backend/tests/plant/conftest.py`.
 
-## Aturan keamanan (penting)
-- GitHub CLI `gh` 2.101.0 terpasang, **belum login**.
-- JANGAN pernah memakai token yang di-paste user di chat. Dua PAT sudah terekspos →
-  wajib di-revoke oleh user di Settings → Developer settings → Personal access tokens.
-- Login harus lewat `gh auth login --hostname github.com --git-protocol https --web`
-  yang dijalankan user sendiri di terminalnya. Credensial masuk Windows Credential Manager.
-- Kalau `gh` belum login, jangan minta token di chat. Minta user login sendiri.
-- `gh` ada di: `%LOCALAPPDATA%\Microsoft\WinGet\Packages\GitHub.cli_Microsoft.Winget.Source_8wekyb3d8bbwe\bin\gh.exe`
-  (terminal baru sudah ada alias `gh`).
+**If a guardrail changes behaviour, re-read the evaluation set.** The
+safety-modification cap found three defects in the locked set that no score had
+ever shown. A defect in a test set is invisible in the score it produces.
 
-## Jebakan tooling yang sudah ketahuan
-- `node --test` di Node 24 pakai strip-only TS: **dilarang** TypeScript parameter
-  property (`constructor(public x: string)`) dan top-level `await`. Tulis eksplisit.
-- `EventSource` bukan global di Node → test SSE perlu stub global manual.
-- PowerShell 5.1 `Set-Content`/`Out-File` bisa merusak encoding UTF-8. Untuk edit file
-  pakai tool edit, bukan Set-Content.
-- `git grep`/scan secret pakai pola `ghp_[A-Za-z0-9]{20,}`, jangan pernah echo token penuh.
+## Measured facts
+
+Ingest: 95 documents (opl 55, datasheet 8, ga 8, interlock 8, pid 8, plot_plan
+8), 362 chunks, 8 equipment, 211 work orders, 92 failure links, 105 measured
+parameters (79 linear + 26 tables), 79 approved + 16 unknown, 28 instrument
+tags, 32 distinct `doc_no`.
+
+Trust: 0 conflicts found, 0 needing SME, **7 verified groups** (never 15), 57
+distinct parameter groups, 56 checkable groups. Graph: 134 nodes, 126 links.
+
+Work orders: 211 total, 31 breakdowns, 434.0 h, IDR 537,770,000 total cost,
+IDR 413,345,000 breakdown-only cost — different scopes, do not conflate. 19 of
+31 breakdowns (61.3%) have a linked OPL.
+
+## Running it
+
+```bash
+# backend
+pip install -r backend/requirements.txt
+export TRUSTHUB_API_TOKEN=<something-long>
+export TRUSTHUB_DATASET_ROOT=/path/to/dataset
+python -m plant.fetch_dataset
+python -m plant.evaluation            # 63/63, exits non-zero if accuracy drops
+python -m plant.holdout --fail-under 95   # needs the dataset, not in CI
+uvicorn main:app --port 8000
+
+# frontend
+cd frontend
+npm ci
+npm run dev                          # proxies /api to the backend
+```
+
+Auth header is `X-TrustHub-Token`. The frontend proxy in
+`frontend/app/backend/[...path]/route.ts` holds the token, so it never reaches
+the browser. LLM is off by default: `TRUSTHUB_PLANT_LLM_MODE=off|local|external`,
+and `external` additionally requires `TRUSTHUB_PLANT_ALLOW_EXTERNAL_LLM=1`.
+
+## Deliberately not built
+
+Component 5 (EDMS / AIMS / Digital Twin) is unbuilt and documented as such. No
+mock connector was added to make the diagram look complete. The Case Book was
+clear that a well-justified architecture beats more data.
+
+## Environment notes for this machine
+
+- `pytest` lives only in `C:\Users\dhika\Synapse\venv\Scripts\python.exe`.
+- Never run `npm run build` while `npm run dev` is live — they share `.next/`.
+- Commit messages: write them with Python and use `git commit -F`. `git commit -m`
+  mangles escaped quotes in PowerShell.
+- Read text with `Get-Content -Encoding UTF8`; without it `▸ ● —` renders as `?`.
+- Generated prose in this repo has picked up stray CJK characters. After editing
+  any `.md` or docstring, scan for chars above `U+2E80` outside the allowlist
+  (`→ — – ↔ § °`).

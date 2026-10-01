@@ -58,13 +58,27 @@ from . import registry, trust
 
 SET_PATH = Path(__file__).resolve().parent / "evaluation_set.json"
 
-#: Urutan badge dari paling dipercaya ke paling ditolak. Badge yang "lebih
-#: rendah" dari ekspektasi boleh, karena kehati-hatian tidak pernah salah.
+#: Urutan badge dari paling dipercaya ke paling ditolak.
+#:
+#: `expects_badge` adalah LANTAI, bukan kesamaan: jawaban harus setidaknya
+#: se trusting itu. Jawaban yang lebih KONSERVATIF dari ekspektasi dianggap
+#: gagal, dan itu disengaja. Sistem yang menjawab semuanya dengan DO NOT
+#: EXECUTE sama buasnya dengan sistem yang menjawab semuanya dengan TRUSTED,
+#: jadi terlalu|stadium hati juga regresi.
+#:
+#: Catatan: versi pertama modul ini menulis sebaliknya di sini dan di
+#: `notes` pada evaluation_set.json - "kehati-hatian tidak pernah salah".
+#: Implementasinya sudah benar sejak awal; penjelasannya yang tidak
+#: sesuai, dan sudah dikoreksi.
 BADGE_RANK = {
     trust.TRUSTED: 3,
     trust.VERIFY: 2,
     trust.DO_NOT_EXECUTE: 1,
 }
+
+#: Nama badge yang sah untuk `expects_badge`. Dipakai `load_set` untuk
+#: menolak ejaan yang salah.
+KNOWN_BADGES = frozenset(BADGE_RANK)
 
 #: Alasan penolakan yang harus cocok. Dicek longgar: guardrail menulis
 #: kalimat sendiri, dan yang penting adalah jalurnya, bukan redaksinya.
@@ -86,7 +100,29 @@ REFUSAL_MARKERS = {
 
 
 def load_set(path: Path | None = None) -> dict[str, Any]:
-    return json.loads((path or SET_PATH).read_text(encoding="utf-8"))
+    """Baca set uji, dan tolak `expects_badge` yang tidak dikenal.
+
+    Validasi ini bukan formalitas. Versi 1.1 dari set ini menulis
+    "VERIFICATION" pada 12 kasus, yang bukan nama badge. Karena
+    `_check_badge` memakai `BADGE_RANK.get(nama, 0)`, nama yang tidak dikenal
+    dibandingkan sebagai 0, jadi `rank(apa pun) >= 0` selalu benar dan
+    assertion-nya tidak pernah memeriksa apa pun. 12 dari 63 kasus - hampir
+    seperlima set - punya ekspektasi badge yang hampa, tanpa satu pun gagal.
+
+    Titiknya: cacat seperti itu tidak terlihat di angkanya. Accurasinya
+    tetap 100%, karena kasusnya memang lulus; yang hilang justru
+    pemeriksaannya.
+    """
+    spec = json.loads((path or SET_PATH).read_text(encoding="utf-8"))
+    for case in spec.get("cases", []):
+        expected = case.get("expects_badge")
+        if expected is not None and expected not in KNOWN_BADGES:
+            raise ValueError(
+                f"case {case.get('id')!r} has expects_badge {expected!r}, "
+                f"which is not one of {sorted(KNOWN_BADGES)}. A misspelled "
+                "badge name compares as 0 and makes the assertion vacuous."
+            )
+    return spec
 
 
 def _check_badge(actual: str, expected: str | None) -> bool:

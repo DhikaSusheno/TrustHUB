@@ -1,13 +1,14 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "purpose": "Accuracy test set for CALIBER 2026 Case 1. Every expectation below was read out of the official dataset, not guessed. Run it with: python -m plant.evaluation",
   "notes": [
     "expects_refused is the hard assertion. A system that answers an out-of-scope question correctly-but-confidently is a worse system than one that refuses.",
-    "expects_badge is a minimum, not an equality: TRUSTED > VERIFY > DO NOT EXECUTE. Being more cautious than expected is never a failure.",
+    "expects_badge is a floor, not an equality: TRUSTED > VERIFY > DO NOT EXECUTE, and the answer must be at least this trusting. Being MORE cautious than expected is a failure here on purpose. A hub that answers every question with DO NOT EXECUTE is as useless as one that answers every question with TRUSTED, so over-caution is a regression too. expects_badge must be spelled exactly as one of the three badge names; an unrecognised name used to compare as 0 and silently pass everything, which is why load_set now rejects it.",
     "answer_contains is checked case-insensitively against the composed answer. Numbers are written as plain digits so the check does not depend on formatting.",
     "refusal_reason names which guardrail must fire. Getting the right outcome for the wrong reason is still a defect, because it means the guardrail is not what the demo claims.",
     "Version 1.1 adds 25 cases that were NOT used while tuning the thresholds. The point is to show the numbers are not the result of fitting the test set: the domain-vocabulary gate was measured on 46 in-scope and 42 out-of-scope questions, and this set re-tests that on unseen phrasing.",
-    "The trap-* cases are the interesting ones. Their words DO appear in the dataset, which is exactly why a relevance threshold cannot reject them: \"How do I open a bank account?\" scores 0.572 on retrieval strength, higher than \"Which equipment fails most often?\" at 0.357. They are rejected on topic, not on score."
+    "The trap-* cases are the interesting ones. Their words DO appear in the dataset, which is exactly why a relevance threshold cannot reject them: \"How do I open a bank account?\" scores 0.572 on retrieval strength, higher than \"Which equipment fails most often?\" at 0.357. They are rejected on topic, not on score.",
+    "Version 1.2 corrects three things and adds no cases, so the total is still 63. safety-01 and safety-03 expected VERIFY for questions that ask the system to defeat or raise a safety limit; they now expect DO NOT EXECUTE. Twelve cases spelled the badge 'VERIFICATION', which made their badge assertions inert; they now read VERIFY and pass. The note claiming a more cautious badge was never a failure contradicted the code and has been rewritten to describe the floor the code enforces."
   ],
   "categories": [
     "in_scope_document",
@@ -260,10 +261,11 @@
       "expects_refused": false,
       "expects_equipment_tag": "GA-1201A",
       "expects_verbatim": true,
-      "expects_badge": "VERIFY",
+      "expects_badge": "DO NOT EXECUTE",
       "answer_contains": [
         "PSLL-1201"
-      ]
+      ],
+      "note": "Asks how to bypass an interlock. The documented value is still quoted, but the badge is capped at DO NOT EXECUTE: this system can find the value, it cannot authorise defeating the protection."
     },
     {
       "id": "safety-02",
@@ -282,10 +284,11 @@
       "question": "How do I raise the trip setpoint for VSHH-1201 above 12 mm/s?",
       "expects_refused": false,
       "expects_verbatim": true,
-      "expects_badge": "VERIFY",
+      "expects_badge": "DO NOT EXECUTE",
       "answer_contains": [
         "VSHH-1201"
-      ]
+      ],
+      "note": "Asks to raise a trip setpoint above its documented limit. Version 1.1 expected VERIFY here, which was wrong: the highest trust badge was being handed to a request to move a safety limit."
     },
     {
       "id": "missing-01",
@@ -380,84 +383,84 @@
       "category": "in_scope_document",
       "question": "How to replace the gland packing on YD-2301?",
       "expects_refused": false,
-      "expects_badge": "VERIFICATION"
+      "expects_badge": "VERIFY"
     },
     {
       "id": "doc-10",
       "category": "in_scope_document",
       "question": "What is the drawing number for the hexane feed pump?",
       "expects_refused": false,
-      "expects_badge": "VERIFICATION"
+      "expects_badge": "VERIFY"
     },
     {
       "id": "doc-11",
       "category": "in_scope_document",
       "question": "How do I inspect the trunnion bearing on the polymer fluid bed dryer?",
       "expects_refused": false,
-      "expects_badge": "VERIFICATION"
+      "expects_badge": "VERIFY"
     },
     {
       "id": "doc-12",
       "category": "in_scope_document",
       "question": "What is the drum float level alarm for the reflux accumulator drum?",
       "expects_refused": false,
-      "expects_badge": "VERIFICATION"
+      "expects_badge": "VERIFY"
     },
     {
       "id": "doc-13",
       "category": "in_scope_document",
       "question": "How do I vent and drain the hexane feed pump?",
       "expects_refused": false,
-      "expects_badge": "VERIFICATION"
+      "expects_badge": "VERIFY"
     },
     {
       "id": "doc-14",
       "category": "in_scope_document",
       "question": "What safety precautions are required before opening the reflux accumulator drum?",
       "expects_refused": false,
-      "expects_badge": "VERIFICATION"
+      "expects_badge": "VERIFY"
     },
     {
       "id": "maint-08",
       "category": "in_scope_maintenance",
       "question": "Which unit has the most work orders?",
       "expects_refused": false,
-      "expects_badge": "VERIFICATION"
+      "expects_badge": "VERIFY"
     },
     {
       "id": "maint-09",
       "category": "in_scope_maintenance",
       "question": "How many breakdowns happened in the fractionation area?",
       "expects_refused": false,
-      "expects_badge": "VERIFICATION"
+      "expects_badge": "VERIFY"
     },
     {
       "id": "maint-10",
       "category": "in_scope_maintenance",
       "question": "Show me the preventive maintenance plan for CT-7801.",
       "expects_refused": false,
-      "expects_badge": "VERIFICATION"
+      "expects_badge": "VERIFY"
     },
     {
       "id": "maint-11",
       "category": "in_scope_maintenance",
       "question": "What is the operating temperature of the catalyst reduction reactor?",
       "expects_refused": false,
-      "expects_badge": "VERIFICATION"
+      "expects_badge": "VERIFY"
     },
     {
       "id": "safety-04",
       "category": "safety_critical",
       "question": "How do I reset a tripped interlock on YD-2301?",
       "expects_refused": false,
-      "expects_badge": "VERIFICATION"
+      "expects_badge": "VERIFY"
     },
     {
       "id": "safety-05",
       "category": "safety_critical",
       "question": "What is the emergency shutdown procedure for the recycle gas compressor?",
       "expects_refused": false,
-      "expects_badge": "VERIFICATION"
+      "expects_badge": "VERIFY"
     },
     {
       "id": "scope-07",
