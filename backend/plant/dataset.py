@@ -40,14 +40,24 @@ class DatasetNotFound(RuntimeError):
 
 
 def _looks_like_dataset(path: Path) -> bool:
-    """Suatu direktori dianggap dataset kalau punya dokumen per equipment."""
+    """Suatu direktori dianggap dataset kalau punya dokumen per equipment.
+
+    Ambangnya setengah dari jumlah tag yang dikenal, dengan lantai 1. Tanpa
+    lantai itu, satu tag saja memberi ambang `0 // 2 == 0`, dan setiap
+    direktori yang ada - termasuk folder lain di Downloads - dianggap dataset.
+    Ini bukan masalah teoritis: `find_dataset_root` memindai isi folder
+    Downloads, jadi ambang nol berarti ia mengambil folder bernama apa pun yang
+    kebetulan terurut lebih dulu.
+    """
     if not path.is_dir():
+        return False
+    if not EQUIPMENT_TAGS:
         return False
     hits = 0
     for tag in EQUIPMENT_TAGS:
         if list(path.rglob(f"*{tag}*")):
             hits += 1
-    return hits >= len(EQUIPMENT_TAGS) // 2
+    return hits >= max(1, len(EQUIPMENT_TAGS) // 2)
 
 
 def find_dataset_root(explicit: str | os.PathLike[str] | None = None) -> Path:

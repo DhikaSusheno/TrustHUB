@@ -128,7 +128,10 @@ def classify(filename: str, text: str = "") -> str:
     if base.startswith("OPL"):
         return "opl"
     low = base.lower()
-    if "pid" in low and base.lower().endswith(".png"):
+    # "p&id" is what the dataset actually calls these files (P&ID_Set_02.png).
+    # Matching the bare substring "pid" would miss all of them except the one
+    # spelled PID_Set_01.png, and "pid" also matches inside unrelated words.
+    if low.endswith((".png", ".jpg", ".jpeg")) and ("p&id" in low or "pid" in low):
         return "pid"
     if "interlock" in low:
         return "interlock"
@@ -261,16 +264,7 @@ def parse_revision_history(text: str) -> list[dict[str, str]]:
     return rows
 
 
-def _extract_person(text: str, label: str) -> str | None:
-    """Ambil nama orang di sebelah label, mis. 'Approved by (Manager)'."""
-    m = re.search(
-        rf"{re.escape(label)}\s*[:\t]?\s*([A-Z][A-Za-z.'\- ]{{2,60}}\(EMP-\d+\))",
-        text,
-    )
-    if m:
-        return _clean(m.group(1))
-    # sebagian OPL menaruh nama di baris berikutnya
-    return None
+
 
 
 # ---------------------------------------------------------------------------
