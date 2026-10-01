@@ -22,7 +22,13 @@ import re
 from dataclasses import dataclass, field, asdict
 from typing import Any
 
-from .retrieval import extract_document_refs, unknown_tags_mentioned
+from .retrieval import (
+    domain_terms,
+    extract_document_refs,
+    mentions_known_entity,
+    non_knowledge_intent,
+    unknown_tags_mentioned,
+)
 
 # Bobot sinyal (proposal 5.4).
 WEIGHTS = {
@@ -38,13 +44,32 @@ TRUSTED_THRESHOLD = 0.80
 VERIFY_THRESHOLD = 0.50
 
 # Konstanta pemetaan relevansi. K = 8 mengubah skor BM25 tak terbatas
-# (umumnya 0-40 pada corpus ini) ke rentang 0..1 dengan s/(s+K). Lantai 0.25
-# dipilih dari pengukuran pada set evaluasi: pertanyaan dalam dataset
-# mendarat di 0.39-0.66, sedangkan pertanyaan di luar dataset mendarat di
-# 0.14-0.18. Lantainya lebar, jadi tidak menyaring pertanyaan yang sah -
-# tujuannya hanya menangkap pertanyaan yang jelas tidak terjawab sumber mana pun.
+# (umumnya 0-40 pada corpus ini) ke rentang 0..1 dengan s/(s+K).
 RELEVANCE_K = 8.0
-RELEVANCE_FLOOR = 0.25
+
+# CATATAN PENTING: relevance TIDAK bisa membedakan pertanyaan plant dari
+# pertanyaan non-plant. Diukur atas 31 pertanyaan dalam-dataset dan 32 di
+# luar dataset, rentang keduanya tumpang tindih sepenuhnya:
+#
+#   dalam dataset   : 0.357 .. 0.737   (terendah: "which equipment fails most often?")
+#   luar dataset    : 0.000 .. 0.572   (tertinggi: "how do I open a bank account?")
+#
+# Jadi TIDAK ADA ambang yang memisahkan keduanya, dan klaim lama di file ini
+# bahwa "pertanyaan luar dataset mendarat di 0.14-0.18" adalah hasil
+# pengukuran pada sampel yang terlalu kecil, bukan fakta.
+#
+# Karena itu penolakan out-of-scope ditangani oleh gerbang kosakata domain di
+# `retrieval.plant_vocabulary`, yang memeriksa TOPIK dan bukan skor. Lantai di
+# bawah ini sekarang hanya satu tugas yang lebih sempit: menangkap
+# pertanyaan yang sudah terbukti tentang plant ini, tapi isinya memang
+# tidak ada di corpus.
+#
+# 0.20 dipilih karena setelah gerbang domain, answers dari 0.15 sampai 0.25
+# tidak berbeda pada satu pun kasus: 63 di evaluation_set.json dan 102 di
+# holdout. 0.20 dipilih agar pertanyaan yang sah tapi luas ("give me the
+# list of critical equipment", relevansi 0.24) tidak terblokir hanya karena
+# meleset 0.01.
+RELEVANCE_FLOOR = 0.20
 
 # Skor approval per status dokumen.
 APPROVAL_SCORE = {
@@ -422,6 +447,9 @@ def evaluate(
     else:
         badge = DO_NOT_EXECUTE
 
+    # Sama dengan badge_for(score) - ditulis eksplisit karena dua aturan keras
+    # di atas (safety tanpa approved, dan sumber kosong) punya prioritas di
+    # atas pemetaan angka biasa.
     return TrustVerdict(
         badge=badge,
         score=score,
@@ -432,6 +460,28 @@ def evaluate(
         conflicts=conflicts,
         warnings=warnings,
     )
+
+
+def badge_for(score: float) -> str:
+    """Badge dari skor numerik saja.
+
+    Dipisahkan dari `evaluate()` supaya skor tetap dari penjumlahan berbobot
+    di satu tempat saja, sementara pemetaan skor-ke-badge ada di satu tempat
+    saja juga. Tidak ada objek `TrustVerdict` di sini: pemanggil yang sudah
+    tahu badge-nya (misalnya jawaban dari tabel maintenance, yang tidak punya
+    dokumen untuk dinilai) tetap bisa turunannya dari ambang yang sama.
+
+    Perhatikan aturan keras `evaluate()` TIDAK ada di sini: safety-critical
+    tanpa sumber approved selalu DO NOT EXECUTE, dan sumber kosong selalu
+    DO NOT EXECUTE. Fungsi ini hanya memetakan angka ke badge, jadi
+    pemanggil yang memakai fungsi ini bertanggung jawab atas dua aturan itu
+    sendiri.
+    """
+    if score >= TRUSTED_THRESHOLD:
+        return TRUSTED
+    if score >= VERIFY_THRESHOLD:
+        return VERIFY
+    return DO_NOT_EXECUTE
 
 
 def badge_style(badge: str) -> dict[str, str]:
@@ -459,6 +509,8 @@ def should_refuse(
     known_tags: list[str] | None = None,
     known_refs: set[str] | None = None,
     min_relevance: float = RELEVANCE_FLOOR,
+    vocabulary: frozenset[str] | None = None,
+    known_instruments: set[str] | None = None,
 ) -> tuple[bool, str | None]:
     """Tolak menjawab? (grounding guardrail, proposal 5.4)
 
@@ -466,7 +518,10 @@ def should_refuse(
     membedakan TrustHUB dari RAG generik yang akan mengarang jawaban dari
     sekadar parameter model.
 
-    Empat pemeriksaan, berurutan dari yang paling pasti:
+    Enam pemeriksaan, berurutan dari yang paling pasti ke yang paling
+    mungkin. Urutan itu penting: pesan yang paling spesifik lebih berguna
+    daripada pesan yang umum, dan check yang murah harus jalan sebelum
+    check yang mahal.
 
     1. Dokumen yang disebut tidak ada di dataset. Contoh: "what does
        OPL-GA-1201A-04 cover?" - OPL-04 memang tidak ada di dataset ini.
@@ -474,13 +529,26 @@ def should_refuse(
        mirip, dan itu kesalahan yang paling merusak kepercayaan.
     2. Equipment yang disebut user di luar dataset. Contoh: "procedure for
        ZX-9999". Tidak ada dokumen yang bisa jadi sumber sama sekali.
-    3. Tidak ada chunk yang ter-retrieve.
-    4. Relevansi di bawah lantai. Ini yang menangkap pertanyaan yang sama
-       sekali tidak ada di corpus, misalnya "who is the CEO of Starbucks?".
-       BM25 tidak pernah mengembalikan nol untuk query berisi kata umum,
-       jadi tanpa lantai ini sistem akan menjawab pertanyaan mana pun dengan
-       dokumen yang kebetulan mengandung kata yang sama - kegagalan yang
-       paling ingin kita hindari dan paling merusak kepercayaan ke sistem.
+       Tag instrumen (PSLL-1201) dikecualikan di sini - formatnya sama
+       dengan tag equipment, dan salah memperlakukannya sebagai equipment
+       asing akan menolak pertanyaan yang sah jawabannya sudah diketahui.
+    3. Niat bukan pencarian pengetahuan. "write me a poem about hexane"
+       bukan pertanyaan yang bisa dijawab dari dokumen, dan memaksakan
+       jawaban hanya menghasilkan potongan yang tidak menjawab apa pun.
+    4. Pertanyaan tidak menyentuh kosakata plant ini sama sekali. "How do
+       I open a bank account?" retrieve lima chunk, karena "account"
+       muncul di beberapa dokumen - jadi check relevansi tidak menangkap
+       nya. Pengukuran: relevansi "bank account" (0.572) LEBIH TINGGI dari
+       "which equipment fails most often" (0.357), jadi tidak ada ambang
+       yang memisahkan keduanya. Yang memisahkan adalah topik: apakah
+       pertanyaannya bicara tentang entitas yang ada di plant ini.
+    5. Tidak ada chunk yang ter-retrieve.
+    6. Relevansi di bawah lantai. Ini menangkap pertanyaan yang menyebut
+       entitas plant tapi tetap tidak ada isinya di corpus.
+
+    Check 4 dilewati kalau pertanyaan sudah menyebut tag atau nomor dokumen
+    yang ADA - penyebutan itu sudah membuktikan topiknya, dan vocabulary
+    hanya akan menahan pertanyaan yang sah.
     """
     if known_refs:
         asked = extract_document_refs(question)
@@ -493,12 +561,36 @@ def should_refuse(
 
     if known_tags:
         mentioned = [t for t in known_tags if t.upper() in (question or "").upper()]
-        unknown = unknown_tags_mentioned(question, known_tags)
+        instruments = {str(t).upper() for t in (known_instruments or set())}
+        unknown = [
+            t
+            for t in unknown_tags_mentioned(question, known_tags)
+            if t not in instruments
+        ]
         if unknown and not mentioned:
             return True, (
                 f"Equipment {', '.join(unknown)} is not part of this dataset, "
                 "so I have no document to answer from."
             )
+
+    if non_knowledge_intent(question):
+        return True, (
+            "This knowledge hub answers questions from the indexed plant "
+            "documents. It does not write poems, letters, or code, so there is "
+            "no document here that would answer that."
+        )
+
+    if vocabulary is not None:
+        entity = mentions_known_entity(question, known_tags or [], known_refs or set())
+        if entity is None:
+            terms = domain_terms(question, vocabulary)
+            if not terms:
+                return True, (
+                    "This question is not about any equipment, document, work "
+                    "order, or maintenance record in the indexed dataset, so "
+                    "there is nothing here I can ground an answer in. I will "
+                    "not answer without a source."
+                )
 
     if not hits:
         return True, (

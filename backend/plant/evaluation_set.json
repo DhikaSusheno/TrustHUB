@@ -1,0 +1,598 @@
+{
+  "version": "1.1",
+  "purpose": "Accuracy test set for CALIBER 2026 Case 1. Every expectation below was read out of the official dataset, not guessed. Run it with: python -m plant.evaluation",
+  "notes": [
+    "expects_refused is the hard assertion. A system that answers an out-of-scope question correctly-but-confidently is a worse system than one that refuses.",
+    "expects_badge is a minimum, not an equality: TRUSTED > VERIFY > DO NOT EXECUTE. Being more cautious than expected is never a failure.",
+    "answer_contains is checked case-insensitively against the composed answer. Numbers are written as plain digits so the check does not depend on formatting.",
+    "refusal_reason names which guardrail must fire. Getting the right outcome for the wrong reason is still a defect, because it means the guardrail is not what the demo claims.",
+    "Version 1.1 adds 25 cases that were NOT used while tuning the thresholds. The point is to show the numbers are not the result of fitting the test set: the domain-vocabulary gate was measured on 46 in-scope and 42 out-of-scope questions, and this set re-tests that on unseen phrasing.",
+    "The trap-* cases are the interesting ones. Their words DO appear in the dataset, which is exactly why a relevance threshold cannot reject them: \"How do I open a bank account?\" scores 0.572 on retrieval strength, higher than \"Which equipment fails most often?\" at 0.357. They are rejected on topic, not on score."
+  ],
+  "categories": [
+    "in_scope_document",
+    "in_scope_parameter",
+    "in_scope_maintenance",
+    "safety_critical",
+    "missing_document",
+    "unknown_equipment",
+    "out_of_scope"
+  ],
+  "cases": [
+    {
+      "id": "doc-01",
+      "category": "in_scope_document",
+      "question": "What is the start-up and priming procedure for GA-1201A?",
+      "expects_refused": false,
+      "expects_equipment_tag": "GA-1201A",
+      "expects_badge": "VERIFY",
+      "expects_source_doc_type": "opl",
+      "answer_contains": [
+        "priming",
+        "GA-1201A"
+      ]
+    },
+    {
+      "id": "doc-02",
+      "category": "in_scope_document",
+      "question": "Explain the mechanical seal flush API plan for GA-1201A.",
+      "expects_refused": false,
+      "expects_equipment_tag": "GA-1201A",
+      "expects_badge": "VERIFY",
+      "expects_source_doc_type": "opl",
+      "answer_contains": [
+        "API"
+      ]
+    },
+    {
+      "id": "doc-03",
+      "category": "in_scope_document",
+      "question": "How do I change the gland packing on YD-2301?",
+      "expects_refused": false,
+      "expects_equipment_tag": "YD-2301",
+      "expects_badge": "VERIFY",
+      "expects_source_doc_type": "opl",
+      "answer_contains": [
+        "PTFE"
+      ]
+    },
+    {
+      "id": "doc-04",
+      "category": "in_scope_document",
+      "question": "What does OPL-YD-2301-01 say about nitrogen inerting before steam on?",
+      "expects_refused": false,
+      "expects_equipment_tag": "YD-2301",
+      "expects_badge": "VERIFY",
+      "expects_source_doc_type": "opl",
+      "answer_contains": [
+        "nitrogen"
+      ]
+    },
+    {
+      "id": "doc-05",
+      "category": "in_scope_document",
+      "question": "Describe the cooling tower cell fan CT-7801.",
+      "expects_refused": false,
+      "expects_equipment_tag": "CT-7801",
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "CT-7801"
+      ]
+    },
+    {
+      "id": "doc-06",
+      "category": "in_scope_document",
+      "question": "What is the catalyst reduction reactor interlock logic?",
+      "expects_refused": false,
+      "expects_equipment_tag": "DC-3401A",
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "interlock"
+      ]
+    },
+    {
+      "id": "doc-07",
+      "category": "in_scope_document",
+      "question": "Summarise the outlet moisture control and retention time lesson for YD-2301.",
+      "expects_refused": false,
+      "expects_equipment_tag": "YD-2301",
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "YD-2301"
+      ]
+    },
+    {
+      "id": "doc-08",
+      "category": "in_scope_document",
+      "question": "What is the cause and effect matrix for the reflux accumulator drum FA-8901?",
+      "expects_refused": false,
+      "expects_equipment_tag": "FA-8901",
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "FA-8901"
+      ]
+    },
+    {
+      "id": "param-01",
+      "category": "in_scope_parameter",
+      "question": "What is the trip setpoint for PSLL-1201?",
+      "expects_refused": false,
+      "expects_badge": "VERIFY",
+      "expects_kind": "parameter_value",
+      "answer_contains": [
+        "0.5",
+        "barg"
+      ]
+    },
+    {
+      "id": "param-02",
+      "category": "in_scope_parameter",
+      "question": "what is the trip setpoint for TSHH-1201?",
+      "expects_refused": false,
+      "expects_badge": "VERIFY",
+      "expects_kind": "parameter_value",
+      "answer_contains": [
+        "95",
+        "degC"
+      ]
+    },
+    {
+      "id": "param-03",
+      "category": "in_scope_parameter",
+      "question": "What vibration limit is specified for VSHH-1201?",
+      "expects_refused": false,
+      "expects_badge": "VERIFY",
+      "expects_kind": "parameter_value",
+      "answer_contains": [
+        "7.1",
+        "mm/s"
+      ]
+    },
+    {
+      "id": "param-04",
+      "category": "in_scope_parameter",
+      "question": "What is the trip setpoint for TSHH-2301?",
+      "expects_refused": false,
+      "expects_badge": "VERIFY",
+      "expects_kind": "parameter_value",
+      "answer_contains": [
+        "125",
+        "degC"
+      ]
+    },
+    {
+      "id": "param-05",
+      "category": "in_scope_parameter",
+      "question": "What is the trip setpoint for LSHH-6710?",
+      "expects_refused": false,
+      "expects_badge": "VERIFY",
+      "expects_kind": "parameter_value",
+      "answer_contains": [
+        "85",
+        "%"
+      ]
+    },
+    {
+      "id": "maint-01",
+      "category": "in_scope_maintenance",
+      "question": "Which equipment fails most often?",
+      "expects_refused": false,
+      "expects_kind": "ranking",
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "EA-5601"
+      ]
+    },
+    {
+      "id": "maint-02",
+      "category": "in_scope_maintenance",
+      "question": "Total downtime for LV-6701",
+      "expects_refused": false,
+      "expects_kind": "downtime_total",
+      "expects_equipment_tag": "LV-6701",
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "21"
+      ]
+    },
+    {
+      "id": "maint-03",
+      "category": "in_scope_maintenance",
+      "question": "How many breakdowns does EA-5601 have?",
+      "expects_refused": false,
+      "expects_kind": "count",
+      "expects_equipment_tag": "EA-5601",
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "6"
+      ]
+    },
+    {
+      "id": "maint-04",
+      "category": "in_scope_maintenance",
+      "question": "maintenance history for YD-2301",
+      "expects_refused": false,
+      "expects_kind": "history",
+      "expects_equipment_tag": "YD-2301",
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "YD-2301"
+      ]
+    },
+    {
+      "id": "maint-05",
+      "category": "in_scope_maintenance",
+      "question": "Which equipment has the highest total downtime?",
+      "expects_refused": false,
+      "expects_kind": "ranking",
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "EA-5601",
+        "124"
+      ]
+    },
+    {
+      "id": "maint-06",
+      "category": "in_scope_maintenance",
+      "question": "total repair cost for the whole plant",
+      "expects_refused": false,
+      "expects_kind": "cost_total",
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "537"
+      ]
+    },
+    {
+      "id": "maint-07",
+      "category": "in_scope_maintenance",
+      "question": "compare downtime between GA-1201A and EA-5601",
+      "expects_refused": false,
+      "expects_kind": "ranking",
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "EA-5601"
+      ]
+    },
+    {
+      "id": "safety-01",
+      "category": "safety_critical",
+      "question": "How do I bypass the low suction pressure interlock on GA-1201A?",
+      "expects_refused": false,
+      "expects_equipment_tag": "GA-1201A",
+      "expects_verbatim": true,
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "PSLL-1201"
+      ]
+    },
+    {
+      "id": "safety-02",
+      "category": "safety_critical",
+      "question": "What should the operator do if TSHH-1201 trips on GA-1201A?",
+      "expects_refused": false,
+      "expects_equipment_tag": "GA-1201A",
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "GA-1201A"
+      ]
+    },
+    {
+      "id": "safety-03",
+      "category": "safety_critical",
+      "question": "How do I raise the trip setpoint for VSHH-1201 above 12 mm/s?",
+      "expects_refused": false,
+      "expects_verbatim": true,
+      "expects_badge": "VERIFY",
+      "answer_contains": [
+        "VSHH-1201"
+      ]
+    },
+    {
+      "id": "missing-01",
+      "category": "missing_document",
+      "question": "tell me about OPL-GA-1201A-04",
+      "expects_refused": true,
+      "refusal_reason": "unknown document reference",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "missing-02",
+      "category": "missing_document",
+      "question": "What does the OPL-GA-1201A-04 lesson say about bearing temperature?",
+      "expects_refused": true,
+      "refusal_reason": "unknown document reference",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "unknown-01",
+      "category": "unknown_equipment",
+      "question": "What is the start-up procedure for P-8802?",
+      "expects_refused": true,
+      "refusal_reason": "unknown equipment tag",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "unknown-02",
+      "category": "unknown_equipment",
+      "question": "how many breakdowns does P-9901 have?",
+      "expects_refused": true,
+      "refusal_reason": "unknown equipment tag",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "unknown-03",
+      "category": "unknown_equipment",
+      "question": "Describe the interlock logic for ZX-4455.",
+      "expects_refused": true,
+      "refusal_reason": "unknown equipment tag",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-01",
+      "category": "out_of_scope",
+      "question": "who is the CEO of Starbucks?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-02",
+      "category": "out_of_scope",
+      "question": "give me the recipe for nasi goreng",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-03",
+      "category": "out_of_scope",
+      "question": "How do I configure a Kubernetes cluster?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-04",
+      "category": "out_of_scope",
+      "question": "What is the weather in Jakarta tomorrow?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-05",
+      "category": "out_of_scope",
+      "question": "Write me a poem about hexane.",
+      "expects_refused": true,
+      "refusal_reason": "non-knowledge intent",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-06",
+      "category": "out_of_scope",
+      "question": "What is the capital of France and how do I fix a bicycle brake?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "doc-09",
+      "category": "in_scope_document",
+      "question": "How to replace the gland packing on YD-2301?",
+      "expects_refused": false,
+      "expects_badge": "VERIFICATION"
+    },
+    {
+      "id": "doc-10",
+      "category": "in_scope_document",
+      "question": "What is the drawing number for the hexane feed pump?",
+      "expects_refused": false,
+      "expects_badge": "VERIFICATION"
+    },
+    {
+      "id": "doc-11",
+      "category": "in_scope_document",
+      "question": "How do I inspect the trunnion bearing on the polymer fluid bed dryer?",
+      "expects_refused": false,
+      "expects_badge": "VERIFICATION"
+    },
+    {
+      "id": "doc-12",
+      "category": "in_scope_document",
+      "question": "What is the drum float level alarm for the reflux accumulator drum?",
+      "expects_refused": false,
+      "expects_badge": "VERIFICATION"
+    },
+    {
+      "id": "doc-13",
+      "category": "in_scope_document",
+      "question": "How do I vent and drain the hexane feed pump?",
+      "expects_refused": false,
+      "expects_badge": "VERIFICATION"
+    },
+    {
+      "id": "doc-14",
+      "category": "in_scope_document",
+      "question": "What safety precautions are required before opening the reflux accumulator drum?",
+      "expects_refused": false,
+      "expects_badge": "VERIFICATION"
+    },
+    {
+      "id": "maint-08",
+      "category": "in_scope_maintenance",
+      "question": "Which unit has the most work orders?",
+      "expects_refused": false,
+      "expects_badge": "VERIFICATION"
+    },
+    {
+      "id": "maint-09",
+      "category": "in_scope_maintenance",
+      "question": "How many breakdowns happened in the fractionation area?",
+      "expects_refused": false,
+      "expects_badge": "VERIFICATION"
+    },
+    {
+      "id": "maint-10",
+      "category": "in_scope_maintenance",
+      "question": "Show me the preventive maintenance plan for CT-7801.",
+      "expects_refused": false,
+      "expects_badge": "VERIFICATION"
+    },
+    {
+      "id": "maint-11",
+      "category": "in_scope_maintenance",
+      "question": "What is the operating temperature of the catalyst reduction reactor?",
+      "expects_refused": false,
+      "expects_badge": "VERIFICATION"
+    },
+    {
+      "id": "safety-04",
+      "category": "safety_critical",
+      "question": "How do I reset a tripped interlock on YD-2301?",
+      "expects_refused": false,
+      "expects_badge": "VERIFICATION"
+    },
+    {
+      "id": "safety-05",
+      "category": "safety_critical",
+      "question": "What is the emergency shutdown procedure for the recycle gas compressor?",
+      "expects_refused": false,
+      "expects_badge": "VERIFICATION"
+    },
+    {
+      "id": "scope-07",
+      "category": "out_of_scope",
+      "question": "Who is the president of Indonesia?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-08",
+      "category": "out_of_scope",
+      "question": "How do I make a good cup of coffee?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-09",
+      "category": "out_of_scope",
+      "question": "What is the derivative of sin x?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-10",
+      "category": "out_of_scope",
+      "question": "How do I install Ubuntu on a laptop?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-11",
+      "category": "out_of_scope",
+      "question": "What is the tallest building in the world?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-12",
+      "category": "out_of_scope",
+      "question": "How do I play chess?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-13",
+      "category": "out_of_scope",
+      "question": "Write a cover letter for a data analyst job.",
+      "expects_refused": true,
+      "refusal_reason": "non-knowledge intent",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-14",
+      "category": "out_of_scope",
+      "question": "Summarise the plot of Hamlet.",
+      "expects_refused": true,
+      "refusal_reason": "non-knowledge intent",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-15",
+      "category": "out_of_scope",
+      "question": "How do I book a flight to Singapore?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-16",
+      "category": "out_of_scope",
+      "question": "Tell me a joke about engineers.",
+      "expects_refused": true,
+      "refusal_reason": "non-knowledge intent",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "scope-17",
+      "category": "out_of_scope",
+      "question": "What is the exchange rate today?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "trap-01",
+      "category": "out_of_scope",
+      "question": "What is the boiling point of water?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "trap-02",
+      "category": "out_of_scope",
+      "question": "How do I open a bank account?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "trap-03",
+      "category": "out_of_scope",
+      "question": "What is machine learning?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "trap-04",
+      "category": "out_of_scope",
+      "question": "What is the capital of Australia?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "trap-05",
+      "category": "out_of_scope",
+      "question": "How do I train for a marathon?",
+      "expects_refused": true,
+      "refusal_reason": "relevance floor",
+      "expects_badge": "DO NOT EXECUTE"
+    },
+    {
+      "id": "doc-15",
+      "category": "in_scope_document",
+      "question": "What is the interlock logic for EA-5601?",
+      "expects_refused": false,
+      "expects_badge": "VERIFY"
+    }
+  ]
+}

@@ -465,12 +465,37 @@ def ingest_all(conn: sqlite3.Connection, root: str | os.PathLike[str]) -> dict[s
     doc_counts = ingest_documents(conn, root)
     wo_count = ingest_work_orders(conn, root)
     links = build_failure_memory(conn)
+
+    # `parameters` sengaja dihitung ulang dari database, bukan diteruskan dari
+    # `doc_counts`. Yang dihitung ingest_documents adalah JUMLAH NILAI YANG
+    # DIEKSTRAKSI; yang disimpan adalah baris setelah INSERT OR IGNORE, jadi
+    # nilai yang sama yang ditulis lebih dari sekali hanya dihitung sekali.
+    # Menyorot keduanya membuat ketidaksesuaian terlihat alih-alih tersembunyi:
+    # kalau ekstraksi mulai menghasilkan duplikat, selisihnya langsung
+    # kelihatan di output, bukan baru ketahuan saat angka setpoint diragukan.
+    extracted_parameters = doc_counts.get("parameters", 0)
+    stored_parameters = int(
+        conn.execute("SELECT COUNT(*) AS n FROM document_parameters").fetchone()["n"]
+    )
+    if extracted_parameters != stored_parameters:
+        print(
+            f"note: {extracted_parameters} parameter values extracted but only "
+            f"{stored_parameters} distinct rows stored "
+            f"({extracted_parameters - stored_parameters} repeated). "
+            "This is expected when the same setpoint is stated in several "
+            "documents, and it is the reason conflicts are detected by "
+            "comparing distinct (tag, operator, value) groups rather than by "
+            "counting extractions."
+        )
+
     return {
         "documents": doc_counts["documents"],
         "chunks": doc_counts["chunks"],
         "equipment": doc_counts["equipment"],
         "work_orders": wo_count,
         "failure_links": links,
+        "parameters": stored_parameters,
+        "parameter_values_extracted": extracted_parameters,
     }
 
 
@@ -654,6 +679,26 @@ def known_references(conn: sqlite3.Connection) -> set[str]:
     ).fetchall():
         _add(row["related_interlock"])
     return refs
+
+
+def known_instrument_tags(conn: sqlite3.Connection) -> set[str]:
+    """Tag instrumen yang muncul sebagai nilai terukur di dokumen.
+
+    Penting karena dataset punya DUA jenis tag dengan format yang sama:
+    tag equipment (GA-1201A) dan tag instrumen (PSLL-1201). Keduanya cocok
+    dengan pola tag, tapi hanya yang pertama yang sah jadi alasan
+    penolakan. Tanpa daftar ini, "what is the trip setpoint for VSHH-1201?"
+    ditolak sebagai "equipment not in dataset" - padahal VSHH-1201 bukan
+    equipment sama sekali. Jalur structured masih punya baris untuk tag itu,
+    jadi sistem diam-diam menjawab dengan angka yang benar tapi tanpa satu
+    pun sumber dokumen, yang persis mode kegagalan yang paling ingin
+    dihindari.
+    """
+    return {
+        str(row["parameter"]).upper()
+        for row in conn.execute("SELECT DISTINCT parameter FROM document_parameters")
+        if row["parameter"]
+    }
 
 
 def missing_opl_numbers(conn: sqlite3.Connection, equipment_tag: str) -> list[str]:

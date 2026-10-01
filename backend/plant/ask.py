@@ -75,6 +75,21 @@ DOWNTIME_CUE = re.compile(
 COUNT_CUE = re.compile(r"\b(how many|number of|count|total|tally|sum)\b", re.IGNORECASE)
 
 #: Pertanyaan yang jawabannya sebuah NILAI terukur. Dicek lebih dulu dari
+#: Trust score untuk jawaban agregat yang dibaca dari tabel maintenance
+#: history, bukan dari teks dokumen. Angka tunggal ini dipilih supaya:
+#:
+#:   - di atas VERIFY_THRESHOLD (0.50), jadi jawaban tidak ditolak hanya
+#:     karena tidak punya sitasi dokumen;
+#:   - di bawah TRUSTED_THRESHOLD (0.80), karena tanpa dokumen yang saling
+#:     mengonfirmasi tidak ada bukti bahwa angka itu masih berlaku di
+#:     lapangan - angka maintenance history bisa usang.
+#:
+#: Ini BUKAN hasil penjumlahan berbobot. Approval, revision, dan agreement
+#: tidak bisa dihitung untuk lookup tabel, jadi menjumlahkannya hanya
+#: menghasilkan angka yang terlihat terukur padahal tidak. Badge-nya
+#: diturunkan dari ambang yang sama lewat `trust.badge_for`.
+STRUCTURED_NO_CITATION_SCORE = 0.60
+
 #: agregat, karena "total downtime for LV-6701" mengandung kata total dan
 #: downtime, sementara "what is the rated flow" mengandung kata rated - dan
 #: yang lebih khusus harus menang.
@@ -215,7 +230,12 @@ def answer_from_maintenance(
         if "cost" in q or "spend" in q or "idr" in q:
             metric = "total_cost_idr"
         elif "work order" in q or "wo" in q.split() or "repair" in q:
-            metric = "wo_count"
+            # Kunci metrik harus sama dengan nama field di dict di atas
+            # (`work_order_count`). Versi pertama menulis "wo_count" - nama
+            # kolom di SQL - lalu key itu dipakai untuk mengurutkan dict yang
+            # field-nya `work_order_count`, jadi "Which unit has the most
+            # work orders?" melempar KeyError dan endpoint /ask balas 500.
+            metric = "work_order_count"
         elif "breakdown" in q or "fail" in q or "failure" in q:
             metric = "breakdown_count"
         ranked = sorted(rows, key=lambda r: -r[metric])
@@ -223,7 +243,7 @@ def answer_from_maintenance(
         metric_label = {
             "downtime_hours": "total downtime",
             "total_cost_idr": "total cost",
-            "wo_count": "number of work orders",
+            "work_order_count": "number of work orders",
             "breakdown_count": "number of breakdowns",
         }[metric]
         return StructuredAnswer(
@@ -715,19 +735,60 @@ def answer(
         hits = retrieval.search(conn, question, equipment_tag=None, top_k=top_k)
 
     # ---- 3. Guardrail ---------------------------------------------------------
+    # Vocabulary diteruskan supaya guardrail bisa menolak pertanyaan yang
+    # tidak menyentuh entitas plant ini sama sekali. Tanpa itu, "How do I
+    # open a bank account?" lolos: retrieval mengembalikan lima chunk
+    # karena kata "account" muncul di dokumen, dan skor relevansinya (0.572)
+    # justru lebih tinggi daripada "which equipment fails most often?"
+    # (0.357). Tidak ada ambang relevansi yang bisa memisahkan keduanya.
+    #
+    # known_instruments wajib diteruskan: pola tag tidak bisa membedakan
+    # tag equipment (GA-1201A) dari tag instrumen (PSLL-1201), dan tanpa
+    # daftar ini pertanyaan setpoint yang sah akan ditolak sebagai
+    # "equipment not in dataset".
+    instrument_tags = registry.known_instrument_tags(conn)
     refuse, reason = trust.should_refuse(
-        question, hits, known_tags=tags, known_refs=known_refs
+        question,
+        hits,
+        known_tags=tags,
+        known_refs=known_refs,
+        vocabulary=retrieval.plant_vocabulary(conn),
+        known_instruments=instrument_tags,
     )
     if refuse:
-        # Kalau pertanyaan agregat punya jawaban dari tabel, tetap dijawab -
-        # misalnya "total downtime" tidak akan punya chunk dokumen yang cocok,
-        # tapi angkanya benar-benar ada di maintenance history.
-        if structured and structured.rows and kind != "document":
-            verdict = trust.evaluate(
-                question, hits, [], question_tag=tag
-            )
+        # Pertanyaan agregat tetap boleh dijawab dari tabel maintenance
+        # meskipun tidak ada chunk dokumen yang cocok - "total downtime"
+        # tidak akan punya chunk yang cocok, tapi angkanya benar-benar ada
+        # di maintenance history.
+        #
+        # Syaratnya: tidak boleh ada entitas asing yang disebut. Tanpa itu
+        # "how many breakdowns does P-9901 have?" ditolak karena P-9901
+        # tidak ada, lalu dijawab dengan total SELURUH plant - jawaban yang
+        # benar secara angka tapi diam-diam mengganti subjeknya, dan itu
+        # lebih buruk daripada menolak.
+        asked_unknown = [
+            t
+            for t in retrieval.unknown_tags_mentioned(question, tags)
+            if t not in instrument_tags
+        ]
+        if structured and structured.rows and kind != "document" and not asked_unknown:
+            # Jawaban agregat tidak punya sitasi dokumen, jadi lima sinyal
+            # trust tidak bisa berjalan: approval dan revision jelas tidak
+            # berlaku, dan agreement tidak bisa dihitung tanpa dokumen yang
+            # saling mengonfirmasi. Yang tersisa hanya bahwa angkanya dibaca
+            # dari tabel maintenance history, yang benar-benar ada.
+            #
+            # Jadi skornya ditetapkan eksplisit, bukan hasil penjumlahan
+            # berbobot. Menghitung "0.3*1 + 0.2*1 + ..." untuk jawaban yang
+            # tidak punya dokumen hanya menghasilkan angka yang terlihat
+            # terukur padahal tidak. Badge diturunkan dari skor itu lewat
+            # badge_for() supaya tidak bisa menyimpang dari threshold kalau
+            # ambangnya nanti diubah.
+            verdict = trust.evaluate(question, hits, [], question_tag=tag)
             registry.log_answer(
-                conn, question, tag, verdict.badge, verdict.score,
+                conn, question, tag,
+                trust.badge_for(STRUCTURED_NO_CITATION_SCORE),
+                STRUCTURED_NO_CITATION_SCORE,
                 ["maintenance_history"], role,
             )
             return Answer(
@@ -735,8 +796,8 @@ def answer(
                 kind=kind,
                 answer=structured.summary
                 + (f"\n\n{structured.note}" if structured.note else ""),
-                badge=trust.VERIFY,
-                trust_score=0.6,
+                badge=trust.badge_for(STRUCTURED_NO_CITATION_SCORE),
+                trust_score=STRUCTURED_NO_CITATION_SCORE,
                 equipment_tag=tag,
                 cross_unit=cross_unit,
                 sources=[],
@@ -745,6 +806,9 @@ def answer(
                     "not from document text",
                     "no document in the corpus matches this question, so the "
                     "citation panel is intentionally empty",
+                    "scored 0.60 without the weighted signals: approval, "
+                    "revision and agreement do not apply to a table lookup, "
+                    "so the score is fixed rather than implied",
                 ],
                 structured=structured.to_dict(),
             )
