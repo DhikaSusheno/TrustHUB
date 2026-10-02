@@ -26,7 +26,7 @@ inventory:
 
 | Group | Mount | Routes |
 |---|---|---|
-| Plant Knowledge Hub | `plant/api.py` via `include_router` at `main.py:163`, prefix `/api/plant` | 21: status, dataset, reindex, equipment (+4 nested), documents (+1), graph, ask, search, trust/weights, conflicts, verification, evaluation, failure-memory, work-orders, audit |
+| Plant Knowledge Hub | `plant/api.py` via `include_router` at `main.py:163`, prefix `/api/plant` | 20: status, dataset, reindex, equipment (+4 nested), documents (+1), graph, ask, search, trust/weights, conflicts, verification, evaluation, failure-memory, work-orders, audit |
 | Guardian | `main.py` | propose_operation, execute_operation, list_pending_approvals, approve_operation, operations |
 | Cortex | `main.py` | understand_repo, explain_topic, review_artifact, repo_health, complexity_report, find_path, suggest_refactor |
 | Engine | `main.py`, `include_in_schema=False` | ingest_repository, ask_about, review_change, health_report, rank_complexity, trace_connection, propose_refactor, propose_operation |
@@ -46,20 +46,26 @@ Two consequences that are easy to get wrong:
   `/docs` while still being live. Absence from the schema does not mean the
   endpoint is gone.
 
-## WHICH HALF IS THE DEMO
+## WHICH HALF IS CASE 1 - the master already answers this
 
-The nine frontend pages are all plant-domain: overview, ask, equipment,
-documents, code graph, verification, maintenance, audit, settings. The landing
-page pitches the plant knowledge hub. So:
+Do not decide this yourself. `../TRUSTHUB.md` is the case-mapping document for
+CALIBER 2026 Case 1, and it settles the question twice:
 
-- `/api/plant/*` is the surface a judge will actually see.
-- Guardian and Cortex are still tested, still contracted, and still reachable,
-  but **the frontend has no UI for them**. The approval panel that three pages
-  used to share was deleted. Do not assume a frontend page exists for a route
-  you add here.
+- **Section 1** lists the six required Case Book components. Five are real and
+  every one of them is plant-domain, mapped to `plant/`. Component 5, EDMS/AIMS
+  integration, is declared **not built**, and the master explains at length why
+  a simulated connector was deliberately dropped.
+- **Section 5** states that `plant/` never imports `main.py`, is mounted as an
+  independent router, and calls the surrounding application "the inherited
+  Synapse application" - mounted specifically so the Case 1 code "can be lifted
+  out without surgery".
 
-This split is unresolved, not deliberate. If you are about to build something
-that only makes sense behind a Guardian UI, say so before building it.
+So `/api/plant/*` is the Case 1 surface, by the master's own account. Guardian,
+Cortex, Graph, GitHub, LLM, RAG, Targets, and Settings are the inherited
+application around it. Keep them working; do not present them as Case 1
+deliverables, and do not add a Case 1 feature that depends on them. If a
+proposed change would make `plant/` import `main.py`, stop - that breaks the
+master's stated architecture.
 
 ## GOAL: Implement two capability groups
 

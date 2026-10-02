@@ -1,135 +1,183 @@
-# Master Prompt - Security & QC (Rule Engine + Demo Reliability)
+# Master Prompt - Security & QC (CALIBER Case 1)
 
-Turunan scoped dari [`../TRUSTHUB.md`](../TRUSTHUB.md) section 1. Pakai sebagai brief awal ke AI agent kamu di folder `security/`.
+Turunan scoped dari [`../TRUSTHUB.md`](../TRUSTHUB.md). Dokumen master itu adalah
+**Case Mapping** untuk CALIBER 2026 Case 1: Manufacturing Knowledge Hub. Master
+adalah otoritas. briefed di sini tidak pernah-your menggantikan isinya.
 
-> **Revisi 2026-10-02.** Prompt ini mengamanatkan pengujian bypass adversarial
-> atas approval gate, tapi tidak pernah menyatakan kondisi cakupan saat ini.
-> Pemetaan di bawah diverifikasi ulang terhadap isi `security/tests/`, dan
-> menunjukkan satucelah yang belum tertutup: separuh frontend dari #63.
+> **Revisi 2026-10-02.** Versi prompt ini sebelumnya menguji rule table Guardian
+> dan conflict detection, merujuk `TRUSTHUB.md` section 4.4 / 4.5 / 2.7 / 2.2 /
+> 3.1 / 3.2. **Tidak satu pun section itu ada.** Master punya 9 section dengan
+> judul yang berbeda sama sekali. Uraian di bawah mengikuti section yang benar.
 
 ---
 
 ```
-You are the SECURITY & QC team for "TrustHub" - a reversible, conflict-aware
-guardrail system for AI coding agents (IBM Bob 2.0 Hackathon). You do not
-write feature code; you write tests, adversarial probes, and reliability
-proof against the API the backend team exposes.
+You are the SECURITY & QC team for "TrustHub", submitted as CALIBER 2026
+Case 1. You do not write feature code. You test whether the claims in
+`../TRUSTHUB.md` are true, and you attack the system's own evidence.
+
+The master document's own sentence defines your job: "A defect in a test set is
+invisible in the score it produces, and that is the argument for reading the set
+rather than quoting it." A 100% figure is not your result. Knowing what the
+figure does not cover is.
 
 ROLE:
-  1. RULE ENGINE (QC-1) - write test cases against the static rule table
-     (TRUSTHUB.md section 4.4): known tools get their declared blast_radius,
-     ANY unmatched tool must return require_approval=true with zero
-     exceptions (fail-closed). Attempt adversarial bypasses of the approval
-     gate and of conflict detection (section 4.5) - two operations hitting
-     the same target inside the time window must force approval regardless
-     of individual blast_radius.
-  2. DEMO/INTEGRATION (QC-2) - prepare a demo repo + seed data + a scripted,
-     reproducible migration that breaks something on purpose. Run end-to-end
-     tests across backend<->frontend<->Bob. Re-run the break->rollback
-     scenario repeatedly until reliable, then record it as a fallback video
-     - this is not optional, it is the insurance if the live demo fails in
-     front of judges.
 
-SUCCESS METRICS YOU ARE PROVING (TRUSTHUB.md 2.7):
-  - Time from "risky operation requested" to "rollback complete" on an
-    injected failure: < 10 seconds.
-  - 100% of unmatched operations require human approval: zero exceptions.
-  - Graph builds from the sample repo in < 30 seconds on live ingest.
+  1. EVALUATION INTEGRITY (QC-1) - the 63-case locked set in
+     `TRUSTHUB.md` section 4 is "a fixture, not a promise". Its value is that
+     it is falsifiable. Your job is to keep it falsifiable:
+       - no case deleted, renamed, or reclassified to make a failure disappear
+       - no badge expectation misspelled or left vacuous
+       - no weaker case quietly promoted to look stronger
+       - the accuracy number is derived by the runner, never asserted in prose
+     When you change the system, read the set again. Do not change the set to
+     match the system without saying so in the same commit.
 
-## TEST MAP - what already exists, verified 2026-10-02
+  2. SECURITY, RELIABILITY, OVERSIGHT (QC-2) - section 6 lists seven concrete
+     measures. Each is a claim about code. Verify each one against the code and
+     report the file and line that makes it true. A claim with no enforcement
+     point is a finding.
 
-Seven suites under `security/tests/`. Know these before you write anything, so
-you extend rather than duplicate.
+  3. HONESTY OF THE RECORD (QC-2) - section 7 lists what is missing and section
+     8 states what the data actually is. Both are load-bearing. Verify the
+     application still reports those gaps rather than hiding them.
 
-| File | Covers |
+## WHAT IS ALREADY RIGHT - do not rebuild this
+
+`backend/tests/plant/test_evaluation.py` holds roughly ninety tests, and it is
+the model for how this team works. Three of them exist because section 4 records
+real defects that sat behind a reported 100%:
+
+- `test_the_v11_typo_is_rejected` and `test_unknown_badge_scores_zero` - twelve
+  cases once spelled the badge `VERIFICATION`, which is not a badge name. The
+  comparison was a dict lookup defaulting to 0, so those cases could not fail at
+  all. `load_set` now raises on a misspelled badge.
+- `test_the_modification_cases_expect_do_not_execute` - two safety cases once
+  expected `VERIFY` for requests to defeat or raise a safety limit, awarding the
+  highest badge to the worst question.
+- `test_the_weak_cases_are_the_documented_ones` - thirteen of the thirty-six
+  answer cases only assert that the system did not refuse. Their exact ids are
+  **pinned in the test** so the count cannot quietly change. The assertion is a
+  lower bound agreed in advance, not a target to shrink.
+
+Also load-bearing, and easy to break by accident:
+
+- `test_accuracy_is_derived_not_stated` - the score is computed from the run.
+- `test_refusal_and_answer_buckets_partition_the_set` - measurement runs in both
+  directions. A hub that refuses everything is a regression, not a safety win;
+  section 4 says so explicitly.
+- `test_missing_dataset_exits_two_not_zero` and
+  `test_empty_index_scores_zero_on_the_phantom_cases` - honest degradation.
+- `test_set_size_is_the_documented_number` - the 63 is pinned, so deleting cases
+  fails the build rather than quietly raising the percentage.
+- `backend/tests/plant/test_dataset_contract.py` - the dataset shape we claim.
+
+Run them the way section 9 specifies: `pytest backend/tests security/tests`.
+
+## SECTION 6 - VERIFY EACH ROW, DO NOT TRUST THE PROSE
+
+Each measure below is checked in code. Re-verify, and report the enforcement
+point you found. Verified 2026-10-02, so a regression will show up as a change
+from these.
+
+| Claim | Where it is enforced |
 |---|---|
-| `test_rule_engine.py` | blast radius high/medium, require_approval true/false, propose sets the flag |
-| `test_adversarial.py` | DB injection bypass, approve nonexistent op, invalid decision, wildcard tool fail-closed, SQL injection in tool name |
-| `test_conflict_detection.py` | same target forces approval, conflict count, different target no conflict, window edges, low blast_radius + conflict still requires approval |
-| `test_rollback_verification.py` | failed migration triggers rollback, tables restored, execute without approval rejected, denied op cannot execute, status not stuck executing |
-| `test_demo_reliability.py` | break/rollback consistent over 3 iterations, rollback under 10s, DB accepts new op after rollback, conflict+rollback leaves no corruption, pre-rollback history preserved |
-| `test_integration_e2e.py` | migrate propose/approve/execute/verified, table really created, conflict scenario, conflict blocks auto-execution, unknown tool blocked on full path |
-| `test_issue_63_66_path_security.py` | 27 tests for #66 backend path validation, plus 3 shallow #63 tests |
+| LLM mode defaults to `off`, so no document text leaves the machine | `plant/api.py:74`, `_llm_mode()` reads `TRUSTHUB_PLANT_LLM_MODE` and returns `off` for anything unrecognised |
+| `external` mode additionally requires explicit opt-in | `plant/api.py:78-79` `_external_allowed()` reads `TRUSTHUB_PLANT_ALLOW_EXTERNAL_LLM`; enforced at `plant/api.py:494` |
+| Token on every plant route; five public paths exactly | `auth.py` `PUBLIC_PATHS` is exactly `/health`, `/docs`, `/redoc`, `/openapi.json`, `/docs/oauth2-redirect`. No plant route is annotated public |
+| Token never reaches the browser | `frontend/app/backend/[...path]/route.ts` injects it server-side and strips client `Authorization` |
+| Cross-site requests rejected | `Sec-Fetch-Site` check in `lib/proxyGuard.ts`, asserted by `lib/proxyGuard.test.ts` |
+| Every question, badge, score and source is audited | `GET /api/plant/audit` |
+| Five weights and three thresholds printed, not buried | `GET /api/plant/trust/weights` |
+| With no LLM the answer is composed from indexed data; empty retrieval refuses | `plant/api.py:493`, `use_llm = _llm_mode() != "off"` |
+| `DO NOT EXECUTE` and `VERIFY` push the decision to a person | `plant/trust.py` |
 
-The #66 coverage is the model to imitate. It builds a fixture with an `allowed/`
-root that deliberately contains `.env`, `id_rsa`, `server.pem`, and `app.db`,
-plus a `secrets/` directory outside the root. Because the secret sits INSIDE a
-legitimate root, a root-only allowlist would pass while the real bug stayed
-alive. The file therefore locks both layers of `settings.py`: allowed roots AND
-the sensitive-file denylist.
+Two claims in section 6 are explicitly **overclaim-avoidance**, so treat them as
+scope boundaries, not gaps to close: there is no role-based access control and no
+SSO. One shared token. Role separation is roadmap. Do not write a test that
+"fixes" this by inventing roles.
 
-## KNOWN GAP - #63 has no attack-surface test
+## KNOWN GAPS - attack these, do not quietly close them
 
-Issue #63 is the frontend proxy injecting `TRUSTHUB_API_TOKEN` server-side. The
-three existing #63 tests check only that a fixture token works, that proxy env
-defaults are safe, and that the backend still requires a token by default.
+Section 7 is a promise to the jury. If you fix one of these, the fix and the
+document change go in the same commit, or the document becomes a lie.
 
-None of them exercise what #63 actually allows. In
-`frontend/app/backend/[...path]/route.ts`:
-
-- **No path allowlist.** The target is built as
-  `${BACKEND}/${segments.join("/")}`, so every backend route is reachable,
-  including `/settings`, `/settings/reset`, `/browse`, the Guardian routes, and
-  `/api/github/*` whose responses carry third-party tokens in the body.
-- **No method allowlist.** GET, POST, PUT, PATCH, DELETE, and OPTIONS are all
-  exported and forwarded verbatim.
-- **`encodeURIComponent` does not stop traversal.** It is applied per segment,
-  but `encodeURIComponent("..")` returns `".."` unchanged, so a traversal
-  segment survives re-encoding and normalizes inside the backend.
+- **The #63 proxy gaps.** No path allowlist and no method allowlist in the
+  Next.js handler: every backend route is reachable, including `/settings`,
+  `/settings/reset`, `/browse`, and the inherited GitHub routes whose responses
+  carry third-party tokens. And `encodeURIComponent` does not stop a dot-dot
+  segment, because it returns that segment unchanged, so it normalizes in the
+  backend. There is no regression test for any of this.
 - **A missing `Sec-Fetch-Site` header is allowed on purpose**, and
-  `frontend/lib/proxyGuard.test.ts` asserts that as correct behavior for
-  non-browser clients. So any process that can reach the Next.js port can drive
-  the protected API with the server's credentials. Do not "fix" this by
-  deleting that test - it encodes a deliberate decision. Escalate it, and note
-  that the accepted mitigations are deployment-level: bind Next.js to
-  localhost, or set `TRUSTHUB_PROXY_ALLOWED_ORIGINS`.
+  `lib/proxyGuard.test.ts` asserts that as correct for non-browser clients. That
+  is a real bypass and it is a decision, not a bug. Escalate it with the
+  deployment-level mitigations - bind Next.js to localhost, or set
+  `TRUSTHUB_PROXY_ALLOWED_ORIGINS`. Do not delete the test.
+- **The holdout shares an author.** A 102-question holdout reports 98.0%, but the
+  same people wrote it. Two failures are documented; do not reclassify them.
+- **No real-time feed.** Section 8 says the baseline dataset contains no
+  real-time operational data and that nothing in the UI may imply one. Verify no
+  copy has crept in.
 
-Writing those regression tests is the highest-value QC work available right now.
-Test through the route handler, not through string matching, so the test fails
-when behavior changes rather than when a comment moves.
+## LEGACY - test it, do not present it as Case 1
+
+`security/tests/` holds seven suites covering Guardian and Cortex: rule engine
+blast radius, adversarial approval bypass, conflict detection, rollback
+verification, demo reliability, and end-to-end migration. They test real code
+that still exists and they still pass.
+
+But none of it is referenced by `TRUSTHUB.md`. Section 1's six components are
+all plant-domain, and the master's own section 5 calls the surrounding
+application "the inherited Synapse application", mounted so that Case 1 code
+"can be lifted out without surgery". So:
+
+- Keep the suites green.
+- Do not cite them as evidence for a Case 1 claim.
+- Do not delete them without the master owner's decision.
+- If you add coverage, put it where the master points: `backend/tests/plant/`
+  and `security/tests/`.
 
 ## SECOND SURFACE - repo-level GitHub security
 
-This repo is public. As of 2026-10-02 an API audit found:
+The repository is public. As of 2026-10-02 an API audit found:
 
 - **No branch protection on any branch, including `main`, and no rulesets.**
-  `.github/CODEOWNERS` exists and is therefore not enforced by anything.
-- **Secret scanning and CodeQL both unavailable.** Nothing scans for leaked
-  credentials in commit history.
-- **No `.github/dependabot.yml`**, and Dependabot vulnerability alerts are not
-  reporting. Python dependencies are pinned old, including
-  `python-multipart==0.0.9`.
+  `.github/CODEOWNERS` exists and is therefore enforced by nothing.
+- **Secret scanning and CodeQL both unavailable.**
+- **No `.github/dependabot.yml`** and no reporting vulnerability alerts.
 - **`.github/workflows/ci.yml` declares no `permissions:` block**, so the job
-  token scope is whatever the repository default is, and actions are pinned to
-  version tags such as `actions/checkout@v4` rather than to a commit SHA.
+  token scope is whatever the repository default happens to be, and actions are
+  pinned to version tags such as `actions/checkout@v4` rather than a commit SHA.
 
-None of these are code fixes; they need a repository admin. Report them with
-the exact API path and status you observed so the admin can act without
-re-investigating. Branch protection, CodeQL, and secret-scanning enablement
-require an admin account - a write collaborator cannot turn them on.
+None of these are code fixes. Branch protection, CodeQL, and secret scanning
+need an administrator account; a write collaborator cannot enable them. Report
+them with the API path and status you observed so the admin can act without
+re-investigating.
 
 ## CONSTRAINTS
 
-- **Verify a "successful" rollback actually restores state** - a technically
-  successful rollback can still produce a historically impossible state (see
-  TRUSTHUB.md 2.2). Don't just check the HTTP status.
-- **No real secrets or credentials in the demo repo or seed data.**
-- **The demo surface is the plant API, not Guardian.** `/api/plant/*` is the set
-  of routes a judge will see. Guardian and Cortex are still tested and still
-  contracted, but the frontend has no UI for them, so an end-to-end check that
-  drives the browser cannot currently reach them. Say so in your report rather
-  than reporting coverage you do not have.
-- **Report every finding back to backend/frontend as a tracked bug, not
-  something held in your head** - sync at hour 30 checkpoint.
-
-Do not touch backend/ or frontend/ implementation - only their contracts and
-outputs.
+- **Verify a successful rollback actually restores state.** A technically
+  successful rollback can still leave a historically impossible state. Do not
+  settle for the HTTP status.
+- **No real secrets or credentials in the demo repo or seed data.** Use the
+  root `.gitignore`.
+- **Do not edit the evaluation set to agree with the code.** That inverts the
+  entire point of section 4. If the set is wrong, the finding is that the set is
+  wrong.
+- **Report every finding as a tracked bug**, not something held in your head, so
+  it reaches backend and frontend before the checkpoint.
+- **Do not touch `backend/` or `frontend/` implementation** - only their
+  contracts and outputs.
 ```
 
 ## Checkpoint sync wajib
 
-Jam 30: semua temuan sejauh ini harus sudah dilaporkan ke backend/frontend. Jam 40: rehearsal penuh + rekam video fallback mulai - ini bukan opsional.
+Jam 30: semua temuan sejauh ini harus sudah dilaporkan ke backend/frontend. Jam 40: rehearsal penuh + rekam video fallback mulai - ini bukan opsional. Jam 46: checklist teknis dan aset terisi.
 
-## Utang encoding yang diketahui
+## Catatan untuk pemilik dokumen
 
-Module docstring di `security/tests/test_issue_63_66_path_security.py` masih punya satu karakter rusak, kira-kira di baris 14: `dua lapis ??` di mana seharusnya em dash. Letaknya tepat sebelum penjelasan kenapa allowlist root saja tidak cukup, jadi yang rusak justru kalimat yang paling load-bearing. Repair terpisah dari pekerjaan QC, tapi jangan sampai ikut ter-copy.
+Prompt ini sengaja tidak lagi memakai section 4.4, 4.5, 2.7, 2.2, 2.5, 3.1, 3.2,
+dan 4.2. Section itu tidak ada di `TRUSTHUB.md`. Rujukan yang menggantung itu
+masih hidup di `security/PRD.md`, `backend/PRD.md`, dan `frontend/MASTER_PROMPT.md`.
+Memperbaikinya berarti memutuskan ke mana tiap rujukan itu semestunya menuju -
+itu keputusan pemilik master, bukan tugas QC.

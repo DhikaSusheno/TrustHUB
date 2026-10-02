@@ -43,7 +43,9 @@ rolled back, you are in the wrong file.
 ## READ FIRST, IN THIS ORDER
 
 1. `DESIGN_SYSTEM.md` - color tokens, layout shell, the 9 pages that exist now
-2. `../TRUSTHUB.md` - product context and data contracts
+2. `../TRUSTHUB.md` - the Case Mapping for CALIBER 2026 Case 1. Section 1 lists
+   the six required components, section 5 the architecture, section 6 the
+   security and oversight claims you help satisfy, section 7 what is missing.
 3. `README.md` - how to run, endpoint map, env vars
 4. `PRD.md` - **historical.** See the drift note below before you read it.
 
@@ -161,6 +163,14 @@ resolutions:
 2. Remove the affordance.
 3. Write a one-line `ponytail:` comment naming the ceiling and the upgrade path
    - only if it genuinely cannot be built right now.
+
+**Every page is a claim surface.** The Case Book judges a knowledge hub on
+whether the thing it shows can be trusted, so the UI is where section 6 of the
+master becomes visible or false. Section 6 requires the five weights and three
+thresholds to be printed rather than buried, every answer to carry its source
+revision and approval status, and `DO NOT EXECUTE` and `VERIFY` to push the
+decision to a person. If you render a trust badge, render the reason with it.
+If you hide a coverage gap, you have falsified section 7.
 
 **One source of truth for connection status.** Import `useBackendStatus()` from
 `hooks/useBackendStatus.ts`. It is a single module-level poller with many
