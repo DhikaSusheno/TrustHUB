@@ -67,10 +67,13 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="flex h-full overflow-hidden bg-surface">
+    // Column on a phone so the nav drawer header sits above the page, row from
+    // md up so the sidebar sits beside it. Both axes are needed: the sidebar
+    // used to be a permanent column, and at 390px it left no room for content.
+    <div className="flex flex-col md:flex-row h-full overflow-hidden bg-surface">
       <LeftNav activePage={activePage} onNavigate={setActivePage} />
 
-      <main className="flex-1 min-w-0 overflow-hidden">
+      <main className="flex-1 min-w-0 min-h-0 overflow-hidden">
         {activePage === "ask"          && <AskPage />}
         {activePage === "equipment"    && <EquipmentPage />}
         {activePage === "documents"    && <DocumentsPage />}

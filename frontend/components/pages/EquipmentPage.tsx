@@ -26,7 +26,8 @@ function DocumentTable({ documents }: { documents: PlantDocument[] }) {
     return <EmptyState title="No documents for this unit" />;
   }
   return (
-    <table className="w-full text-[11px]">
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[560px] text-[11px]">
       <thead className="text-slate-400">
         <tr>
           <th className="text-left px-2.5 py-1.5 font-medium">Document</th>
@@ -59,6 +60,7 @@ function DocumentTable({ documents }: { documents: PlantDocument[] }) {
         ))}
       </tbody>
     </table>
+    </div>
   );
 }
 
@@ -67,7 +69,8 @@ function WorkOrderTable({ workOrders }: { workOrders: WorkOrder[] }) {
     return <EmptyState title="No work orders recorded for this unit" />;
   }
   return (
-    <table className="w-full text-[11px]">
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[640px] text-[11px]">
       <thead className="text-slate-400">
         <tr>
           <th className="text-left px-2.5 py-1.5 font-medium">WO</th>
@@ -107,6 +110,7 @@ function WorkOrderTable({ workOrders }: { workOrders: WorkOrder[] }) {
         ))}
       </tbody>
     </table>
+    </div>
   );
 }
 

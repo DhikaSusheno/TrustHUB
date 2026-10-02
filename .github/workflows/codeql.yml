@@ -1,0 +1,66 @@
+# .github/workflows/codeql.yml
+#
+# CodeQL untuk bahasa yang dipakai repo ini. JavaScript/TypeScript dan Python
+# adalah dua bahasa yang benar-benar dianalisis di sini.
+#
+# Action di-pin ke SHA dengan alasan yang sama seperti ci.yml: tag bisa
+# dipindahkan tanpa perubahan di file ini, dan job ini menjalankan kode repo
+# pihak ketiga. Dependabot menaikkan pin ini (lihat .github/dependabot.yml).
+
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Dijalankan juga saat tidak ada push ke main selama 7 hari. CodeQL
+  # mendeteksi kerentanan lewat pola di kode, dan pola itu bisa muncul dari
+  # pembaruan basis aturan CodeQL, bukan hanya dari commit baru. Tanpa
+  # schedule, kelas kerentanan yang baru ditambahkan ke basis aturan CodeQL
+  # tidak pernah ikut dianalisis.
+  schedule:
+    - cron: "27 4 * * 1"
+
+# Scope yang sama seperti CI: analisis statis tidak butuh menulis ke repo.
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze ${{ matrix.language }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      # security-events: write dibutuhkan CodeQL untuk mengunggah hasil
+      # analisis ke Security tab. Ini satu-satunya scope tulis di repo ini,
+      # dan hanya berlaku untuk job ini, bukan ke token yang dipakai job lain.
+      security-events: write
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, python]
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: github/codeql-action/init@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3
+        with:
+          languages: ${{ matrix.language }}
+          # Tidak ada query kustom. Default pack CodeQL untuk kedua bahasa
+          # sudah mencakup kelas kerentanan yang relevan di sini (injection,
+          # path traversal, reflected XSS, hard-coded credential). Query
+          # tambahan tanpa kasus nyata di repo ini menambah noise, bukan
+          # perlindungan.
+          queries: security-extended
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3
+        with:
+          category: /language:${{ matrix.language }}

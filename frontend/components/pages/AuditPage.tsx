@@ -180,8 +180,12 @@ export default function AuditPage() {
                   tone={log.data.refused > 0 ? "good" : "default"}
                   sub="no trustworthy source"
                 />
-                <div className="rounded-lg border border-slate-800/60 bg-panel px-4 py-3">
-                  <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
+                {/* Badges issued is the same kind of entry as the two counts beside it, so it
+                  gets the same ruled treatment instead of a box. A hand-rolled
+                  copy of Stat here used to put a bordered panel in the third
+                  cell of a grid whose other two cells had no border at all. */}
+                <div className="border-t border-slate-800/70 pt-2.5">
+                  <div className="text-[10px] uppercase tracking-wide text-slate-400 mb-2">
                     Badges issued
                   </div>
                   <BadgeCounts log={log.data} />
@@ -194,8 +198,8 @@ export default function AuditPage() {
                   hint="Every question submitted on the Ask page is recorded here with its badge and sources."
                 />
               ) : (
-                <div className="rounded border border-slate-800/60 overflow-hidden">
-                  <table className="w-full text-[11px]">
+                <div className="rounded border border-slate-800/60 overflow-x-auto overflow-y-hidden">
+                  <table className="w-full min-w-[640px] text-[11px]">
                     <thead className="text-slate-400 bg-slate-800/30">
                       <tr>
                         <th className="text-left px-3 py-2 font-medium">Asked</th>

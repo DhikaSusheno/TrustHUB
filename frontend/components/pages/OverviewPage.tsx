@@ -118,8 +118,8 @@ export default function OverviewPage() {
                   {/* The verified set points themselves. Seven rows of
                       "this number, said seven times" is the whole argument. */}
                   {verification.data.values.length > 0 && (
-                    <div className="rounded border border-slate-800/60 overflow-hidden">
-                      <table className="w-full text-[11px]">
+                    <div className="rounded border border-slate-800/60 overflow-x-auto overflow-y-hidden">
+                      <table className="w-full min-w-[560px] text-[11px]">
                         <thead className="bg-slate-800/40 text-slate-400">
                           <tr>
                             <th className="text-left px-2.5 py-1.5 font-medium">Unit</th>
@@ -235,7 +235,7 @@ export default function OverviewPage() {
               <li>
                 - No LLM is used by default. Answers are composed from indexed
                 text and measured values, so nothing is generated and nothing
-                can be hallucinated &mdash; but nothing is paraphrased either.
+                can be hallucinated, but nothing is paraphrased either.
               </li>
               <li>
                 - Zero contradictions means the extracted values agree. It does

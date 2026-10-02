@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 const inter = localFont({ src: "../public/fonts/InterVariable.woff2", variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "TrustHUB — Manufacturing Knowledge Hub",
+  title: "TrustHUB: Manufacturing Knowledge Hub",
   description:
     "Document-grounded answers with a trust badge, cited sources, and measured refusals. CALIBER 2026 Case 1, LLDPE unit Set 01.",
 };

@@ -21,8 +21,17 @@
 // "Ask" is first because it is the only page where a number reaches a person.
 // `NAV_PAGES` is derived from this list, so the URL guard cannot drift from
 // what the sidebar can actually reach.
+//
+// The nine items are the same on a phone as on a desktop, but the frame around
+// them is not. Below md the sidebar was a fixed 208px column, which on a 390px
+// screen left under 180px for the page itself and pushed every table off the
+// edge. So below md the sidebar becomes a drawer behind a top bar, and at md it
+// returns to being a static column exactly as it was. The item list, the labels,
+// the footer and the status do not change between the two; only the container
+// does, so a phone user and a desktop user are in the same nine-page app.
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useBackendStatus, type BackendMode } from "@/hooks/useBackendStatus";
 import { usePlatformSettings } from "@/lib/usePlatformSettings";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
@@ -121,6 +130,20 @@ function NavIcon({ d }: { d: string }) {
   );
 }
 
+/** Two glyphs at the NavIcon weight, so the control that opens the drawer reads
+ *  as the same family as the nine icons it reveals. */
+function DrawerGlyph({ open }: { open: boolean }) {
+  return (
+    <svg aria-hidden="true" className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" viewBox="0 0 24 24">
+      {open ? (
+        <path d="M6 6l12 12M18 6L6 18" />
+      ) : (
+        <path d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+      )}
+    </svg>
+  );
+}
+
 const FOOTER_STATUS: Record<BackendMode, { dot: string; text: string }> = {
   live:     { dot: "bg-green-400",  text: "text-green-400" },
   empty:    { dot: "bg-yellow-400", text: "text-yellow-400" },
@@ -138,54 +161,122 @@ export default function LeftNav({ activePage, onNavigate }: Props) {
   const { mode } = useBackendStatus();
   const { settings } = usePlatformSettings();
   const { t } = useI18n();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const platformName = settings?.platform_name || "TrustHUB";
   const environment = settings?.environment || "LLDPE Unit";
   const footer = FOOTER_STATUS[mode];
+  const activeItem = NAV_ITEMS.find((item) => item.id === activePage);
+
+  // Escape closes the drawer, because a drawer that can only be dismissed by
+  // tapping the same button that opened it traps a keyboard user.
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDrawerOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drawerOpen]);
+
+  // Choosing a page is the end of the interaction on a phone: the new page is
+  // underneath a drawer, so leaving it open would hide the thing just requested.
+  function navigate(page: NavPage) {
+    onNavigate(page);
+    setDrawerOpen(false);
+  }
 
   return (
-    <nav aria-label="Primary" className="w-52 shrink-0 flex flex-col bg-panel border-r border-slate-800/60 overflow-hidden">
-      <div className="px-4 py-4 border-b border-slate-800/60 shrink-0">
-        <Link href="/landing" className="flex items-center gap-2.5 rounded-lg group" aria-label={`${platformName} — about and demo guide`}>
-          <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center shrink-0 group-hover:border-blue-400/60 transition-colors">
-            <LogoMark />
-          </div>
-          <div className="min-w-0">
-            <div className="text-sm font-bold text-ink tracking-tight truncate">{platformName}</div>
-            <div className="text-[10px] text-slate-500 leading-tight truncate">{environment} &middot; Set 01</div>
-          </div>
-        </Link>
-      </div>
-
-      <div className="flex-1 py-2 space-y-0.5 px-2 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
-          const isActive = activePage === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              aria-current={isActive ? "page" : undefined}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
-                isActive
-                  ? "bg-blue-600/20 text-blue-400 font-medium"
-                  : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
-              }`}
-            >
-              <NavIcon d={item.d} />
-              <span className="flex-1 truncate">{t(item.labelKey)}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="px-4 py-3 border-t border-slate-800/60 space-y-1 shrink-0">
-        <div className="text-xs text-slate-500 font-mono">v0.1.0 &middot; CALIBER 2026</div>
-        <LanguageSwitcher />
-        <ThemeSwitcher />
-        <div className="flex items-center gap-1.5" role="status">
-          <span className={`w-1.5 h-1.5 rounded-full inline-block shrink-0 ${footer.dot} ${mode === "checking" ? "animate-pulse" : ""}`} />
-          <span className={`text-xs truncate ${footer.text}`}>{t(FOOTER_LABEL[mode])}</span>
+    <>
+      {/* `md:contents` dissolves this wrapper on a desktop, which promotes the
+          <nav> below to a direct flex child of the shell. Without it the
+          wrapper would sit in the row flex at a fixed width and squeeze the
+          page to nothing, because the drawer is fixed and takes no space. */}
+      <div className="w-full md:contents">
+        {/* Below md there is no sidebar, so the current page name is the only
+            thing telling someone where they are. */}
+        <div className="md:hidden h-14 flex items-center gap-2 px-2 border-b border-slate-800/60 bg-panel shrink-0">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen((open) => !open)}
+            aria-expanded={drawerOpen}
+            aria-controls="primary-nav"
+            aria-label={drawerOpen ? "Close navigation" : "Open navigation"}
+            className="h-11 w-11 shrink-0 flex items-center justify-center rounded-lg text-slate-300 hover:bg-slate-800/60 hover:text-slate-100 transition-colors"
+          >
+            <DrawerGlyph open={drawerOpen} />
+          </button>
+          <span className="text-sm font-semibold text-ink truncate">
+            {activeItem ? t(activeItem.labelKey) : platformName}
+          </span>
+          <span className="flex-1" />
+          <span
+            className={`w-2 h-2 rounded-full shrink-0 ${footer.dot} ${mode === "checking" ? "animate-pulse" : ""}`}
+            aria-hidden="true"
+          />
         </div>
+
+        <nav
+          id="primary-nav"
+          aria-label="Primary"
+          className={`fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-panel border-r border-slate-800/60 overflow-hidden transition-transform duration-200 motion-reduce:transition-none md:static md:z-auto md:w-52 md:shrink-0 md:translate-x-0 ${
+            drawerOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="px-4 py-4 border-b border-slate-800/60 shrink-0">
+            <Link href="/landing" className="flex items-center gap-2.5 rounded-lg group" aria-label={`${platformName}: about and demo guide`}>
+              <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center shrink-0 group-hover:border-blue-400/60 transition-colors">
+                <LogoMark />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-ink tracking-tight truncate">{platformName}</div>
+                <div className="text-[10px] text-slate-500 leading-tight truncate">{environment} &middot; Set 01</div>
+              </div>
+            </Link>
+          </div>
+
+          <div className="flex-1 py-2 space-y-0.5 px-2 overflow-y-auto">
+            {NAV_ITEMS.map((item) => {
+              const isActive = activePage === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(item.id)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`w-full min-h-[44px] md:min-h-0 flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
+                    isActive
+                      ? "bg-blue-600/20 text-blue-400 font-medium"
+                      : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+                  }`}
+                >
+                  <NavIcon d={item.d} />
+                  <span className="flex-1 truncate">{t(item.labelKey)}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="px-4 py-3 border-t border-slate-800/60 space-y-1 shrink-0">
+            <div className="text-xs text-slate-500 font-mono">v0.1.0 &middot; CALIBER 2026</div>
+            <LanguageSwitcher />
+            <ThemeSwitcher />
+            <div className="flex items-center gap-1.5" role="status">
+              <span className={`w-1.5 h-1.5 rounded-full inline-block shrink-0 ${footer.dot} ${mode === "checking" ? "animate-pulse" : ""}`} />
+              <span className={`text-xs truncate ${footer.text}`}>{t(FOOTER_LABEL[mode])}</span>
+            </div>
+          </div>
+        </nav>
       </div>
-    </nav>
+
+      {/* A real button rather than a bare overlay, so tapping outside to dismiss
+          is reachable from the keyboard as well as by touch. */}
+      {drawerOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={() => setDrawerOpen(false)}
+          className="md:hidden fixed inset-0 z-40 bg-slate-900/60"
+        />
+      )}
+    </>
   );
 }

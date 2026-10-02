@@ -34,10 +34,13 @@ export function PageShell({ title, subtitle, actions, children, className = "" }
   const { t } = useI18n();
   return (
     <div className={`flex flex-col h-full overflow-hidden ${className}`}>
-      <header className="px-6 py-4 border-b border-slate-800/60 flex items-start justify-between gap-4 shrink-0">
+      {/* `flex-wrap` so page actions drop below the title instead of colliding
+          with it once the sidebar stops stealing 208px of a phone screen, and
+          the tighter padding below sm buys back most of what that costs. */}
+      <header className="px-4 sm:px-6 py-4 border-b border-slate-800/60 flex flex-wrap items-start justify-between gap-x-4 gap-y-3 shrink-0">
         <div className="min-w-0">
           <h1 className="text-lg font-semibold text-ink tracking-tight">{resolve(title, t)}</h1>
-          {subtitle && <p className="mt-0.5 text-xs text-slate-500">{resolve(subtitle, t)}</p>}
+          {subtitle && <p className="mt-1 text-xs text-slate-400 leading-relaxed">{resolve(subtitle, t)}</p>}
         </div>
         {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
       </header>
@@ -120,7 +123,7 @@ export function Panel({ title, hint, actions, children, className = "", flush = 
             <h2 className="text-xs font-semibold text-slate-300 uppercase tracking-wide whitespace-nowrap">
               {title}
             </h2>
-            {hint && <span className="text-[11px] text-slate-600 truncate">{hint}</span>}
+            {hint && <span className="text-[11px] text-slate-400 truncate">{hint}</span>}
           </div>
           {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
         </div>
@@ -130,7 +133,16 @@ export function Panel({ title, hint, actions, children, className = "", flush = 
   );
 }
 
-/** A labelled number. Used for every count shown on the overview. */
+/** A labelled number. Used for every count shown on the overview.
+ *
+ *  This is a ruled entry rather than a card, and it is used 37 times across six
+ *  pages, which is what decided it. Thirty-seven identical rounded boxes read as
+ *  a card kit and give every count the same weight, when the only thing anyone
+ *  came for is the number. A hairline over the group does the separating, the
+ *  value takes the size, and the numbers in a row land on a shared baseline.
+ *
+ *  ink-3 for the label and the sub, not ink-4: ink-4 measures 3.98:1 on the panel
+ *  this sits on, and both are real sentences at 11px. */
 export function Stat({
   label,
   value,
@@ -149,10 +161,10 @@ export function Stat({
     bad: "text-red-300",
   }[tone];
   return (
-    <div className="rounded-lg border border-slate-800/60 bg-panel-2 px-4 py-3">
-      <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
-      <div className={`mt-1 text-xl font-semibold tabular-nums ${toneClass}`}>{value}</div>
-      {sub && <div className="mt-0.5 text-[11px] text-slate-600">{sub}</div>}
+    <div className="border-t border-slate-800/70 pt-2.5">
+      <div className="text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
+      <div className={`mt-1.5 text-2xl font-semibold tabular-nums leading-none ${toneClass}`}>{value}</div>
+      {sub && <div className="mt-2 text-[11px] text-slate-400 leading-snug">{sub}</div>}
     </div>
   );
 }

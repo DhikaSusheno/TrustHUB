@@ -180,7 +180,7 @@ export default function PlantSettingsPage() {
               <p className="text-[11px] text-slate-500 leading-relaxed pt-1 border-t border-slate-800/60">
                 Consequences of the default, stated plainly: answers are
                 assembled from indexed text and measured values, so nothing is
-                generated and nothing can be hallucinated &mdash; but nothing is
+                generated and nothing can be hallucinated, but nothing is
                 paraphrased either, and procedural steps are quoted rather than
                 restated. That is a deliberate trade. A paraphrase of an
                 isolation procedure is a safety defect, and a system that can

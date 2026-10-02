@@ -188,14 +188,14 @@ export default function VerificationPage() {
           </div>
 
           {/* The verified values themselves. */}
-          <Panel title="Cross-confirmed values" hint={`${v.verified_groups} groups`} flush>
+          <Panel title="Cross-confirmed values" hint={`${v.verified_groups} groups`} flush className="overflow-x-auto">
             {v.values.length === 0 ? (
               <EmptyState
                 title="No value appears in more than one document"
                 hint="With a single-document index there is nothing to cross-confirm. That is the expected result for the synthetic test fixture, not a failure."
               />
             ) : (
-              <table className="w-full text-[11px]">
+              <table className="w-full min-w-[560px] text-[11px]">
                 <thead className="text-slate-400 bg-slate-800/30">
                   <tr>
                     <th className="text-left px-3 py-2 font-medium">Unit</th>

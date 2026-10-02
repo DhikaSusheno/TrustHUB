@@ -98,7 +98,7 @@ function DocumentRow({ doc }: { doc: PlantDocument }) {
         <tr className="bg-inset">
           <td colSpan={7} className="px-4 py-2.5">
             <div className="text-[10px] uppercase tracking-wide text-slate-600 mb-1">
-              Revision history &mdash; read from {evidenceSource(doc)}
+              Revision history, read from {evidenceSource(doc)}
             </div>
             <pre className="text-[11px] text-slate-300 whitespace-pre-wrap font-mono leading-relaxed break-words">
               {doc.revision_history}
@@ -222,8 +222,8 @@ export default function DocumentsPage() {
               hint="Clear the filters to see the full register."
             />
           ) : (
-            <Panel flush>
-              <table className="w-full text-[11px]">
+            <Panel flush className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-[11px]">
                 <thead className="text-slate-400 bg-slate-800/30">
                   <tr>
                     <th className="text-left px-2.5 py-2 font-medium">Document</th>

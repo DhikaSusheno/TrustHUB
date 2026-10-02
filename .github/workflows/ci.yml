@@ -6,6 +6,22 @@ on:
   pull_request:
     branches: [main]
 
+# GITHUB_TOKEN default-nya punya scope yang lebih besar dari yang CI ini
+# perlukan, dan default itu berubah dari waktu ke waktu. Job di bawah hanya
+# membaca dan menjalankan test, jadi scopes-nya dikecilkan eksplisit di sini.
+# Kalau sebuah step butuh tulis (misalnya membuat komentar PR), permissions di
+# level job harus menaikkan kembali secara eksplisit, bukan mengandalkan default
+# GitHub.
+permissions:
+  contents: read
+
+# Cancel PR lama saat commit baru masuk. Tanpa ini, queue menumpuk dan
+# checkout lama tetap berjalan memakai menit runner yang sama, jadi perubahan
+# kecil bisa menunggu lebih lama dari yang perlu.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend:
     name: Backend tests
@@ -15,9 +31,13 @@ jobs:
         working-directory: backend
 
     steps:
-      - uses: actions/checkout@v4
+# Action di-pin ke SHA, bukan ke tag. Tag (@v4) bisa dipindahkan ke commit
+      # lain kapan saja tanpa ada perubahan di file ini, dan job ini menjalankan
+      # kode dari repo pihak ketiga memakai kredensial CI. SHA membuat isi yang
+      # benar-benar dijalankan eksplisit dan bisa diaudit.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
           cache: pip
@@ -100,9 +120,9 @@ jobs:
         working-directory: frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           # Node 22.6+ untuk --experimental-strip-types, 23.6+ strip_types
           # on by default. Node 20 TIDAK bisa menjalankan file test .ts sama
@@ -113,6 +133,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Lint dijalankan di CI karena ia satu-satunya gerbang yang menangkap
+      # masalah yang lolos typecheck: aturan react-hooks yang salah, import
+      # tak terpakai, dan aturan aksesibilitas jsx-a11y. Tanpa step ini,
+      # perubahan yang evocatif secara visual lolos ke main tanpa pernah
+      # di-lint.
+      - name: Lint
+        run: npm run lint
 
       - name: Unit tests
         run: npm test

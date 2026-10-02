@@ -58,6 +58,15 @@ workspace/
 projects_registry.json
 backend/projects_registry.json
 
+# Log output dari `npm run dev` yang di-redIRECT ke file saat menjalankan
+# server secara background (npm tidak bisa menulis ke stdout dan stderr ke
+# satu file sekaligus, jadi perintahnya dibungkus cmd /c). Log ini berubah
+# setiap kali modul di-recompile, dan isinya bisa memuat path absolut mesin
+# lokal - tidak ada gunanya di repo dan tidak boleh ikut ter-commit.
+frontend-dev.log
+backend-dev.log
+*.dev.log
+
 # ---------------------------------------------------------------------------
 # CALIBER Case 1 - dataset dan hasil indeks
 # ---------------------------------------------------------------------------

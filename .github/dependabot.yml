@@ -1,0 +1,55 @@
+# .github/dependabot.yml
+#
+# Dependabot membuka PR Dependency Security dan menjaga dependensi tetap
+# menerima perbaikan keamanan tanpa harus menunggu discovery manual.
+#
+# GitHub merekomendasikan schedule "monthly" untuk repo yang tidak aktif
+# harian: weekly menghasilkan banyak PR yang belum sempat direview dan
+# kemudian di-close, yang menambah beban review tanpa menambah keamanan.
+# Kalau tim sudah sempat.merge cepat, turunkan ke "weekly".
+
+version: 2
+
+updates:
+  # ---------------------------------------------------------------- frontend
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    # Action GitHub dikonfigurasi lewat dependabot dengan label yang sama,
+    # supaya PR dari Actions dan PR dari library bisa dibedakan saat review.
+    labels:
+      - dependencies
+      - frontend
+
+  # ----------------------------------------------------------------- backend
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - backend
+
+  - package-ecosystem: pip
+    directory: /security
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - security
+
+  # ------------------------------------------------------------------ actions
+  # Workflow memakai tag yang dipin ke SHA (lihat .github/workflows/ci.yml),
+  # jadi dependabot yang perlu menaikkan SHA-nya secara berkala. Tanpa entry
+  # ini, workflow akan tertinggal selamanya justru karena pinning-nya.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies
+      - ci

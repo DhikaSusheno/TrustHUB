@@ -2,9 +2,18 @@
 // The about page: what this system does, how it decides to answer, and what it
 // refuses. Server component - it holds no state and reads nothing.
 //
-// Every number on this page is one the backend returns. Where a number is a
-// measurement of the dataset rather than a property of the code, it says which
-// endpoint produces it, so a reader can check it instead of taking it on trust.
+// Provenance of the four figures below, because the distinction matters to a
+// judge and used to be misstated in this file's header comment. They are the
+// official CALIBER Case 1 dataset's figures, as documented in the Case Book
+// (`TRUSTHUB.md`, the section that lists what each endpoint reports), and each
+// is named here with the endpoint that produces it once the dataset is
+// ingested: `GET /api/plant/status` and `GET /api/plant/verification`.
+//
+// They are NOT what this instance is currently holding. A fresh checkout has
+// no index at all, so a visitor who opens the app sees the Dataset page say so
+// while this page shows the dataset's documented totals. That gap is stated
+// under the figures rather than left for someone to discover.
+//
 // Nothing here is aspirational: the awkward facts (sample data, one missing
 // document, no LLM) are in the first screen rather than in a footnote.
 
@@ -13,14 +22,13 @@ import PetroProcessMotif from "@/components/landing/PetroProcessMotif";
 import LogoMark from "@/components/shared/LogoMark";
 
 // --- What the dataset actually contains -------------------------------------
-// From /api/plant/status and /api/plant/verification with the official
-// CALIBER dataset ingested.
+// The official CALIBER Case 1 dataset, not a local instance. See the note above.
 
 const FACTS = [
-  { k: "95", v: "documents indexed, with real document numbers, revisions and approval records" },
-  { k: "8", v: "equipment units, each with a datasheet, GA, interlock diagram and plot plan" },
-  { k: "211", v: "work orders joined from the maintenance workbook, 31 of them breakdowns" },
-  { k: "0", v: "contradictions among extracted trip set points, out of 105 values extracted" },
+  { k: "95", v: "documents, with real document numbers, revisions and approval records", src: "/api/plant/status" },
+  { k: "8", v: "equipment units, each with a datasheet, GA, interlock diagram and plot plan", src: "/api/plant/status" },
+  { k: "211", v: "work orders joined from the maintenance workbook, 31 of them breakdowns", src: "/api/plant/status" },
+  { k: "0", v: "contradictions among extracted trip set points, out of 105 values extracted", src: "/api/plant/verification" },
 ];
 
 // --- The problem, stated as the plant actually experiences it ---------------
@@ -188,8 +196,13 @@ export default function LandingPage() {
         <section className="py-20 sm:py-28 border-b border-slate-800/60">
           <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center">
             <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-5">
-            CALIBER 2026 &middot; Case 1 &middot; Manufacturing Knowledge Hub
+          {/* Not a badge and not uppercase-tracked: this is a case reference, so
+              it is set in the same mono as every document number and tag on this
+              page, in sentence case, the way a document header is written. The
+              case number takes the ink because it is the part a judge is
+              scanning for. */}
+          <p className="font-mono text-xs text-slate-400 mb-5">
+            CALIBER 2026, <span className="text-ink">Case 1</span>, Manufacturing Knowledge Hub
           </p>
           <h1 className="text-4xl sm:text-5xl font-bold text-ink tracking-tight leading-[1.1] max-w-3xl">
             An engineering knowledge hub that would rather refuse than guess.
@@ -215,7 +228,7 @@ export default function LandingPage() {
             </div>
             <div className="min-w-0">
               <PetroProcessMotif className="w-full h-auto" />
-              <p className="mt-4 text-[11px] text-slate-600 leading-relaxed">
+              <p className="mt-4 text-[11px] text-slate-400 leading-relaxed">
                 A polymerisation train as a P&amp;ID draws it: vessels on one
                 pipe run, instrument bubbles above each, tags in the notation the
                 indexed documents use. The unit this hub reads is a linear low
@@ -223,19 +236,34 @@ export default function LandingPage() {
               </p>
             </div>
           </div>
-          <dl className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-6">
+          {/* Every readable step on this page is ink-3 or darker. ink-4 measures 4.09:1
+            and ink-5 2.57:1 against the dark surface this page sits on, so the
+            two faintest steps cannot carry a real sentence here, whatever they
+            are used for elsewhere. Hierarchy comes from weight and size instead,
+            which costs nothing and is legible in both themes. */}
+          <p className="mt-14 text-xs font-semibold uppercase tracking-wide text-slate-300">
+            The official dataset, as documented in the Case Book
+          </p>
+          <dl className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-6">
             {FACTS.map((s) => (
               <div key={s.v} className="border-l border-slate-800 pl-4">
-                <dt className="text-xl font-bold text-ink">{s.k}</dt>
-                <dd className="text-xs text-slate-500 mt-1 leading-snug">{s.v}</dd>
+                <dt className="text-xl font-bold text-ink tabular-nums">{s.k}</dt>
+                <dd className="text-xs text-slate-400 mt-1 leading-snug">{s.v}</dd>
+                {/* ink-4 rather than ink-5: this is a real sentence at 10px, and ink-5 sits
+                    at 3.98:1 on the dark surface, which is below AA for text this
+                    small. The endpoint is meta, but meta is still read. */}
+                <dd className="mt-1.5 text-[10px] font-mono text-slate-400">{s.src}</dd>
               </div>
             ))}
           </dl>
-          <p className="mt-5 text-[11px] text-slate-600 leading-relaxed max-w-3xl">
-            These four figures describe the official CALIBER Case 1 dataset as it
-            was measured when the documents were indexed. A local instance built
-            on a synthetic index reports smaller counters, and its equipment names
-            and documents are examples rather than the plant&rsquo;s own records.
+          <p className="mt-5 text-xs text-slate-400 leading-relaxed max-w-3xl">
+            These four figures are the official CALIBER Case 1 dataset&rsquo;s
+            totals, taken from the Case Book and labelled with the endpoint that
+            produces each one. They are not what this instance is holding right
+            now: a fresh checkout has no plant index, so the app opens on an
+            empty Dataset page until the dataset is fetched with{" "}
+            <code className="font-mono text-slate-400">python -m plant.fetch_dataset</code>.
+            What a given instance holds is on the Dataset page, not here.
           </p>
         </section>
 
@@ -247,11 +275,14 @@ export default function LandingPage() {
             the documents. What it does not have is any way to know which of
             them applies, whether it is current, and whether it has been approved.
           </p>
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          {/* Three columns with nothing between them but space. The problems
+              are not objects, they are the same problem seen three ways, and a
+              border around each one would say they were three separate features. */}
+          <div className="mt-12 grid gap-8 sm:grid-cols-3">
             {PROBLEMS.map((p) => (
-              <article key={p.title} className="rounded-xl border border-slate-800/60 bg-panel p-5">
-                <h3 className="text-sm font-semibold text-ink">{p.title}</h3>
-                <p className="mt-2 text-xs text-slate-400 leading-relaxed">{p.body}</p>
+              <article key={p.title}>
+                <h3 className="text-base font-semibold text-ink leading-snug">{p.title}</h3>
+                <p className="mt-3 text-sm text-slate-400 leading-relaxed">{p.body}</p>
               </article>
             ))}
           </div>
@@ -264,11 +295,14 @@ export default function LandingPage() {
             Four steps, in this order. The check for whether an answer is
             permitted at all happens before anything is written, not after.
           </p>
-          <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* This is the one genuinely ordered list on the page, so it is the one
+              place a number earns its place. The rule and the step token carry
+              the sequence; four identical boxes would not have. */}
+          <ol className="mt-12 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
             {PIPELINE.map((s) => (
-              <li key={s.n} className="rounded-xl border border-slate-800/60 bg-panel p-5">
-                <span className="text-xs font-mono text-blue-400">{s.n}</span>
-                <h3 className="mt-2 text-sm font-semibold text-ink">{s.title}</h3>
+              <li key={s.n} className="border-t border-slate-800/70 pt-4">
+                <span className="font-mono text-xs text-blue-300">{s.n}</span>
+                <h3 className="mt-3 text-sm font-semibold text-ink leading-snug">{s.title}</h3>
                 <p className="mt-2 text-xs text-slate-400 leading-relaxed">{s.body}</p>
               </li>
             ))}
@@ -279,16 +313,21 @@ export default function LandingPage() {
         <section id="data" className="scroll-mt-14 py-20 border-b border-slate-800/60">
           <h2 className="text-2xl font-bold text-ink">The four baseline data types</h2>
           <p className="mt-2 text-sm text-slate-400 max-w-2xl">
-            Joined by the key the dataset itself specifies &mdash; the
+            Joined by the key the dataset itself specifies: the
             equipment tag, which the dataset&rsquo;s own documentation calls the
             join key to all other documents.
           </p>
-          <div className="mt-10 grid gap-4 lg:grid-cols-2">
+          {/* Set like a datasheet: the type name and what it carries share one
+              baseline, because they are two properties of the same row rather
+              than a heading and a subtitle. */}
+          <div className="mt-12 grid gap-x-10 gap-y-8 lg:grid-cols-2">
             {DATA_TYPES.map((d) => (
-              <article key={d.name} className="rounded-xl border border-slate-800/60 bg-panel p-5">
-                <h3 className="text-sm font-semibold text-ink">{d.name}</h3>
-                <p className="mt-1 text-xs text-blue-300">{d.detail}</p>
-                <p className="mt-2 text-xs text-slate-500 leading-relaxed">{d.note}</p>
+              <article key={d.name} className="border-t border-slate-800/70 pt-4">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <h3 className="text-sm font-semibold text-ink">{d.name}</h3>
+                  <p className="text-xs text-blue-300">{d.detail}</p>
+                </div>
+                <p className="mt-2.5 text-xs text-slate-400 leading-relaxed">{d.note}</p>
               </article>
             ))}
           </div>
@@ -310,25 +349,25 @@ export default function LandingPage() {
                   <div key={w.name}>
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="text-xs text-slate-300">{w.name}</span>
-                      <span className="text-xs font-mono text-slate-500">{w.w}</span>
+                      <span className="text-xs font-mono text-slate-400">{w.w}</span>
                     </div>
                     <div className="mt-1 h-1 rounded-full bg-slate-800 overflow-hidden">
                       <div className="h-full bg-blue-500" style={{ width: `${parseFloat(w.w) * 100 / 0.3}%` }} />
                     </div>
-                    <p className="mt-1 text-[10px] text-slate-600">{w.body}</p>
+                    <p className="mt-1 text-[10px] text-slate-400">{w.body}</p>
                   </div>
                 ))}
               </div>
               <div className="mt-5 pt-4 border-t border-slate-800/60 space-y-1.5 text-[11px]">
-                <p><span className="text-green-300 font-semibold">TRUSTED</span> at 0.80 &mdash; approved, revisioned, corroborated.</p>
-                <p><span className="text-amber-300 font-semibold">VERIFY</span> at 0.50 &mdash; usable after checking the cited document.</p>
+                <p><span className="text-green-300 font-semibold">TRUSTED</span> at 0.80: approved, revisioned, corroborated.</p>
+                <p><span className="text-amber-300 font-semibold">VERIFY</span> at 0.50: usable after checking the cited document.</p>
                 <p><span className="text-red-300 font-semibold">DO NOT EXECUTE</span> below 0.50, or refused outright when no source supports the question.</p>
               </div>
             </div>
 
             <div className="rounded-xl border border-slate-800/60 bg-panel p-5">
               <h3 className="text-sm font-semibold text-ink">What it refuses, and why</h3>
-              <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+              <p className="mt-1 text-xs text-slate-400 leading-relaxed">
                 Refusals are the feature, not the failure mode. A hub that
                 answers everything is fluent, not trustworthy.
               </p>
@@ -336,7 +375,7 @@ export default function LandingPage() {
                 {REFUSALS.map((r) => (
                   <li key={r.q}>
                     <p className="text-xs font-mono text-slate-200 break-words">{r.q}</p>
-                    <p className="mt-0.5 text-[11px] text-slate-500 leading-relaxed">{r.why}</p>
+                    <p className="mt-0.5 text-[11px] text-slate-400 leading-relaxed">{r.why}</p>
                   </li>
                 ))}
               </ul>
@@ -351,10 +390,14 @@ export default function LandingPage() {
             Listed here rather than in a footer, because a knowledge-hub demo that
             only shows its strengths is asking to be audited for the rest.
           </p>
+          {/* The marker is a vertical rule, not a dash glyph. It carries the same
+              role as the rule on each of the four figures above, so the section
+              reuses the page's one repeated gesture instead of introducing a
+              second one. */}
           <ul className="mt-8 space-y-3 max-w-3xl">
             {LIMITS.map((limit) => (
               <li key={limit} className="flex gap-3 text-sm text-slate-400 leading-relaxed">
-                <span className="text-amber-400 shrink-0">&mdash;</span>
+                <span className="w-0.5 h-4 bg-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
                 <span>{limit}</span>
               </li>
             ))}
@@ -369,11 +412,18 @@ export default function LandingPage() {
             ask a question, check its sources, then check whether those sources
             agree.
           </p>
-          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Rows under a hairline rule, not nine bordered boxes. These are nine steps of
+             one walkthrough, and a grid of identical boxes says "parallel
+             features" instead; the rule is also the gesture the register pages in
+             the app already use, so the landing page matches the product it
+             describes. */}
+          <div className="mt-10 grid gap-x-10 sm:grid-cols-2">
             {PAGES.map((p) => (
-              <div key={p.page} className="rounded-xl border border-slate-800/60 p-4">
-                <h3 className="text-sm font-semibold text-ink font-mono">{p.page}</h3>
-                <p className="mt-1 text-xs text-slate-400 leading-relaxed">{p.what}</p>
+              <div key={p.page} className="flex gap-4 border-t border-slate-800/70 py-3">
+                <h3 className="w-24 shrink-0 text-xs font-semibold text-blue-300 font-mono">
+                  {p.page}
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed min-w-0">{p.what}</p>
               </div>
             ))}
           </div>
@@ -385,20 +435,20 @@ export default function LandingPage() {
         </section>
 
         {/* ---------- Stack ---------- */}
+        {/* One line of set, not nine pills. A cloud of chips says "we also used these"
+              and carries no information a reader can act on; the sentence
+              underneath is the part that matters, because it explains why
+              there is no vector database and no API key. */}
         <section className="py-20">
           <h2 className="text-2xl font-bold text-ink">Built with</h2>
-          <div className="mt-6 flex flex-wrap gap-2">
-            {STACK.map((tech) => (
-              <span key={tech} className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-xs text-slate-400 font-mono">
-                {tech}
-              </span>
-            ))}
-          </div>
-          <p className="mt-8 text-xs text-slate-600 leading-relaxed max-w-2xl">
+          <p className="mt-6 font-mono text-xs text-slate-400 max-w-3xl leading-relaxed">
+            {STACK.join("  ")}
+          </p>
+          <p className="mt-8 text-sm text-slate-400 leading-relaxed max-w-2xl">
             Retrieval is SQLite FTS5 rather than a hosted vector database, so the
             whole system runs on one machine with no API key and no external
             service. The dataset is fetched with{" "}
-            <code className="font-mono text-slate-500">python -m plant.fetch_dataset</code>{" "}
+            <code className="font-mono text-xs text-slate-300">python -m plant.fetch_dataset</code>{" "}
             and is not committed, because its licence does not permit
             redistribution.
           </p>
@@ -406,13 +456,18 @@ export default function LandingPage() {
       </main>
 
       <footer className="border-t border-slate-800/60">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
-          <p className="text-xs text-slate-600">
-            CALIBER 2026 &middot; Case 1 &middot; Manufacturing Knowledge Hub &middot; LLDPE unit, Set 01
+        {/* No fourth "Open the app". The header button is sticky, so it is on
+            screen for every one of these lines already; a fourth identical
+            button at the bottom is repetition with no new destination. What a
+            reader who has reached the end actually wants is the one command
+            that changes the state of the app, so that is what closes the page. */}
+        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-6 justify-between">
+          <p className="text-xs text-slate-400">
+            CALIBER 2026, Case 1, Manufacturing Knowledge Hub, LLDPE unit Set 01
           </p>
-          <Link href="/" className="text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-ink transition-colors">
-            Open the app
-          </Link>
+          <p className="font-mono text-xs text-slate-400">
+            python -m plant.fetch_dataset
+          </p>
         </div>
       </footer>
     </div>

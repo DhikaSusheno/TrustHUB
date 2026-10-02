@@ -3,7 +3,12 @@
 Scope untuk: [@DhikaSusheno](https://github.com/DhikaSusheno) (BE-1 · Guardian), [@Masrendra](https://github.com/Masrendra) (BE-2 · Cortex).
 Konteks penuh (problem statement, bukti riset, non-goals): [`../TRUSTHUB.md`](../TRUSTHUB.md) section 2.
 
-## Goals (dari TRUSTHUB.md 2.4, bagian yang backend tanggung jawab penuh)
+> **Catatan penomoran.** PRD ini ditulis saat `TRUSTHUB.md` masih punya
+> sub-section bernomor (2.4, 4.2, 4.4). Case Book sekarang hanya bernomor 1–9
+> tanpa sub-section, jadi rujukan "section X.Y" di bawah sudah diarahkan ke
+> section yang benar-benar ada.
+
+## Goals (dari TRUSTHUB.md §6 Security, reliability, oversight)
 
 1. Setiap operasi berisiko (`propose_operation` → `execute_operation`) punya jalur rollback otomatis yang terverifikasi.
 2. Konflik antar-operasi terdeteksi **sebelum** eksekusi (conflict-aware gating), bukan setelah rusak.
@@ -22,8 +27,8 @@ Konteks penuh (problem statement, bukti riset, non-goals): [`../TRUSTHUB.md`](..
 
 ## Kontrak yang tidak boleh berubah setelah jam 2 (SYNC checkpoint)
 
-- Skema SQLite: `nodes`, `edges`, `operations`, `approvals` — lihat [`../TRUSTHUB.md`](../TRUSTHUB.md) section 4.2.
-- Rule table format (blast radius, fail-closed default) — section 4.4.
+- Skema SQLite: `nodes`, `edges`, `operations`, `approvals` — lihat [`../TRUSTHUB.md`](../TRUSTHUB.md) §5 Data architecture.
+- Rule table format (blast radius, fail-closed default) — §6 Security, reliability, oversight.
 - Bentuk event SSE yang dikonsumsi frontend — sepakati bareng FE-1/FE-2 di jam 0–2.
 
 ## Non-Goals (jangan melar dari ini)

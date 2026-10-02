@@ -24,8 +24,8 @@
 //      tidak bisa menyamarkan diri sebagai backend.
 //   3. Kalau TRUSTHUB_API_TOKEN kosong, proxy menolak dengan 503 alih-alih
 //      meneruskan request tanpa token.
-//   4. Tiap segmen path di-encode, supaya ".." atau "/" yang tersembunyi
-//      tidak bisa mengubah tujuan request di backend.
+//   4. Hanya endpoint yang dipakai antarmuka TrustHUB yang boleh lewat, dengan
+//      method yang sesuai. Lihat BACKEND_ROUTE_ALLOWLIST di lib/proxyGuard.ts.
 //
 // CATATAN AKHIR: ini menutup vektor browser. Klien non-browser (curl, skrip
 // lokal, proses lain di jaringan) yang bisa menjangkau port ini tetap bisa
@@ -39,6 +39,7 @@ import {
   crossSiteDenial,
   missingTokenDenial,
   parseAllowedOrigins,
+  routeDenial,
 } from "@/lib/proxyGuard";
 
 const BACKEND = process.env.BACKEND_URL ?? "http://localhost:8000";
@@ -139,8 +140,20 @@ async function proxy(request: NextRequest, context: RouteContext): Promise<Respo
   // Next 15 membuat params berupa Promise. Menunggu di sini wajib; kalau
   // diakses sinkron, segments selalu kosong dan semua request jatuh ke root.
   const rawSegments = (await context.params)?.path ?? [];
-  // Encode tiap segmen: Next.js sudah men-decode-nya, jadi encode ulang
-  // mencegah segmen berisi ".." atau "/" menembus sebagai struktur path.
+
+  // Allowlist endpoint + method. Dilakukan atas segmen yang SUDAH di-decode,
+  // sebelum di-encode ulang: encodeURIComponent("..") tetap "..", jadi
+  // traversal harus ditolak di sini, bukan Expectations bahwa encode
+  // menyelesaikannya. Tanpa baris ini, /backend/* meneruskan token server ke
+  // /api/github/* dan /api/llm/providers*, yang puts token pihak ketiga di BODY
+  // respons, serta ke endpoint yang menulis ke disk.
+  const routeDenied = routeDenial(rawSegments, request.method);
+  if (routeDenied) {
+    return jsonError(routeDenied.status, routeDenied.error, routeDenied.hint);
+  }
+
+  // Encode ulang tiap segmen supaya karakter yang sah di dalam nama resource
+  // (spasi, "+", "#") terkirim sebagai-isih ke backend, bukan mengubah path.
   const segments = rawSegments.map((s) => encodeURIComponent(s));
   const target = `${BACKEND}/${segments.join("/")}${request.nextUrl.search}`;
 

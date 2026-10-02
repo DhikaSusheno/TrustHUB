@@ -94,3 +94,132 @@ export function parseAllowedOrigins(raw: string | undefined): Set<string> {
       .filter(Boolean)
   );
 }
+
+// --------------------------------------------------------------- allowlist
+//
+// Yang diIzinkan lewat proxy adalah endpoint yang benar-benar dipanggil
+// frontend. Semua route lain di backend/main.py TIDAK boleh terjangkau lewat
+// proxy, karena proxy menyuntikkan TRUSTHUB_API_TOKEN milik server ke setiap
+// request yang diteruskan.
+//
+// Tanpa allowlist, `/backend/*` jadi pintu masuk ke endpoint yang tidak pernah
+// dimaksud untuk diekspos lewat web:
+//
+//   - /api/github/*      menyimpan token GitHub milik operator dan
+//                        menampilkannya di BODY respons
+//   - /api/llm/providers* menyimpan API key provider LLM di BODY respons
+//                        (termasuk saat menambah provider)
+//   - /api/targets (POST/PATCH/DELETE), /operations, /approve_operation,
+//     /execute_operation, /propose_operation
+//                        menulis ke disk dan menjalankan operasi atas nama
+//                        server; tidak ada layar TrustHUB yang memanggilnya
+//
+// Alasan allowlist, bukan bloklist: bloklist harus memperbarui dirinya setiap
+// kali route baru ditambahkan ke backend, dan route baru itu akan lolos sampai
+// ada yang ingat. Allowlist gagal aman secara default.
+
+type BackendRouteRule = {
+  /** Regex terhadap path yang dimulai `/`, dianchor di kedua ujung. */
+  path: RegExp;
+  /** Method HTTP yang boleh. `HEAD` dianggap sama dengan `GET`. */
+  methods: readonly string[];
+};
+
+/**
+ * Bahasa Indonesia Path Param (plant/api.py) memakai nama variabel route
+ * sebagai penanda posisi, jadi `trust/weights` adalah dua segmen. Pola di
+ * bawah ditulis terhadap hasil DECODE dari Next.js, sebelum di-encode ulang.
+ */
+const PLANT_PARAM = "[^/]+";
+
+export const BACKEND_ROUTE_ALLOWLIST: readonly BackendRouteRule[] = [
+  // ---------------------------------------------------------------- sistem
+  { path: /^\/health$/, methods: ["GET", "HEAD"] },
+  { path: /^\/settings$/, methods: ["GET", "HEAD", "POST"] },
+  { path: /^\/settings\/reset$/, methods: ["POST"] },
+  { path: /^\/browse$/, methods: ["GET", "HEAD"] },
+  { path: /^\/api\/targets\/browse$/, methods: ["GET", "HEAD"] },
+
+  // ------------------------------------------- CALIBER plant router (read)
+  {
+    path: new RegExp(
+      "^/api/plant/(status|dataset|equipment|documents|work-orders" +
+        "|failure-memory|graph|verification|evaluation|conflicts|audit" +
+        "|search|trust/weights)$"
+    ),
+    methods: ["GET", "HEAD"],
+  },
+  { path: new RegExp(`^/api/plant/equipment/${PLANT_PARAM}$`), methods: ["GET", "HEAD"] },
+  {
+    path: new RegExp(
+      `^/api/plant/equipment/${PLANT_PARAM}/(documents|work-orders|failure-memory)$`
+    ),
+    methods: ["GET", "HEAD"],
+  },
+  { path: new RegExp(`^/api/plant/documents/${PLANT_PARAM}$`), methods: ["GET", "HEAD"] },
+
+  // ------------------------------------------ CALIBER plant router (write)
+  { path: /^\/api\/plant\/ask$/, methods: ["POST"] },
+  { path: /^\/api\/plant\/reindex$/, methods: ["POST"] },
+];
+
+/**
+ * Tolak request ke endpoint yang tidak ada di allowlist, atau ke endpoint yang
+ * ada tapi dengan method yang salah.
+ *
+ * Method ikut diperiksa karena `GET /settings` dan `POST /settings` memang dua
+ * operasi berbeda: yang pertama membaca, yang kedua menulis konfigurasi.
+ * Mengizinkan keduanya untuk semua rule akan mengembalikan kemampuan tulis ke
+ *-route baca lewat method lain.
+ */
+export function routeDenial(
+  segments: readonly string[],
+  method: string
+): ProxyDenial | null {
+  // Path traversal dicek pada segmen yang SUDAH di-decode oleh Next.js, bukan
+  // sesudahnya. encodeURIComponent("..") tetap "..", jadi encode ulang tidak
+  // mencegah "../" yang membuat path menunjuk endpoint lain dari yang
+  // diallowlist. Menolak ".", "..", segmen kosong, dan segmen yang memuat
+  // separator menutupnya di titik yang benar.
+  for (const segment of segments) {
+    if (segment === "" || segment === "." || segment === "..") {
+      return {
+        status: 400,
+        error: "Path tidak valid",
+        hint: "Segmen path harus nama resource, bukan navigasi direktori",
+      };
+    }
+    if (segment.includes("/") || segment.includes("\\")) {
+      return {
+        status: 400,
+        error: "Path tidak valid",
+        hint: "Segmen path tidak boleh memuat pemisah path",
+      };
+    }
+  }
+
+  const path = `/${segments.join("/")}`;
+  const allowedPath = BACKEND_ROUTE_ALLOWLIST.some((rule) => rule.path.test(path));
+  if (!allowedPath) {
+    return {
+      status: 404,
+      error: "Endpoint backend tidak tersedia lewat proxy",
+      hint: "Proxy hanya melayani endpoint yang dipakai antarmuka TrustHUB",
+    };
+  }
+
+  const normalizedMethod = method.toUpperCase();
+  const rule = BACKEND_ROUTE_ALLOWLIST.find((entry) => entry.path.test(path));
+  const allowedMethod =
+    rule !== undefined &&
+    rule.methods.some((entry) => entry.toUpperCase() === normalizedMethod);
+  if (!allowedMethod) {
+    return {
+      status: 405,
+      error: "Method tidak diizinkan untuk endpoint ini",
+      hint: `${normalizedMethod} ${path}`,
+    };
+  }
+
+  return null;
+}

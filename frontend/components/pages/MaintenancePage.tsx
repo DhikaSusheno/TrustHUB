@@ -51,7 +51,8 @@ function WorkOrderTable({ items }: { items: WorkOrder[] }) {
     return <EmptyState title="No work orders match this filter" />;
   }
   return (
-    <table className="w-full text-[11px]">
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[720px] text-[11px]">
       <thead className="text-slate-400 bg-slate-800/30">
         <tr>
           <th className="text-left px-2.5 py-2 font-medium">WO</th>
@@ -98,6 +99,7 @@ function WorkOrderTable({ items }: { items: WorkOrder[] }) {
         ))}
       </tbody>
     </table>
+    </div>
   );
 }
 
