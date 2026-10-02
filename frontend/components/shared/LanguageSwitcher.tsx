@@ -1,4 +1,4 @@
-// components/shared/LanguageSwitcher.tsx
+﻿// components/shared/LanguageSwitcher.tsx
 // Interface language control.
 //
 // A native <select> rather than a custom menu or a row of buttons. Two reasons:
@@ -48,7 +48,7 @@ export default function LanguageSwitcher() {
         className="min-w-0 flex-1 bg-transparent text-xs text-slate-400 hover:text-slate-200 focus-visible:text-slate-200 transition-colors cursor-pointer"
       >
         {LOCALES.map((code) => (
-          <option key={code} value={code} className="bg-[#0d1117] text-slate-200">
+          <option key={code} value={code} className="bg-panel text-slate-200">
             {LOCALE_NAME[code]}
           </option>
         ))}

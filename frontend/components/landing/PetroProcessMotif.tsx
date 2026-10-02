@@ -7,11 +7,15 @@
 // drawing. The reference is the notation engineers already read every day, not
 // any particular plant, so nothing on the page implies an endorsement.
 //
-// Line art rather than a photograph or a gradient: the landing page sits on
-// bg-app #080d14 with panels at #0d1117, and a photo would fight the dark
-// canvas instead of settling into it. Stroke uses the accent-blue token.
-
-const VESSEL_FILL = "#0d1117";
+// Line art rather than a photograph or a gradient: the landing page sits on the
+// app surface with panels one step above it, and a photo would fight the canvas
+// instead of settling into it. Stroke uses the accent-blue token.
+//
+// The vessel fill and the tag text read from the theme variables rather than a
+// fixed hex, because SVG attributes take CSS colours. A hardcoded panel colour
+// here would leave the vessels sitting near-black on a light theme, reading as
+// holes punched in the page.
+const VESSEL_FILL = "rgb(var(--panel))";
 const PIPE = "#3b82f6";
 
 export default function PetroProcessMotif({ className = "" }: { className?: string }) {
@@ -82,7 +86,7 @@ export default function PetroProcessMotif({ className = "" }: { className?: stri
       {/* Equipment tags, in the notation the documents in the index use. */}
       <g
         stroke="none"
-        fill="#64748b"
+        fill="rgb(var(--ink-4))"
         fontSize="10"
         fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
         textAnchor="middle"

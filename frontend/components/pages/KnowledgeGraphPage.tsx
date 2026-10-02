@@ -1,4 +1,4 @@
-// components/pages/KnowledgeGraphPage.tsx
+﻿// components/pages/KnowledgeGraphPage.tsx
 // The plant knowledge graph, reusing the existing force-graph component.
 //
 // What this view is for: showing that the document set is a *structure*, not a
@@ -104,11 +104,16 @@ function PlantGraph({
     return map;
   }, [center, placed]);
 
+  // Fills are tints of the same accent the stroke uses, taken from the theme
+  // variables at a low alpha. The previous fixed hexes were dark navy, brown,
+  // olive and maroon: legible on the dark canvas, and on a light theme they
+  // would have stayed dark while everything around them went pale, so the nodes
+  // read as holes instead of as nodes.
   const NODE_STYLE: Record<NodeTypeFilter, { fill: string; stroke: string; r: number }> = {
-    equipment: { fill: "#1e3a5f", stroke: "#3b82f6", r: 13 },
-    interlock: { fill: "#3f2d1e", stroke: "#f59e0b", r: 8 },
-    document: { fill: "#1a2a1e", stroke: "#22c55e", r: 6 },
-    breakdown: { fill: "#3f1e1e", stroke: "#ef4444", r: 7 },
+    equipment: { fill: "rgb(var(--accent-blue) / 0.16)", stroke: "#3b82f6", r: 13 },
+    interlock: { fill: "rgb(var(--accent-amber) / 0.16)", stroke: "#f59e0b", r: 8 },
+    document: { fill: "rgb(var(--accent-green) / 0.16)", stroke: "#22c55e", r: 6 },
+    breakdown: { fill: "rgb(var(--accent-red) / 0.16)", stroke: "#ef4444", r: 7 },
   };
 
   const activeId = hover ?? selected;
@@ -133,7 +138,7 @@ function PlantGraph({
               y1={a.y}
               x2={b.x}
               y2={b.y}
-              stroke={lit ? "#60a5fa" : "#243040"}
+              stroke={lit ? "rgb(var(--accent-blue))" : "rgb(var(--line-2))"}
               strokeWidth={lit ? 1.6 : 1}
               opacity={lit ? 0.95 : 0.7}
             />
@@ -179,7 +184,7 @@ function PlantGraph({
             className="fill-slate-500"
             style={{ fontSize: 8 }}
           >
-            {center.doc_count ?? 0} docs · {center.breakdown_count ?? 0} breakdowns
+            {center.doc_count ?? 0} docs Â· {center.breakdown_count ?? 0} breakdowns
           </text>
         </g>
       )}
@@ -209,7 +214,7 @@ function PlantGraph({
               className={lit ? "fill-slate-200" : "fill-slate-500"}
               style={{ fontSize: 7.5, fontFamily: "monospace" }}
             >
-              {node.label.length > 22 ? `${node.label.slice(0, 21)}…` : node.label}
+              {node.label.length > 22 ? `${node.label.slice(0, 21)}â€¦` : node.label}
             </text>
           </g>
         );
@@ -303,7 +308,7 @@ export default function KnowledgeGraphPage() {
               </span>
             </div>
 
-            <div className="rounded-lg border border-slate-800/60 bg-[#0a0e14] p-2">
+            <div className="rounded-lg border border-slate-800/60 bg-inset p-2">
               {shown.nodes.length === 0 ? (
                 <div className="p-10 text-center text-[11px] text-slate-500">
                   Every node type is filtered out, or the selected unit has no
@@ -322,7 +327,7 @@ export default function KnowledgeGraphPage() {
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-lg border border-slate-800/60 bg-[#0f141b] p-4">
+            <div className="rounded-lg border border-slate-800/60 bg-panel-2 p-4">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
                 Focus a unit
               </div>
@@ -361,7 +366,7 @@ export default function KnowledgeGraphPage() {
             {/* Relation counts, measured. This is the architecture claim in
                 numbers: 8 datasheets, 8 GA drawings, 8 interlock diagrams,
                 8 plot plans, 55 one-point lessons, 31 breakdown links. */}
-            <div className="rounded-lg border border-slate-800/60 bg-[#0f141b] p-4">
+            <div className="rounded-lg border border-slate-800/60 bg-panel-2 p-4">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
                 Relations
               </div>
@@ -388,7 +393,7 @@ export default function KnowledgeGraphPage() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-800/60 bg-[#0f141b] p-4">
+            <div className="rounded-lg border border-slate-800/60 bg-panel-2 p-4">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
                 Read this as
               </div>

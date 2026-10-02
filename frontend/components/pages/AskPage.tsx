@@ -1,4 +1,4 @@
-// components/pages/AskPage.tsx
+﻿// components/pages/AskPage.tsx
 // The grounded question page. This is the page the whole product is judged on,
 // because it is the only place where a number reaches an engineer.
 //
@@ -105,7 +105,7 @@ function AnswerBody({ result }: { result: PlantAnswer }) {
 
   return (
     <>
-      <div className="rounded-lg border border-slate-800/60 bg-[#0d1117] p-4">
+      <div className="rounded-lg border border-slate-800/60 bg-panel p-4">
         {/* The answer text is the only prose the system generates, and it is
             assembled from document text plus measured values, never invented. */}
         <div className="text-sm text-slate-100 leading-relaxed whitespace-pre-line break-words">
@@ -196,7 +196,7 @@ export default function AskPage() {
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="e.g. What is the trip setpoint for VSHH-1201?"
             aria-label="Question"
-            className="flex-1 px-3.5 py-2.5 rounded-lg bg-[#0d1117] border border-slate-700 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-colors"
+            className="flex-1 px-3.5 py-2.5 rounded-lg bg-panel border border-slate-700 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-colors"
           />
           <button
             type="submit"
@@ -274,7 +274,7 @@ export default function AskPage() {
                   key={example.label}
                   onClick={() => void submit(example.question)}
                   disabled={busy}
-                  className="text-left rounded-lg border border-slate-800/60 bg-[#0f141b] px-3.5 py-3 hover:border-blue-500/40 hover:bg-[#131a24] disabled:opacity-50 transition-colors"
+                  className="text-left rounded-lg border border-slate-800/60 bg-panel-2 px-3.5 py-3 hover:border-blue-500/40 hover:bg-surface-hover disabled:opacity-50 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium text-slate-200">

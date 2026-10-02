@@ -1,4 +1,4 @@
-// components/pages/PlantSettingsPage.tsx
+﻿// components/pages/PlantSettingsPage.tsx
 // Dataset provenance, index state, and the LLM policy.
 //
 // Three jobs, and the page is arranged in that order because it is a
@@ -138,7 +138,7 @@ export default function PlantSettingsPage() {
                 <p className="text-[11px] text-amber-200 leading-relaxed">
                   {s.problem}
                 </p>
-                <pre className="text-[11px] font-mono text-slate-300 bg-[#0a0e14] border border-slate-800 rounded px-3 py-2 overflow-x-auto">
+                <pre className="text-[11px] font-mono text-slate-300 bg-inset border border-slate-800 rounded px-3 py-2 overflow-x-auto">
                   python -m plant.fetch_dataset
                 </pre>
               </div>
@@ -207,7 +207,7 @@ export default function PlantSettingsPage() {
                   <Stat label="One-point lessons" value={d.by_doc_type.opl ?? 0} />
                   <Stat
                     label="Date range"
-                    value={`${d.date_range[0]?.slice(0, 10) ?? "?"} → ${
+                    value={`${d.date_range[0]?.slice(0, 10) ?? "?"} â†’ ${
                       d.date_range[1]?.slice(0, 10) ?? "?"
                     }`}
                   />

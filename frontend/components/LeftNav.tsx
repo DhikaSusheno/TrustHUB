@@ -27,6 +27,7 @@ import { useBackendStatus, type BackendMode } from "@/hooks/useBackendStatus";
 import { usePlatformSettings } from "@/lib/usePlatformSettings";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 import LogoMark from "@/components/shared/LogoMark";
+import ThemeSwitcher from "@/components/shared/ThemeSwitcher";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import type { StringKey } from "@/lib/i18n/dictionary";
 
@@ -142,14 +143,14 @@ export default function LeftNav({ activePage, onNavigate }: Props) {
   const footer = FOOTER_STATUS[mode];
 
   return (
-    <nav aria-label="Primary" className="w-52 shrink-0 flex flex-col bg-[#0d1117] border-r border-slate-800/60 overflow-hidden">
+    <nav aria-label="Primary" className="w-52 shrink-0 flex flex-col bg-panel border-r border-slate-800/60 overflow-hidden">
       <div className="px-4 py-4 border-b border-slate-800/60 shrink-0">
-        <Link href="/landing" className="flex items-center gap-2.5 rounded-lg group" aria-label={`${platformName} — about and demo guide`}>
+        <Link href="/landing" className="flex items-center gap-2.5 rounded-lg group" aria-label={`${platformName} â€” about and demo guide`}>
           <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center shrink-0 group-hover:border-blue-400/60 transition-colors">
             <LogoMark />
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-bold text-white tracking-tight truncate">{platformName}</div>
+            <div className="text-sm font-bold text-ink tracking-tight truncate">{platformName}</div>
             <div className="text-[10px] text-slate-500 leading-tight truncate">{environment} &middot; Set 01</div>
           </div>
         </Link>
@@ -179,6 +180,7 @@ export default function LeftNav({ activePage, onNavigate }: Props) {
       <div className="px-4 py-3 border-t border-slate-800/60 space-y-1 shrink-0">
         <div className="text-xs text-slate-500 font-mono">v0.1.0 &middot; CALIBER 2026</div>
         <LanguageSwitcher />
+        <ThemeSwitcher />
         <div className="flex items-center gap-1.5" role="status">
           <span className={`w-1.5 h-1.5 rounded-full inline-block shrink-0 ${footer.dot} ${mode === "checking" ? "animate-pulse" : ""}`} />
           <span className={`text-xs truncate ${footer.text}`}>{t(FOOTER_LABEL[mode])}</span>

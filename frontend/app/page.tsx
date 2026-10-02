@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 // app/page.tsx
 // Application shell: sidebar plus one page at a time.
 //
-// FE-1 @nabilfauzandafa · FE-2 @ShannWasHere
+// FE-1 @nabilfauzandafa Â· FE-2 @ShannWasHere
 //
 // This file is deliberately thin. It owns two things and nothing else:
 //
@@ -67,7 +67,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="flex h-full overflow-hidden bg-[#080d14]">
+    <div className="flex h-full overflow-hidden bg-surface">
       <LeftNav activePage={activePage} onNavigate={setActivePage} />
 
       <main className="flex-1 min-w-0 overflow-hidden">

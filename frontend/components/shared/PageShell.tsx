@@ -36,7 +36,7 @@ export function PageShell({ title, subtitle, actions, children, className = "" }
     <div className={`flex flex-col h-full overflow-hidden ${className}`}>
       <header className="px-6 py-4 border-b border-slate-800/60 flex items-start justify-between gap-4 shrink-0">
         <div className="min-w-0">
-          <h1 className="text-lg font-semibold text-white tracking-tight">{resolve(title, t)}</h1>
+          <h1 className="text-lg font-semibold text-ink tracking-tight">{resolve(title, t)}</h1>
           {subtitle && <p className="mt-0.5 text-xs text-slate-500">{resolve(subtitle, t)}</p>}
         </div>
         {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
@@ -73,7 +73,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
       >
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${needsIndex ? "bg-amber-400" : "bg-red-400"}`} />
-          <h2 className="text-sm font-semibold text-white">
+          <h2 className="text-sm font-semibold text-ink">
             {needsIndex ? t("state.no_index") : t("state.load_failed")}
           </h2>
         </div>
@@ -113,7 +113,7 @@ interface PanelProps {
 
 export function Panel({ title, hint, actions, children, className = "", flush = false }: PanelProps) {
   return (
-    <section className={`rounded-lg border border-slate-800/60 bg-[#0f141b] ${className}`}>
+    <section className={`rounded-lg border border-slate-800/60 bg-panel-2 ${className}`}>
       {title && (
         <div className="px-4 py-3 border-b border-slate-800/60 flex items-center justify-between gap-3">
           <div className="min-w-0 flex items-baseline gap-3">
@@ -143,13 +143,13 @@ export function Stat({
   tone?: "default" | "good" | "warn" | "bad";
 }) {
   const toneClass = {
-    default: "text-white",
+    default: "text-ink",
     good: "text-green-300",
     warn: "text-amber-300",
     bad: "text-red-300",
   }[tone];
   return (
-    <div className="rounded-lg border border-slate-800/60 bg-[#0f141b] px-4 py-3">
+    <div className="rounded-lg border border-slate-800/60 bg-panel-2 px-4 py-3">
       <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
       <div className={`mt-1 text-xl font-semibold tabular-nums ${toneClass}`}>{value}</div>
       {sub && <div className="mt-0.5 text-[11px] text-slate-600">{sub}</div>}

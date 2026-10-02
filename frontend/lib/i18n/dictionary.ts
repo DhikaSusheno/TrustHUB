@@ -43,7 +43,7 @@ export const STRINGS = {
   "nav.graph": { en: "Graph", id: "Graf" },
   "nav.verification": { en: "Verification", id: "Pemeriksaan" },
   "nav.maintenance": { en: "Maintenance", id: "Pemeliharaan" },
-  "nav.overview": { en: "Overview", id: "Ikhtisar" },
+  "nav.overview": { en: "Overview", id: "Ringkasan" },
   "nav.audit": { en: "Audit", id: "Audit" },
   "nav.dataset": { en: "Dataset", id: "Data" },
 
@@ -109,6 +109,11 @@ export const STRINGS = {
   // Language control.
   "lang.label": { en: "Language", id: "Bahasa" },
   "lang.switch_to": { en: "Switch interface language", id: "Ganti bahasa antarmuka" },
+
+  // LeftNav footer: colour theme.
+  "theme.label": { en: "Colour theme", id: "Tema warna" },
+  "theme.dark": { en: "Dark", id: "Gelap" },
+  "theme.light": { en: "Light", id: "Terang" },
 } satisfies Record<string, Entry>;
 
 export type StringKey = keyof typeof STRINGS;

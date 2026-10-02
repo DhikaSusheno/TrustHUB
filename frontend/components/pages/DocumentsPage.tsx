@@ -1,4 +1,4 @@
-// components/pages/DocumentsPage.tsx
+﻿// components/pages/DocumentsPage.tsx
 // The document register, with the approval and revision evidence visible.
 //
 // The reason this page exists as a first-class view rather than a filter on
@@ -65,7 +65,7 @@ function DocumentRow({ doc }: { doc: PlantDocument }) {
             <div className="break-words text-slate-200">
               {hasHistory && (
                 <span className="text-slate-600 font-mono mr-1">
-                  {open ? "▾" : "▸"}
+                  {open ? "â–¾" : "â–¸"}
                 </span>
               )}
               {doc.filename}
@@ -95,7 +95,7 @@ function DocumentRow({ doc }: { doc: PlantDocument }) {
         </td>
       </tr>
       {open && hasHistory && (
-        <tr className="bg-[#0a0e14]">
+        <tr className="bg-inset">
           <td colSpan={7} className="px-4 py-2.5">
             <div className="text-[10px] uppercase tracking-wide text-slate-600 mb-1">
               Revision history &mdash; read from {evidenceSource(doc)}
@@ -140,7 +140,7 @@ export default function DocumentsPage() {
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const selectClass =
-    "px-2 py-1 rounded bg-[#0d1117] border border-slate-700 text-[11px] text-slate-300 focus:outline-none focus:border-blue-500/60";
+    "px-2 py-1 rounded bg-panel border border-slate-700 text-[11px] text-slate-300 focus:outline-none focus:border-blue-500/60";
 
   const summary = useMemo(() => {
     if (!documents.data) return null;

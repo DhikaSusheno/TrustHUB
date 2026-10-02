@@ -1,4 +1,4 @@
-// components/pages/AuditPage.tsx
+﻿// components/pages/AuditPage.tsx
 // The answer audit trail, and why the trust score is what it is.
 //
 // Two things share this page because they answer the same question from
@@ -54,7 +54,7 @@ function BadgeCounts({ log }: { log: AuditLogShape }) {
               <div className={`h-full ${tone}`} style={{ width: `${pct}%` }} />
             </div>
             <span className="font-mono text-slate-500 w-12 text-right">
-              {count} · {pct}%
+              {count} Â· {pct}%
             </span>
           </div>
         );
@@ -180,7 +180,7 @@ export default function AuditPage() {
                   tone={log.data.refused > 0 ? "good" : "default"}
                   sub="no trustworthy source"
                 />
-                <div className="rounded-lg border border-slate-800/60 bg-[#0d1117] px-4 py-3">
+                <div className="rounded-lg border border-slate-800/60 bg-panel px-4 py-3">
                   <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
                     Badges issued
                   </div>
@@ -239,7 +239,7 @@ export default function AuditPage() {
                               </td>
                             </tr>
                             {open && (
-                              <tr className="bg-[#0a0e14]">
+                              <tr className="bg-inset">
                                 <td colSpan={5} className="px-3 py-2">
                                   {sources.length === 0 ? (
                                     <p className="text-[11px] text-slate-500">

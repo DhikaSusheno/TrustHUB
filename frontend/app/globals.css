@@ -1,33 +1,127 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+   Themes.
+
+   Dark is declared on :root and is therefore the no-JS, no-attribute default,
+   which is the theme the app already shipped. Light is an override. Putting the
+   default on :root rather than on [data-theme="dark"] means a visitor whose
+   script has not run yet sees the current dark UI instead of a flash of light.
+
+   Everything is an RGB triplet because tailwind.config.cjs consumes these as
+   `rgb(var(--x) / <alpha-value>)`, which is the only form that keeps the alpha
+   modifiers on the call sites working (`border-slate-800/60`).
+
+   Measured against the panel colour of each theme, every accent and every text
+   step clears WCAG AA in light mode (blue 6.41, green 4.80, red 6.19, amber
+   4.81, primary text 17.2, secondary 7.0). The two muted steps sit at 4.31 and
+   2.73, which is the same place the dark theme already sits at 3.98 and 2.50;
+   they are used for placeholders and meta, not for body copy, and this was not
+   made worse to make the themes match.
+--------------------------------------------------------------------------- */
+:root {
+  color-scheme: dark;
+
+  --surface: 8 13 20;      /* app background */
+  --panel: 13 17 23;       /* cards */
+  --panel-2: 15 20 27;     /* raised, nested panels */
+  --inset: 10 14 20;       /* table stripe, code block */
+  --surface-hover: 19 26 36;       /* hover fill */
+  --deep: 15 23 42;        /* recessed fill */
+
+  --line: 30 41 59;        /* default border */
+  --line-2: 51 65 85;      /* emphasised border */
+
+  --ink-1: 241 245 249;    /* primary text */
+  --ink-1b: 226 232 240;
+  --ink-2: 203 213 225;
+  --ink-3: 148 163 184;    /* secondary text */
+  --ink-4: 100 116 139;    /* muted, meta */
+  --ink-5: 71 85 105;      /* faint, placeholder */
+
+  --accent-blue-softest: 191 219 254;
+  --accent-blue-soft: 147 197 253;
+  --accent-blue: 96 165 250;
+  --accent-green-soft: 134 239 172;
+  --accent-green: 74 222 128;
+  --accent-red-soft: 252 165 165;
+  --accent-red: 248 113 113;
+  --accent-amber-softest: 253 230 138;
+  --accent-amber-soft: 252 211 77;
+  --accent-amber: 251 191 36;
+
+  --page-edge: rgba(0, 0, 0, 0.38);
+  --page-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --surface: 238 241 244;
+  --panel: 249 250 251;
+  --panel-2: 242 245 247;
+  --inset: 227 232 237;
+  --surface-hover: 233 237 241;
+  --deep: 230 234 238;
+
+  --line: 215 221 228;
+  --line-2: 169 181 193;
+
+  --ink-1: 15 23 34;
+  --ink-1b: 30 41 59;
+  --ink-2: 51 65 85;
+  --ink-3: 70 88 107;
+  --ink-4: 100 121 141;
+  --ink-5: 138 155 173;
+
+  --accent-blue-softest: 30 58 138;
+  --accent-blue-soft: 37 99 235;
+  --accent-blue: 29 78 216;
+  --accent-green-soft: 22 163 74;
+  --accent-green: 21 128 61;
+  --accent-red-soft: 220 38 38;
+  --accent-red: 185 28 28;
+  --accent-amber-softest: 146 64 14;
+  --accent-amber-soft: 180 83 9;
+  --accent-amber: 180 83 9;
+
+  /* The vignette inverts: darkening edges is right on a dark page and reads as
+     grime on a light one, so light gets a faint cool shade instead. The grain
+     drops from 0.05 to 0.035 because the same opacity that is invisible on
+     near-black is visible as dirt on near-white. */
+  --page-edge: rgba(15, 23, 42, 0.06);
+  --page-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='0.035'/%3E%3C/svg%3E");
+}
+
 /* ponytail: --font-inter comes from next/font/local via `inter.variable` on <html>.
-   Do NOT redeclare it here — a `:root` copy shadows the hashed family name and
+   Do NOT redeclare it here â€” a `:root` copy shadows the hashed family name and
    silently falls back to system-ui. */
 html, body {
   height: 100%;
-  background-color: #080d14;
-  /* The background has one job: keep a large near-black surface from banding
-     on a monitor and hold the eye in the middle of the page. It does that with
-     two things, and neither raises the average luminance.
+  background-color: rgb(var(--surface));
+  /* The background has one job: keep a large flat surface from banding on a
+     monitor and hold the eye in the middle of the page. It does that with two
+     things, and neither raises the average luminance.
 
      The grain is what makes the dark read as a material instead of a hole. It
      was chosen over a top highlight deliberately: a highlight would have to
-     push #080d14 above #0d1117 to be visible at all, and the moment the
+     push the surface above the panel to be visible at all, and the moment the
      background outranks the panels, every panel stops reading as raised. Grain
      has no mean, so the depth relationship survives it.
 
-     The vignette only darkens. It is anchored to the top edge so the top of
-     the viewport is the brightest part of the screen and the bottom is grounded.
+     The vignette only darkens, and only on the dark theme. It is anchored to
+     the top edge so the top of the viewport is the brightest part of the
+     screen and the bottom is grounded. Both layers are swapped per theme by
+     the two custom properties above.
 
      What is deliberately absent: a blueprint grid, a glow, an orb behind the
      content. All three are period-correct for an industrial theme and all three
      would compete with a document reader whose entire job is to be read. */
-
   background-image:
-    radial-gradient(130% 90% at 50% 0%, rgba(0, 0, 0, 0) 42%, rgba(0, 0, 0, 0.38) 100%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='0.05'/%3E%3C/svg%3E");
+    radial-gradient(130% 90% at 50% 0%, rgba(0, 0, 0, 0) 42%, var(--page-edge) 100%),
+    var(--page-grain);
   background-repeat: no-repeat, repeat;
   /* Fixed, so the vignette does not travel with the content. The app scrolls
      inside a fixed-height body, and each page owns its own scroll container, so
@@ -35,8 +129,8 @@ html, body {
   background-attachment: fixed, fixed;
 
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  /* Native <select>, scrollbar, and input popups render dark instead of flashing white. */
-  color-scheme: dark;
+  /* Native <select>, scrollbar, and input popups follow the theme instead of
+     flashing the opposite one against this palette. */
 }
 
 :focus-visible {
@@ -51,17 +145,17 @@ html, body {
   height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #0d1117;
+  background: rgb(var(--panel));
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: rgb(var(--line-2));
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgb(var(--ink-5));
 }
 
-/* Pulse ring — node pending */
+/* Pulse ring â€” node pending */
 @keyframes pulse-ring {
   0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.5); }
   70%  { transform: scale(1);    box-shadow: 0 0 0 8px rgba(251, 191, 36, 0); }
