@@ -19,28 +19,47 @@ submission itself.
 ## Regenerate
 
 ```bash
-cd frontend
-npm install --no-save puppeteer-core     # not in package.json; see below
-node ../docs/deck/build/render.mjs
+cd docs/deck/build
+npm ci
+npm run render
+npm run audit
 ```
 
 `render.mjs` writes the PDF and one PNG per slide into `../shots/`. It also runs
 an overflow audit and fails loudly if any element leaves its slide box.
 
-```bash
-node ../docs/deck/build/audit.mjs
-```
-
 `audit.mjs` reports per-slide content height against the footer position, so a
 slide that is about to collide is visible without opening the images.
 
-## Why puppeteer-core is not a dependency
+## Where to install, and why it is not a frontend dependency
 
-The deck is a build artifact, not part of the product. Adding a headless-browser
-dependency to `frontend/package.json` would make every `npm ci` on the judging
-panel's machine download Chromium, for a script they will never run. It is
-installed with `--no-save` instead, which leaves `package.json` and the lockfile
-untouched and keeps CI unaffected.
+`npm ci` belongs in **this** directory, not in `frontend/`. Node resolves the
+`puppeteer-core` import by walking up from the importing file, so it looks in
+`docs/deck/build/node_modules` first. An install under `frontend/` is never on
+that path, so the scripts cannot see it no matter which directory you run them
+from.
+
+This directory keeps its own `package.json` and lockfile. `puppeteer-core` is a
+declared devDependency *of the deck build*, and `puppeteer-core` never downloads
+a Chromium of its own. What it must not become is a dependency of
+`frontend/package.json`: that would make every `npm ci` on the judging panel's
+machine resolve a headless browser for a script the product never runs. Keeping
+the two packages apart is what keeps CI clean.
+
+## Paths are relative, Chrome is discovered
+
+Both scripts resolve `deck.html`, the PDF, and `shots/` from their own location,
+so a checkout works at any path.
+
+Chrome is located by probing the usual install locations. Override it when it
+lives somewhere else:
+
+```bash
+CHROME_PATH=/usr/bin/chromium npm run render
+```
+
+Without a usable browser both scripts exit 2 and say which variable to set,
+instead of failing on a missing file three lines later.
 
 ## Layout is verified mechanically, not by eye
 

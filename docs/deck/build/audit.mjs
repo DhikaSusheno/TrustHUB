@@ -1,11 +1,33 @@
 // Layout audit that does not rely on looking at the images.
 // Checks: content/footer overlap, vertical collisions, bottom clearance,
 // and reports the tightest slides so they can be fixed by hand.
+// Run `npm ci` in this directory first; node resolves puppeteer-core from the
+// node_modules next to this file, not from your shell's working directory.
 import puppeteer from "puppeteer-core";
 import path from "node:path";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 
-const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-const ROOT = "C:\\Users\\dhika\\TrustHUB\\docs\\deck";
+// Resolved from this script's own location so a checkout in any directory works.
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+const CHROME_CANDIDATES = [
+  process.env.CHROME_PATH,
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium",
+].filter(Boolean);
+const CHROME = CHROME_CANDIDATES.find((p) => fs.existsSync(p));
+if (!CHROME) {
+  console.error(
+    "no Chrome/Chromium found. Set CHROME_PATH to the executable, e.g.\n" +
+      "  CHROME_PATH=/usr/bin/chromium npm run audit"
+  );
+  process.exit(2);
+}
+
 const html = "file:///" + path.join(ROOT, "deck.html").replace(/\\/g, "/");
 
 const browser = await puppeteer.launch({
