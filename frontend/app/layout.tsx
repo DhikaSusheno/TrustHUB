@@ -36,7 +36,21 @@ export default function RootLayout({
     // The old `dark` class is gone. Nothing in the app used a `dark:` variant,
     // because every colour was a fixed hex or a Tailwind shade that now resolves
     // through a theme variable. What decides the palette is data-theme.
-    <html lang="en">
+    //
+    // suppressHydrationWarning is required, not cosmetic. The bootstrap script
+    // below sets data-theme on this element before React hydrates, so the DOM
+    // this element is in has an attribute the server never rendered. React
+    // compares the two, finds them different, and reports that it will not patch
+    // it up. Without this flag every page logs a hydration error naming <html>.
+    //
+    // The flag goes on <html> and nowhere else: it suppresses attributes and
+    // text for that one element only, and the mismatch is on that element only.
+    //
+    // data-theme is deliberately not written here as a JSX attribute. If React
+    // owned it, it would hold the value it rendered and could write the server
+    // default back over the stored choice. The script and ThemeProvider own the
+    // attribute; React is only told not to complain about it.
+    <html lang="en" suppressHydrationWarning>
       {/* No bg-* here on purpose. The surface colour, the grain and the
           vignette are owned by globals.css; a second declaration of the base
           colour in the tree is one more place to forget when it changes. */}
