@@ -1,0 +1,18 @@
+# Dependency untuk menjalankan backend/tests.
+#
+# Dipisah dari requirements.txt dengan alasan yang sama seperti
+# security/requirements-test.txt: requirements.txt berisi dependency runtime
+# (dipakai uvicorn di produksi), sedangkan ini hanya untuk pytest. Mencampur
+# dua-duanya membuat image produksi ikut membawa pytest.
+#
+# pytest-asyncio WAJIB ada di sini, bukan hanya di
+# security/requirements-test.txt. backend/tests/test_model_discovery.py memakai
+# @pytest.mark.asyncio pada 3 test, jadi backend/test tidak bisa jalan tanpa
+# plugin itu. Sebelumnya backend tidak mendeklarasikannya sendiri - CI kebetulan
+# hijau karena CI memasang security/requirements-test.txt, jadi siapa pun yang
+# hanya `pip install -r backend/requirements.txt` berakhir dengan 3 failure
+# "async def functions are not natively supported" dan 0 test benar-benar
+# dijalankan. Versi di-pin sama dengan yang security/ pakai supaya dua suite
+# tidak bisa berjalan dengan versi pytest yang berbeda.
+pytest==8.2.2
+pytest-asyncio==0.23.7
