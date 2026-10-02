@@ -179,8 +179,8 @@ export default function AskPage() {
 
   return (
     <PageShell
-      title="Ask the Knowledge Hub"
-      subtitle="Every answer carries a trust badge, the documents behind it, and the reason for its score. Questions with no support are refused."
+      title="page.ask.title"
+      subtitle="page.ask.subtitle"
     >
       <div className="p-6 max-w-5xl">
         {/* Input */}

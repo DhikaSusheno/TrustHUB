@@ -270,8 +270,8 @@ export default function KnowledgeGraphPage() {
 
   return (
     <PageShell
-      title="Knowledge Graph"
-      subtitle="How the documents, interlock logic, and failure history connect. Every unit is linked to the documents that govern it."
+      title="page.graph.title"
+      subtitle="page.graph.subtitle"
     >
       {graph.loading && <Loading label="Building graph" />}
       {graph.error !== null && <ErrorState error={graph.error} onRetry={graph.reload} />}

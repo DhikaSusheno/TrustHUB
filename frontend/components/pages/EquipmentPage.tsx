@@ -282,8 +282,8 @@ export default function EquipmentPage() {
 
   return (
     <PageShell
-      title="Equipment"
-      subtitle="Eight units in Set 01, each with interlock logic, a P&ID reference, and maintenance history."
+      title="page.equipment.title"
+      subtitle="page.equipment.subtitle"
     >
       {equipment.loading && <Loading label="Loading equipment" />}
       {equipment.error !== null && <ErrorState error={equipment.error} onRetry={equipment.reload} />}

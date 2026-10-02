@@ -80,8 +80,8 @@ export default function PlantSettingsPage() {
 
   return (
     <PageShell
-      title="Dataset & Policy"
-      subtitle="Provenance, index contents, and what this system will and will not do with the data."
+      title="page.dataset.title"
+      subtitle="page.dataset.subtitle"
     >
       {status.loading && <Loading label="Reading configuration" />}
       {status.error !== null && <ErrorState error={status.error} onRetry={status.reload} />}

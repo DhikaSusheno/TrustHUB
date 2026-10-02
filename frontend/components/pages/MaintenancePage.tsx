@@ -134,8 +134,8 @@ export default function MaintenancePage() {
 
   return (
     <PageShell
-      title="Maintenance History"
-      subtitle="211 work orders and 31 breakdowns, 2024-06-04 to 2025-12-06. Costs are the workbook's own dummy rupiah values."
+      title="page.maintenance.title"
+      subtitle="page.maintenance.subtitle"
       actions={
         <select
           value={mode}

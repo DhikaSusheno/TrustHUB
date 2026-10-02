@@ -29,8 +29,8 @@ export default function OverviewPage() {
 
   return (
     <PageShell
-      title="Manufacturing Knowledge Hub"
-      subtitle="LLDPE unit, Set 01. Documents, interlock logic, and maintenance history in one index."
+      title="page.overview.title"
+      subtitle="page.overview.subtitle"
     >
       {status.loading && <Loading label="Reading plant index" />}
       {status.error !== null && <ErrorState error={status.error} onRetry={status.reload} />}

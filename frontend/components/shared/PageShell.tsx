@@ -11,10 +11,19 @@
 
 import type { ReactNode } from "react";
 import { PlantApiError } from "@/lib/plantApi";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { STRINGS, type StringKey } from "@/lib/i18n/dictionary";
+
+/** A dictionary key for static chrome, or a literal for computed text. */
+type Chrome = string | StringKey;
+
+function resolve(value: Chrome, t: (key: StringKey) => string): string {
+  return typeof value === "string" && value in STRINGS ? t(value as StringKey) : value;
+}
 
 interface ShellProps {
-  title: string;
-  subtitle?: string;
+  title: Chrome;
+  subtitle?: Chrome;
   /** Rendered on the right of the title row: filters, buttons, totals. */
   actions?: ReactNode;
   children: ReactNode;
@@ -22,12 +31,13 @@ interface ShellProps {
 }
 
 export function PageShell({ title, subtitle, actions, children, className = "" }: ShellProps) {
+  const { t } = useI18n();
   return (
     <div className={`flex flex-col h-full overflow-hidden ${className}`}>
       <header className="px-6 py-4 border-b border-slate-800/60 flex items-start justify-between gap-4 shrink-0">
         <div className="min-w-0">
-          <h1 className="text-lg font-semibold text-white tracking-tight">{title}</h1>
-          {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
+          <h1 className="text-lg font-semibold text-white tracking-tight">{resolve(title, t)}</h1>
+          {subtitle && <p className="mt-0.5 text-xs text-slate-500">{resolve(subtitle, t)}</p>}
         </div>
         {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
       </header>
@@ -36,18 +46,20 @@ export function PageShell({ title, subtitle, actions, children, className = "" }
   );
 }
 
-export function Loading({ label = "Loading" }: { label?: string }) {
+export function Loading({ label }: { label?: string }) {
+  const { t } = useI18n();
   return (
     <div className="flex items-center justify-center h-64" role="status" aria-live="polite">
       <div className="flex items-center gap-3 text-sm text-slate-500">
         <span className="w-3 h-3 rounded-full border-2 border-slate-600 border-t-blue-400 animate-spin" />
-        {label}&hellip;
+        {label ?? t("state.loading")}&hellip;
       </div>
     </div>
   );
 }
 
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+  const { t } = useI18n();
   const isApi = error instanceof PlantApiError;
   const needsIndex = isApi && error.needsIndex;
   const detail = isApi ? (error as PlantApiError).detail : String(error);
@@ -62,7 +74,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${needsIndex ? "bg-amber-400" : "bg-red-400"}`} />
           <h2 className="text-sm font-semibold text-white">
-            {needsIndex ? "Plant index not built" : "Could not load this view"}
+            {needsIndex ? t("state.no_index") : t("state.load_failed")}
           </h2>
         </div>
         <p className="mt-2 text-sm text-slate-300 leading-relaxed whitespace-pre-line">{detail}</p>
@@ -71,7 +83,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
             onClick={onRetry}
             className="mt-4 text-xs px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
           >
-            Try again
+            {t("state.try_again")}
           </button>
         )}
       </div>

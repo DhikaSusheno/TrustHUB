@@ -74,8 +74,8 @@ export default function AuditPage() {
 
   return (
     <PageShell
-      title="Audit & Trust"
-      subtitle="How the score is computed, and every question this instance has been asked."
+      title="page.audit.title"
+      subtitle="page.audit.subtitle"
     >
       <div className="p-6 space-y-5">
         {/* The weight table, printed in full. A reader should be able to

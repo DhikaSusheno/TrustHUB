@@ -31,8 +31,8 @@ export default function VerificationPage() {
 
   return (
     <PageShell
-      title="Verification"
-      subtitle="Do the documents agree with each other? Extraction inventory, cross-confirmed values, and every contradiction found."
+      title="page.verification.title"
+      subtitle="page.verification.subtitle"
     >
       {verification.loading && <Loading label="Comparing documents" />}
       {verification.error !== null && <ErrorState error={verification.error} onRetry={verification.reload} />}

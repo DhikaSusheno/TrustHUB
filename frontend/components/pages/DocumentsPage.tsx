@@ -155,8 +155,8 @@ export default function DocumentsPage() {
 
   return (
     <PageShell
-      title="Documents"
-      subtitle="Every indexed file with its document number, revision, and the approval marker that was actually found in it."
+      title="page.documents.title"
+      subtitle="page.documents.subtitle"
       actions={
         <>
           <select
