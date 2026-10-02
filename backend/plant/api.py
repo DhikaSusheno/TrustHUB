@@ -123,6 +123,38 @@ def _open_index() -> sqlite3.Connection:
     return conn
 
 
+_OFFICIAL_NOTE = (
+    "All documents come from the official CALIBER-provided dataset, "
+    "labelled by its authors as sample data."
+)
+_SYNTHETIC_NOTE = (
+    "SYNTHETIC DEMO DATA, built from the test fixture in "
+    "backend/tests/plant/conftest.py. This is NOT the official CALIBER "
+    "dataset. Its equipment names, documents, and numbers are examples, and "
+    "nothing here may be cited as dataset-derived."
+)
+
+
+def _provenance_note() -> str:
+    """Catat provenance index, jangan pernah klaim CALIBER untuk data lain.
+
+    Tabel data_provenance hanya diisi kalau index dibangun di luar pipeline
+    resmi. Kalau tabelnya tidak ada, indexnya dianggap berasal dari
+    fetch_dataset (pipeline yang memang memakai datasetirat resmi).
+    """
+    try:
+        conn = _open_index()
+    except Exception:
+        return _OFFICIAL_NOTE
+    try:
+        row = conn.execute("SELECT origin FROM data_provenance LIMIT 1").fetchone()
+    except sqlite3.Error:
+        return _OFFICIAL_NOTE
+    finally:
+        conn.close()
+    return _SYNTHETIC_NOTE if row and row[0] == "synthetic" else _OFFICIAL_NOTE
+
+
 @router.get("/status")
 def plant_status() -> dict[str, Any]:
     """Kesiapan sistem: dataset ditemukan, indeks dibangun, mode LLM aktif.
@@ -158,10 +190,7 @@ def plant_status() -> dict[str, Any]:
                 "leaves this machine unless an LLM mode is explicitly enabled."
             ),
         },
-        "dataset_licence_note": (
-            "All documents come from the official CALIBER-provided dataset, "
-            "labelled by its authors as sample data."
-        ),
+        "dataset_licence_note": _provenance_note(),
     }
 
     try:
