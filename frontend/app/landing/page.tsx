@@ -10,6 +10,7 @@
 
 import Link from "next/link";
 import PetroProcessMotif from "@/components/landing/PetroProcessMotif";
+import LogoMark from "@/components/shared/LogoMark";
 
 // --- What the dataset actually contains -------------------------------------
 // From /api/plant/status and /api/plant/verification with the official
@@ -155,22 +156,9 @@ const STACK = [
   "openpyxl",
 ];
 
-function LogoMark() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="w-full h-full" fill="none" stroke="#3b82f6" strokeWidth={1.6} strokeLinecap="round">
-      <path d="M12 12L6 6.5M12 12l6-5.5M12 12l-5.5 6M12 12l5.5 6" opacity={0.55} />
-      <circle cx="12" cy="12" r="3.1" fill="#3b82f6" stroke="none" />
-      <circle cx="6" cy="6.5" r="1.9" />
-      <circle cx="18" cy="6.5" r="1.9" />
-      <circle cx="6.5" cy="18" r="1.9" />
-      <circle cx="17.5" cy="18" r="1.9" />
-    </svg>
-  );
-}
-
 export default function LandingPage() {
   return (
-    <div className="h-full overflow-y-auto bg-[#080d14]">
+    <div className="h-full overflow-y-auto">
       {/* ---------- Nav ---------- */}
       <header className="sticky top-0 z-10 border-b border-slate-800/60 bg-[#080d14]/90 backdrop-blur">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-4">

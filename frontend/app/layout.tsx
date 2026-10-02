@@ -22,7 +22,10 @@ export default function RootLayout({
     // mount. Rendering the stored locale here would make the server and the
     // client disagree on the first paint.
     <html lang="en" className="dark">
-      <body className={`${inter.variable} h-screen overflow-hidden bg-[#080d14] text-slate-100 antialiased`}>
+      {/* No bg-* here on purpose. The surface colour, the grain and the
+          vignette are owned by globals.css; a second declaration of the base
+          colour in the tree is one more place to forget when it changes. */}
+      <body className={`${inter.variable} h-screen overflow-hidden text-slate-100 antialiased`}>
         {/* Banner sits in flow, not fixed, so it can never cover the page
             header underneath. Children get the remaining height. */}
         <div className="flex h-full flex-col">

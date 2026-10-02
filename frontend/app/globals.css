@@ -8,6 +8,32 @@
 html, body {
   height: 100%;
   background-color: #080d14;
+  /* The background has one job: keep a large near-black surface from banding
+     on a monitor and hold the eye in the middle of the page. It does that with
+     two things, and neither raises the average luminance.
+
+     The grain is what makes the dark read as a material instead of a hole. It
+     was chosen over a top highlight deliberately: a highlight would have to
+     push #080d14 above #0d1117 to be visible at all, and the moment the
+     background outranks the panels, every panel stops reading as raised. Grain
+     has no mean, so the depth relationship survives it.
+
+     The vignette only darkens. It is anchored to the top edge so the top of
+     the viewport is the brightest part of the screen and the bottom is grounded.
+
+     What is deliberately absent: a blueprint grid, a glow, an orb behind the
+     content. All three are period-correct for an industrial theme and all three
+     would compete with a document reader whose entire job is to be read. */
+
+  background-image:
+    radial-gradient(130% 90% at 50% 0%, rgba(0, 0, 0, 0) 42%, rgba(0, 0, 0, 0.38) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='0.05'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, repeat;
+  /* Fixed, so the vignette does not travel with the content. The app scrolls
+     inside a fixed-height body, and each page owns its own scroll container, so
+     this is what makes the grain stationary instead of sliding under the text. */
+  background-attachment: fixed, fixed;
+
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   /* Native <select>, scrollbar, and input popups render dark instead of flashing white. */
   color-scheme: dark;

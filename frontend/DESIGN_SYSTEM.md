@@ -28,6 +28,45 @@
 > **Canvas graph wajib `#080d14`.** Dulu `#0f172a` (slate-900) —creates a seam
 > karena `#0d1117` panel di atasnya. Sama dengan `bg-app`.
 
+### Permukaan background
+
+`#080d14` adalah warna dasar, bukan warnanya yang dilihat user. Di atasnya
+`globals.css` menambah dua hal, dan tidak ada yang lain:
+
+| Lapisan | Nilai | Fungsi |
+|---|---|---|
+| Grain | `feTurbulence`, `opacity 0.05`, tile 160px | Menghentikan bidang near-black yang luas agar tidak banding di monitor |
+| Vignette | `radial-gradient(130% 90% at 50% 0%)`, hitam `0 → 0.38` | Menahan mata di tengah halaman, meng-ground bagian bawah |
+
+Keduanya sengaja **tidak menaikkan luminance rata-rata**. Kalau background
+dibuat lebih terang dari `#0d1117`, panel berhenti terbaca sebagai lapisan yang
+melayang di atas. Grain dipilih justru karena tidak punya mean, jadi hubungan
+kedalaman itu tetap utuh.
+
+`background-attachment: fixed` dipakai karena app scroll di dalam container
+yang tingginya tetap, sehingga grain tidak ikut bergerak di bawah teks.
+
+> **Jangan** menambahkan grid blueprint, glow, atau orb di belakang konten.
+> Ketiganya cocok untuk tema industri dan ketiganya akan bersaing dengan
+> pembaca dokumen yang tugasnya justru dibaca.
+
+Satu-satunya pemilik background adalah `globals.css`. Jangan menuliskannya
+lagi sebagai `bg-[#080d14]` di `layout.tsx` atau container halaman — itulah
+alasan deklarasi ganda tersebut sudah dihapus.
+
+### Logo
+
+`components/shared/LogoMark.tsx` — satu-satunya sumber. Dipakai oleh `LeftNav`
+dan header landing; `app/icon.svg` adalah gambarnya yang sama pada 32px dengan
+stroke lebih tebal agar tetap terbaca di tab browser 16px.
+
+Bentuknya heksagon dengan lubang tengah: heksagon adalah hardware di plant dan
+sekaligus "hub" pada nama TrustHUB; lubangnya adalah satu sumber yang disepakati
+dokumen lain. Dua bentuk, satu warna, tanpa gradien.
+
+> Logo ini pernah di-copy-paste ke dua file dan `icon.svg` melenceng ke perisai
+> hijau yang sekaligus mengklaim status TRUSTED. Ketiganya kini satu file.
+
 ---
 
 ## Layout Shell

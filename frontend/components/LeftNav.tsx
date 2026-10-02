@@ -26,6 +26,7 @@ import Link from "next/link";
 import { useBackendStatus, type BackendMode } from "@/hooks/useBackendStatus";
 import { usePlatformSettings } from "@/lib/usePlatformSettings";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
+import LogoMark from "@/components/shared/LogoMark";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import type { StringKey } from "@/lib/i18n/dictionary";
 
@@ -115,21 +116,6 @@ function NavIcon({ d }: { d: string }) {
   return (
     <svg aria-hidden="true" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
       <path d={d} />
-    </svg>
-  );
-}
-
-// Mark: one central node joined to four, which is both a synapse and a unit
-// with four governing document types. Single accent colour, no gradient.
-function LogoMark() {
-  return (
-    <svg aria-hidden="true" className="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth={1.6} strokeLinecap="round">
-      <path d="M12 12L6 6.5M12 12l6-5.5M12 12l-5.5 6M12 12l5.5 6" opacity={0.55} />
-      <circle cx="12" cy="12" r="3.1" fill="#3b82f6" stroke="none" />
-      <circle cx="6" cy="6.5" r="1.9" />
-      <circle cx="18" cy="6.5" r="1.9" />
-      <circle cx="6.5" cy="18" r="1.9" />
-      <circle cx="17.5" cy="18" r="1.9" />
     </svg>
   );
 }
