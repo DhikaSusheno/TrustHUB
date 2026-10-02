@@ -1,4 +1,4 @@
-﻿// components/shared/LanguageSwitcher.tsx
+// components/shared/LanguageSwitcher.tsx
 // Interface language control.
 //
 // A native <select> rather than a custom menu or a row of buttons. Two reasons:

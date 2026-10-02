@@ -1,4 +1,4 @@
-﻿// components/pages/DocumentsPage.tsx
+// components/pages/DocumentsPage.tsx
 // The document register, with the approval and revision evidence visible.
 //
 // The reason this page exists as a first-class view rather than a filter on
@@ -65,7 +65,7 @@ function DocumentRow({ doc }: { doc: PlantDocument }) {
             <div className="break-words text-slate-200">
               {hasHistory && (
                 <span className="text-slate-600 font-mono mr-1">
-                  {open ? "â–¾" : "â–¸"}
+                  {open ? "▾" : "▸"}
                 </span>
               )}
               {doc.filename}

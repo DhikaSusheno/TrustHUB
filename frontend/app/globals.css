@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -59,15 +59,25 @@
 [data-theme="light"] {
   color-scheme: light;
 
-  --surface: 238 241 244;
-  --panel: 249 250 251;
-  --panel-2: 242 245 247;
-  --inset: 227 232 237;
-  --surface-hover: 233 237 241;
-  --deep: 230 234 238;
+  /* Grey, not white. The panel was #f9fafb, which is white in all but name, and
+     on a long shift a large near-white field is tiring. Every value here is a
+     grey step, so nothing on the light theme is pure white.
 
-  --line: 215 221 228;
-  --line-2: 169 181 193;
+     The panel is also the reference for every contrast number below, because
+     that is the colour text actually sits on. Grey costs contrast, so the
+     accents had to move down with it: green 4.35 and amber 4.36 failed AA
+     against the old near-white and only clear it at the darker steps used here.
+     Measured against this panel: ink-1 15.62, ink-2 8.98, ink-3 6.35,
+     blue 5.81, green 6.19, red 5.61, amber 6.15. */
+  --surface: 221 226 230;    /* #dde2e6 app background */
+  --panel: 237 239 241;      /* #edeff1 cards, and the contrast reference */
+  --panel-2: 228 231 234;    /* #e4e7ea raised, nested panels */
+  --inset: 212 217 221;      /* #d4d9dd table stripe, code block */
+  --surface-hover: 221 225 228;     /* #dde1e4 hover fill */
+  --deep: 216 220 223;       /* #d8dcdf recessed fill */
+
+  --line: 198 204 210;       /* #c6ccd2 default border */
+  --line-2: 154 163 171;     /* #9aa3ab emphasised border */
 
   --ink-1: 15 23 34;
   --ink-1b: 30 41 59;
@@ -76,16 +86,19 @@
   --ink-4: 100 121 141;
   --ink-5: 138 155 173;
 
+  /* Light accents run darker than their Tailwind shade names suggest. In light,
+     "softer" means closer to white, and closer to white means less contrast, so
+     the soft steps are darkened rather than lightened here. */
   --accent-blue-softest: 30 58 138;
-  --accent-blue-soft: 37 99 235;
+  --accent-blue-soft: 30 64 175;
   --accent-blue: 29 78 216;
-  --accent-green-soft: 22 163 74;
-  --accent-green: 21 128 61;
-  --accent-red-soft: 220 38 38;
-  --accent-red: 185 28 28;
+  --accent-green-soft: 22 101 52;
+  --accent-green: 20 83 40;
+  --accent-red-soft: 185 28 28;
+  --accent-red: 153 27 27;
   --accent-amber-softest: 146 64 14;
-  --accent-amber-soft: 180 83 9;
-  --accent-amber: 180 83 9;
+  --accent-amber-soft: 146 64 14;
+  --accent-amber: 120 53 15;
 
   /* The vignette inverts: darkening edges is right on a dark page and reads as
      grime on a light one, so light gets a faint cool shade instead. The grain
@@ -96,7 +109,7 @@
 }
 
 /* ponytail: --font-inter comes from next/font/local via `inter.variable` on <html>.
-   Do NOT redeclare it here â€” a `:root` copy shadows the hashed family name and
+   Do NOT redeclare it here — a `:root` copy shadows the hashed family name and
    silently falls back to system-ui. */
 html, body {
   height: 100%;
@@ -155,7 +168,7 @@ html, body {
   background: rgb(var(--ink-5));
 }
 
-/* Pulse ring â€” node pending */
+/* Pulse ring — node pending */
 @keyframes pulse-ring {
   0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.5); }
   70%  { transform: scale(1);    box-shadow: 0 0 0 8px rgba(251, 191, 36, 0); }

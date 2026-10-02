@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 // app/page.tsx
 // Application shell: sidebar plus one page at a time.
 //
-// FE-1 @nabilfauzandafa Â· FE-2 @ShannWasHere
+// FE-1 @nabilfauzandafa · FE-2 @ShannWasHere
 //
 // This file is deliberately thin. It owns two things and nothing else:
 //

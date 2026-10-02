@@ -1,4 +1,4 @@
-﻿/** @type {import('tailwindcss').Config} */
+/** @type {import('tailwindcss').Config} */
 
 // Every neutral and every accent text shade below resolves to a CSS variable
 // rather than to a fixed hex. globals.css declares those variables twice, once

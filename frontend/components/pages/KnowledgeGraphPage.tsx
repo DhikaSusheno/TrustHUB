@@ -1,4 +1,4 @@
-﻿// components/pages/KnowledgeGraphPage.tsx
+// components/pages/KnowledgeGraphPage.tsx
 // The plant knowledge graph, reusing the existing force-graph component.
 //
 // What this view is for: showing that the document set is a *structure*, not a
@@ -184,7 +184,7 @@ function PlantGraph({
             className="fill-slate-500"
             style={{ fontSize: 8 }}
           >
-            {center.doc_count ?? 0} docs Â· {center.breakdown_count ?? 0} breakdowns
+            {center.doc_count ?? 0} docs · {center.breakdown_count ?? 0} breakdowns
           </text>
         </g>
       )}
@@ -214,7 +214,7 @@ function PlantGraph({
               className={lit ? "fill-slate-200" : "fill-slate-500"}
               style={{ fontSize: 7.5, fontFamily: "monospace" }}
             >
-              {node.label.length > 22 ? `${node.label.slice(0, 21)}â€¦` : node.label}
+              {node.label.length > 22 ? `${node.label.slice(0, 21)}…` : node.label}
             </text>
           </g>
         );

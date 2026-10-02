@@ -145,7 +145,7 @@ export default function LeftNav({ activePage, onNavigate }: Props) {
   return (
     <nav aria-label="Primary" className="w-52 shrink-0 flex flex-col bg-panel border-r border-slate-800/60 overflow-hidden">
       <div className="px-4 py-4 border-b border-slate-800/60 shrink-0">
-        <Link href="/landing" className="flex items-center gap-2.5 rounded-lg group" aria-label={`${platformName} â€” about and demo guide`}>
+        <Link href="/landing" className="flex items-center gap-2.5 rounded-lg group" aria-label={`${platformName} — about and demo guide`}>
           <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center shrink-0 group-hover:border-blue-400/60 transition-colors">
             <LogoMark />
           </div>

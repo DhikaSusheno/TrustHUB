@@ -85,7 +85,7 @@ function WorkOrderTable({ workOrders }: { workOrders: WorkOrder[] }) {
               {wo.wo_number}
               {wo.breakdown === 1 && (
                 <span className="ml-1 text-red-400" title="Unplanned breakdown">
-                  â—
+                  ●
                 </span>
               )}
             </td>
@@ -312,7 +312,7 @@ export default function EquipmentPage() {
                 </div>
                 <div className="mt-1 text-[10px] text-slate-600 font-mono">
                   {unit.doc_count} docs &middot; {unit.wo_count} WO
-                  {unit.opl_count > 0 ? ` Â· ${unit.opl_count} OPL` : ""}
+                  {unit.opl_count > 0 ? ` · ${unit.opl_count} OPL` : ""}
                 </div>
               </button>
             ))}

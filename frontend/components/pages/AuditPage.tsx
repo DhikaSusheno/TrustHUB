@@ -1,4 +1,4 @@
-﻿// components/pages/AuditPage.tsx
+// components/pages/AuditPage.tsx
 // The answer audit trail, and why the trust score is what it is.
 //
 // Two things share this page because they answer the same question from
@@ -54,7 +54,7 @@ function BadgeCounts({ log }: { log: AuditLogShape }) {
               <div className={`h-full ${tone}`} style={{ width: `${pct}%` }} />
             </div>
             <span className="font-mono text-slate-500 w-12 text-right">
-              {count} Â· {pct}%
+              {count} · {pct}%
             </span>
           </div>
         );

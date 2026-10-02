@@ -1,4 +1,4 @@
-﻿// components/pages/AskPage.tsx
+// components/pages/AskPage.tsx
 // The grounded question page. This is the page the whole product is judged on,
 // because it is the only place where a number reaches an engineer.
 //

@@ -1,4 +1,4 @@
-﻿// components/pages/MaintenancePage.tsx
+// components/pages/MaintenancePage.tsx
 // Maintenance history, read as a record of what has actually failed.
 //
 // The reason this page exists separately from Equipment: the work orders are
@@ -71,7 +71,7 @@ function WorkOrderTable({ items }: { items: WorkOrder[] }) {
               {wo.wo_number}
               {wo.breakdown === 1 && (
                 <span className="ml-1 text-red-400" title="Unplanned breakdown">
-                  â—
+                  ●
                 </span>
               )}
             </td>
