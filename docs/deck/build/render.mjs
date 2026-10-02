@@ -1,17 +1,43 @@
 // Render deck.html to PDF and screenshot every slide so layout can be checked.
-// Run from frontend\ so node_modules resolves puppeteer-core.
+// Run `npm ci` in this directory first; node resolves puppeteer-core from the
+// node_modules next to this file, not from your shell's working directory.
 import puppeteer from "puppeteer-core";
 import path from "node:path";
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 
-const CHROME =
-  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-const ROOT = "C:\\Users\\dhika\\TrustHUB\\docs\\deck";
+// Resolved from this script's own location so a checkout in any directory works.
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+const CHROME_CANDIDATES = [
+  process.env.CHROME_PATH,
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium",
+].filter(Boolean);
+const CHROME = CHROME_CANDIDATES.find((p) => fs.existsSync(p));
+if (!CHROME) {
+  console.error(
+    "no Chrome/Chromium found. Set CHROME_PATH to the executable, e.g.\n" +
+      "  CHROME_PATH=/usr/bin/chromium npm run render"
+  );
+  process.exit(2);
+}
+
 const html = "file:///" + path.join(ROOT, "deck.html").replace(/\\/g, "/");
 const pdf = path.join(ROOT, "TrustHUB-CALIBER2026-Case1.pdf");
 const shotDir = path.join(ROOT, "shots");
 
 fs.mkdirSync(shotDir, { recursive: true });
+// Clear stale shots first. The deck used to be 15 slides and is now 13, so
+// slide-14.png and slide-15.png survived the rewrite. Leaving them in place
+// makes the folder claim a longer deck than the PDF actually has, which is
+// the same class of drift the audit exists to catch.
+for (const f of fs.readdirSync(shotDir)) {
+  if (f.endsWith(".png")) fs.unlinkSync(path.join(shotDir, f));
+}
 
 const browser = await puppeteer.launch({
   executablePath: CHROME,

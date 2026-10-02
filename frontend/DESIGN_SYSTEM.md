@@ -28,6 +28,107 @@
 > **Canvas graph wajib `#080d14`.** Dulu `#0f172a` (slate-900) —creates a seam
 > karena `#0d1117` panel di atasnya. Sama dengan `bg-app`.
 
+### Tema gelap dan terang
+
+Ada dua tema. Yang gelap di declare di `:root`, jadi itu default-nya dan
+tema yang sudah dipakai sebelum fitur ini ada. Terang menimpanya lewat
+`[data-theme="light"]`. Menaruh default di `:root` (bukan di
+`[data-theme="dark"]`) berarti pengunjung yang skripnya belum jalan tetap melihat
+tema gelap, bukan kilatan terang.
+
+Cara kerjanya **satu atribut**, `data-theme` di `<html>`. Semua warna di app ini
+menyelesaikan diri lewat CSS variable, jadi berganti tema **tidak** mengganti
+class apa pun dan **tidak** memicu re-render. Karena itu tidak ada satupun
+komponen yang perlu tahu tema mana yang aktif, dan tidak ada varian `dark:`.
+
+Semua token adalah RGB triplet, bukan hex, karena `tailwind.config.cjs`
+menggunakannya sebagai `rgb(var(--x) / <alpha-value>)`. Hanya bentuk itu yang
+tetap menyediakan modifier alpha di call site, dan call site memang memakainya
+(`border-slate-800/60`).
+
+Skala `slate` **dipetakan ulang**, bukan ditambah. `text-slate-400` muncul 62 kali
+dan artinya "teks sekunder"; kalau dibiarkan menunjuk ke hex aslinya, teks itu
+tidak terbaca di panel terang. Menulis ulang 62 call site ke nama baru
+butuh kerja yang sama dengan diff yang lebih buruk.
+
+| Peran | Gelap | Terang (abu-abu) |
+|---|---|---|
+| `--surface` | `#080d14` | `#dde2e6` |
+| `--panel` | `#0d1117` | `#edeff1` |
+| `--panel-2` | `#0f141b` | `#e4e7ea` |
+| `--inset` | `#0a0e14` | `#d4d9dd` |
+| `--surface-hover` | `#131a24` | `#dde1e4` |
+| `--deep` | `#0f172a` | `#d8dcdf` |
+| `--line` | `#1e293b` | `#c6ccd2` |
+| `--ink-1` s/d `--ink-5` | `#f1f5f9` → `#475569` | `#0f1722` → `#8a9bad` |
+
+**Tidak ada putih murni di tema terang.** Panel lama `#f9fafb` putih dalam nama saja,
+dan bidang besar yang mendekati putih melelahkan untuk shift panjang. Semua
+permukaan terang sekarang abu-abu bertingkat, sehingga panel tetap terbaca
+terangkat dari surface (1.13:1) dan border tetap terlihat (1.41:1).
+
+Abu-abu mengurangi kontras, jadi accent harus turun bersamanya. Terhadap panel
+abu-abu `#edeff1` yang baru: teks utama 15.62, sekunder 8.98, `--ink-3` 6.35,
+biru 5.81, hijau 6.19, merah 5.61, amber 6.15 — semua lolos AA. Hijau `#15803d`
+(4.35) dan amber `#b45309` (4.36) sebenarnya sudah gagal pada panel putih lama
+dan hanya lolos pada langkah yang lebih gelap yang dipakai sekarang.
+
+Dua langkah muted ada di 3.91 dan 2.47, di bawah tema gelap sekarang (3.98 dan
+2.50) dan sengaja dibiarkan begitu: keduanya untuk placeholder dan meta, bukan
+body copy.
+
+Nama label **tidak** ikut berubah. Opsi itu tetap terbaca `Light` / `Terang`
+meskipun warnanya abu-abu, karena yang dijanjikan switcher adalah mode terang
+terhadap mode gelap, bukan pilihan putih terhadap hitam.
+
+> **`text-white` tidak boleh dipetakan ke tinta.** Dipakai untuk body copy di
+> panel (harus membalik di terang) **dan** untuk 4 label di atas `bg-blue-600`
+> (harus tetap putih di kedua tema). Keempatnya sengaja dibiarkan `text-white`.
+> Yang lain sudah diganti `text-ink`.
+
+> **Jangan menamai token warna `hover`.** bertabrakan dengan variant `hover:`.
+> `hover:bg-hover` tidak pernah ter-generate dan state hover mati diam-diam.
+> Namanya `--surface-hover`.
+
+### Permukaan background
+
+`#080d14` adalah warna dasar, bukan warnanya yang dilihat user. Di atasnya
+`globals.css` menambah dua hal, dan tidak ada yang lain:
+
+| Lapisan | Nilai | Fungsi |
+|---|---|---|
+| Grain | `feTurbulence`, `opacity 0.05`, tile 160px | Menghentikan bidang near-black yang luas agar tidak banding di monitor |
+| Vignette | `radial-gradient(130% 90% at 50% 0%)`, hitam `0 → 0.38` | Menahan mata di tengah halaman, meng-ground bagian bawah |
+
+Keduanya sengaja **tidak menaikkan luminance rata-rata**. Kalau background
+dibuat lebih terang dari `#0d1117`, panel berhenti terbaca sebagai lapisan yang
+melayang di atas. Grain dipilih justru karena tidak punya mean, jadi hubungan
+kedalaman itu tetap utuh.
+
+`background-attachment: fixed` dipakai karena app scroll di dalam container
+yang tingginya tetap, sehingga grain tidak ikut bergerak di bawah teks.
+
+> **Jangan** menambahkan grid blueprint, glow, atau orb di belakang konten.
+> Ketiganya cocok untuk tema industri dan ketiganya akan bersaing dengan
+> pembaca dokumen yang tugasnya justru dibaca.
+
+Satu-satunya pemilik background adalah `globals.css`. Jangan menuliskannya
+lagi sebagai `bg-[#080d14]` di `layout.tsx` atau container halaman — itulah
+alasan deklarasi ganda tersebut sudah dihapus.
+
+### Logo
+
+`components/shared/LogoMark.tsx` — satu-satunya sumber. Dipakai oleh `LeftNav`
+dan header landing; `app/icon.svg` adalah gambarnya yang sama pada 32px dengan
+stroke lebih tebal agar tetap terbaca di tab browser 16px.
+
+Bentuknya heksagon dengan lubang tengah: heksagon adalah hardware di plant dan
+sekaligus "hub" pada nama TrustHUB; lubangnya adalah satu sumber yang disepakati
+dokumen lain. Dua bentuk, satu warna, tanpa gradien.
+
+> Logo ini pernah di-copy-paste ke dua file dan `icon.svg` melenceng ke perisai
+> hijau yang sekaligus mengklaim status TRUSTED. Ketiganya kini satu file.
+
 ---
 
 ## Layout Shell

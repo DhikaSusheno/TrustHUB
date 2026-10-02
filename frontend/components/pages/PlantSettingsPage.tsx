@@ -80,8 +80,8 @@ export default function PlantSettingsPage() {
 
   return (
     <PageShell
-      title="Dataset & Policy"
-      subtitle="Provenance, index contents, and what this system will and will not do with the data."
+      title="page.dataset.title"
+      subtitle="page.dataset.subtitle"
     >
       {status.loading && <Loading label="Reading configuration" />}
       {status.error !== null && <ErrorState error={status.error} onRetry={status.reload} />}
@@ -138,7 +138,7 @@ export default function PlantSettingsPage() {
                 <p className="text-[11px] text-amber-200 leading-relaxed">
                   {s.problem}
                 </p>
-                <pre className="text-[11px] font-mono text-slate-300 bg-[#0a0e14] border border-slate-800 rounded px-3 py-2 overflow-x-auto">
+                <pre className="text-[11px] font-mono text-slate-300 bg-inset border border-slate-800 rounded px-3 py-2 overflow-x-auto">
                   python -m plant.fetch_dataset
                 </pre>
               </div>

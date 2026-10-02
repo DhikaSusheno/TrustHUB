@@ -199,11 +199,11 @@ function EquipmentDetail({ tag }: { tag: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-slate-800/60 bg-[#0f141b] p-4">
+      <div className="rounded-lg border border-slate-800/60 bg-panel-2 p-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold text-white font-mono">{unit.equipment_tag}</h2>
+              <h2 className="text-base font-semibold text-ink font-mono">{unit.equipment_tag}</h2>
               <Tag tone="amber">{unit.criticality}</Tag>
             </div>
             <p className="mt-1 text-sm text-slate-300">{unit.equipment_name}</p>
@@ -282,8 +282,8 @@ export default function EquipmentPage() {
 
   return (
     <PageShell
-      title="Equipment"
-      subtitle="Eight units in Set 01, each with interlock logic, a P&ID reference, and maintenance history."
+      title="page.equipment.title"
+      subtitle="page.equipment.subtitle"
     >
       {equipment.loading && <Loading label="Loading equipment" />}
       {equipment.error !== null && <ErrorState error={equipment.error} onRetry={equipment.reload} />}

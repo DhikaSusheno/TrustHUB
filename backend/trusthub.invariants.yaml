@@ -1,4 +1,4 @@
-﻿# trusthub.invariants.yaml
+# trusthub.invariants.yaml
 # Post-execution invariant checks untuk Guardian (execute_operation)
 # Sesuai TRUSTHUB.md section 1 (MASTER PROMPT) — "runs the verification checks from trusthub.invariants.yaml"
 #

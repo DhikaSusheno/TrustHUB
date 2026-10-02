@@ -29,8 +29,8 @@ export default function OverviewPage() {
 
   return (
     <PageShell
-      title="Manufacturing Knowledge Hub"
-      subtitle="LLDPE unit, Set 01. Documents, interlock logic, and maintenance history in one index."
+      title="page.overview.title"
+      subtitle="page.overview.subtitle"
     >
       {status.loading && <Loading label="Reading plant index" />}
       {status.error !== null && <ErrorState error={status.error} onRetry={status.reload} />}
@@ -39,7 +39,7 @@ export default function OverviewPage() {
         <div className="p-6 space-y-5">
           {/* Licence note. It is a status line, not a legal footer, because
               it changes how every number below should be read. */}
-          <div className="rounded-lg border border-slate-800/60 bg-[#0f141b] px-4 py-3 flex items-start gap-3">
+          <div className="rounded-lg border border-slate-800/60 bg-panel-2 px-4 py-3 flex items-start gap-3">
             <Tag tone="amber">sample data</Tag>
             <p className="text-[11px] text-slate-400 leading-relaxed flex-1">
               {status.data?.dataset_licence_note} Trip set points and costs in
@@ -188,17 +188,17 @@ export default function OverviewPage() {
                   <div className="space-y-2.5">
                     <div className="flex justify-between text-[11px]">
                       <span className="text-slate-400">Breakdowns recorded</span>
-                      <span className="font-mono text-white">{failure.data.breakdown_total}</span>
+                      <span className="font-mono text-ink">{failure.data.breakdown_total}</span>
                     </div>
                     <div className="flex justify-between text-[11px]">
                       <span className="text-slate-400">Downtime</span>
-                      <span className="font-mono text-white">
+                      <span className="font-mono text-ink">
                         {formatHours(failure.data.breakdown_downtime_hours)}
                       </span>
                     </div>
                     <div className="flex justify-between text-[11px]">
                       <span className="text-slate-400">Breakdown cost</span>
-                      <span className="font-mono text-white">
+                      <span className="font-mono text-ink">
                         {formatIDR(failure.data.breakdown_cost_idr)}
                       </span>
                     </div>

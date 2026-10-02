@@ -39,10 +39,26 @@ else:
         pages = len(r.pages)
         box = r.pages[0].mediabox
         w, h = float(box.width), float(box.height)
-        text = "\n".join((p.extract_text() or "") for p in r.pages)
-        print(f"  pages: {pages}  (limit 15)   {'ok' if pages <= 15 else 'OVER LIMIT'}")
-        if pages > 15:
-            problems.append(f"deck has {pages} slides, over the 15 limit")
+        page_texts = [(p.extract_text() or "") for p in r.pages]
+        text = "\n".join(page_texts)
+
+        # The CALIBER booklet caps the deck at 7 slides, "including the cover
+        # slide and excluding any appendix slides", and allows unlimited
+        # appendix pages. Appendix pages carry APPENDIX in the footer, so the
+        # two groups are counted apart. A single total cannot tell a compliant
+        # 7-slide deck with evidence from a 13-slide deck that ignored the cap,
+        # which is exactly the mistake this check used to make.
+        MAIN_LIMIT = 7
+        appendix = [t for t in page_texts if "APPENDIX" in t]
+        main = [t for t in page_texts if "APPENDIX" not in t]
+        print(f"  pages: {pages}  =  {len(main)} main + {len(appendix)} appendix")
+        print(f"  main deck: {len(main)}  (booklet limit {MAIN_LIMIT})   "
+              f"{'ok' if len(main) <= MAIN_LIMIT else 'OVER LIMIT'}")
+        if len(main) > MAIN_LIMIT:
+            problems.append(
+                f"deck has {len(main)} main slides, over the {MAIN_LIMIT} the "
+                "booklet allows once appendix slides are excluded"
+            )
         print(f"  page size: {w:.0f} x {h:.0f} pt   ratio {w/h:.3f} "
               f"({'16:9' if abs(w/h - 16/9) < 0.01 else 'NOT 16:9'})")
         print(f"  extractable text: {len(text):,} chars  "
@@ -115,6 +131,8 @@ try:
     import pypdf
 
     r = pypdf.PdfReader(str(PDF))
+    MAIN_LIMIT = 7
+
     # PDF text extraction wraps lines, so "Link to be added on\nsubmission"
     # does not contain "Link to be added on submission". Searching raw text
     # would report a placeholder as absent, which is the one answer this check
@@ -122,23 +140,21 @@ try:
     def norm(page):
         return " ".join((r.pages[page].extract_text() or "").split())
 
-    first, last = norm(0), norm(len(r.pages) - 1)
-    for page_no, page_text, token in (
-        (1, first, "to be confirmed"),
-        (1, first, "SUPERVISOR"),
-        (15, last, "Link to be added on submission"),
-        (15, last, "DEMO VIDEO"),
-    ):
-        present = token.lower() in page_text.lower()
-        print(
-            f"  slide {page_no:>2}: "
-            f"{'PLACEHOLDER PRESENT' if present else 'filled'}: {token!r}"
-        )
-        if not present:
-            problems.append(
-                f"slide {page_no} no longer mentions {token!r} - "
-                f"confirm the real value was substituted"
-            )
+    # Report every placeholder still sitting in the seven main slides, by
+    # slide. Pinning fixed slide numbers worked only while the deck layout was
+    # frozen; it silently checked nothing once a slide moved.
+    PLACEHOLDERS = ("to be confirmed", "link to be added on submission")
+    found = False
+    for i in range(min(MAIN_LIMIT, len(r.pages))):
+        body = norm(i)
+        if "appendix" in body.lower():
+            continue
+        for token in PLACEHOLDERS:
+            if token.lower() in body.lower():
+                found = True
+                print(f"  slide {i + 1:>2}: PLACEHOLDER PRESENT: {token!r}")
+    if not found:
+        print("  none left in the main deck")
 except Exception as exc:  # noqa: BLE001
     print(f"  (could not check: {exc})")
 

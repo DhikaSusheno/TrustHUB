@@ -130,12 +130,12 @@ export default function MaintenancePage() {
   }, [workOrders.data, workType, discipline]);
 
   const selectClass =
-    "px-2 py-1 rounded bg-[#0d1117] border border-slate-700 text-[11px] text-slate-300 focus:outline-none focus:border-blue-500/60";
+    "px-2 py-1 rounded bg-panel border border-slate-700 text-[11px] text-slate-300 focus:outline-none focus:border-blue-500/60";
 
   return (
     <PageShell
-      title="Maintenance History"
-      subtitle="211 work orders and 31 breakdowns, 2024-06-04 to 2025-12-06. Costs are the workbook's own dummy rupiah values."
+      title="page.maintenance.title"
+      subtitle="page.maintenance.subtitle"
       actions={
         <select
           value={mode}

@@ -9,6 +9,8 @@
 // document, no LLM) are in the first screen rather than in a footnote.
 
 import Link from "next/link";
+import PetroProcessMotif from "@/components/landing/PetroProcessMotif";
+import LogoMark from "@/components/shared/LogoMark";
 
 // --- What the dataset actually contains -------------------------------------
 // From /api/plant/status and /api/plant/verification with the official
@@ -154,30 +156,17 @@ const STACK = [
   "openpyxl",
 ];
 
-function LogoMark() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="w-full h-full" fill="none" stroke="#3b82f6" strokeWidth={1.6} strokeLinecap="round">
-      <path d="M12 12L6 6.5M12 12l6-5.5M12 12l-5.5 6M12 12l5.5 6" opacity={0.55} />
-      <circle cx="12" cy="12" r="3.1" fill="#3b82f6" stroke="none" />
-      <circle cx="6" cy="6.5" r="1.9" />
-      <circle cx="18" cy="6.5" r="1.9" />
-      <circle cx="6.5" cy="18" r="1.9" />
-      <circle cx="17.5" cy="18" r="1.9" />
-    </svg>
-  );
-}
-
 export default function LandingPage() {
   return (
-    <div className="h-full overflow-y-auto bg-[#080d14]">
+    <div className="h-full overflow-y-auto">
       {/* ---------- Nav ---------- */}
-      <header className="sticky top-0 z-10 border-b border-slate-800/60 bg-[#080d14]/90 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-slate-800/60 bg-surface/90 backdrop-blur">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-4">
           <span className="flex items-center gap-2.5">
             <span className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center">
               <LogoMark />
             </span>
-            <span className="text-sm font-bold text-white tracking-tight">TrustHUB</span>
+            <span className="text-sm font-bold text-ink tracking-tight">TrustHUB</span>
           </span>
           <nav aria-label="Sections" className="hidden md:flex items-center gap-5 text-xs text-slate-400 ml-4">
             <a href="#problem" className="hover:text-slate-200 transition-colors">Problem</a>
@@ -197,10 +186,12 @@ export default function LandingPage() {
       <main className="max-w-6xl mx-auto px-6">
         {/* ---------- Hero ---------- */}
         <section className="py-20 sm:py-28 border-b border-slate-800/60">
+          <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center">
+            <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-5">
             CALIBER 2026 &middot; Case 1 &middot; Manufacturing Knowledge Hub
           </p>
-          <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tight leading-[1.1] max-w-3xl">
+          <h1 className="text-4xl sm:text-5xl font-bold text-ink tracking-tight leading-[1.1] max-w-3xl">
             An engineering knowledge hub that would rather refuse than guess.
           </h1>
           <p className="mt-6 text-base text-slate-400 max-w-2xl leading-relaxed">
@@ -214,26 +205,43 @@ export default function LandingPage() {
             <Link href="/" className="text-sm font-semibold px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors">
               Open the app
             </Link>
-            <a href="#how" className="text-sm px-5 py-2.5 rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white transition-colors">
+            <a href="#how" className="text-sm px-5 py-2.5 rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-ink transition-colors">
               How it works
             </a>
-            <a href="#limits" className="text-sm px-5 py-2.5 rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white transition-colors">
+            <a href="#limits" className="text-sm px-5 py-2.5 rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-ink transition-colors">
               What it does not claim
             </a>
+          </div>
+            </div>
+            <div className="min-w-0">
+              <PetroProcessMotif className="w-full h-auto" />
+              <p className="mt-4 text-[11px] text-slate-600 leading-relaxed">
+                A polymerisation train as a P&amp;ID draws it: vessels on one
+                pipe run, instrument bubbles above each, tags in the notation the
+                indexed documents use. The unit this hub reads is a linear low
+                density polyethylene line.
+              </p>
+            </div>
           </div>
           <dl className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-6">
             {FACTS.map((s) => (
               <div key={s.v} className="border-l border-slate-800 pl-4">
-                <dt className="text-xl font-bold text-white">{s.k}</dt>
+                <dt className="text-xl font-bold text-ink">{s.k}</dt>
                 <dd className="text-xs text-slate-500 mt-1 leading-snug">{s.v}</dd>
               </div>
             ))}
           </dl>
+          <p className="mt-5 text-[11px] text-slate-600 leading-relaxed max-w-3xl">
+            These four figures describe the official CALIBER Case 1 dataset as it
+            was measured when the documents were indexed. A local instance built
+            on a synthetic index reports smaller counters, and its equipment names
+            and documents are examples rather than the plant&rsquo;s own records.
+          </p>
         </section>
 
         {/* ---------- Problem ---------- */}
         <section id="problem" className="scroll-mt-14 py-20 border-b border-slate-800/60">
-          <h2 className="text-2xl font-bold text-white">The problem</h2>
+          <h2 className="text-2xl font-bold text-ink">The problem</h2>
           <p className="mt-2 text-sm text-slate-400 max-w-2xl">
             Not &ldquo;information is hard to find&rdquo;. A plant already has
             the documents. What it does not have is any way to know which of
@@ -241,8 +249,8 @@ export default function LandingPage() {
           </p>
           <div className="mt-10 grid gap-4 sm:grid-cols-3">
             {PROBLEMS.map((p) => (
-              <article key={p.title} className="rounded-xl border border-slate-800/60 bg-[#0d1117] p-5">
-                <h3 className="text-sm font-semibold text-white">{p.title}</h3>
+              <article key={p.title} className="rounded-xl border border-slate-800/60 bg-panel p-5">
+                <h3 className="text-sm font-semibold text-ink">{p.title}</h3>
                 <p className="mt-2 text-xs text-slate-400 leading-relaxed">{p.body}</p>
               </article>
             ))}
@@ -251,16 +259,16 @@ export default function LandingPage() {
 
         {/* ---------- How it works ---------- */}
         <section id="how" className="scroll-mt-14 py-20 border-b border-slate-800/60">
-          <h2 className="text-2xl font-bold text-white">How it works</h2>
+          <h2 className="text-2xl font-bold text-ink">How it works</h2>
           <p className="mt-2 text-sm text-slate-400 max-w-2xl">
             Four steps, in this order. The check for whether an answer is
             permitted at all happens before anything is written, not after.
           </p>
           <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {PIPELINE.map((s) => (
-              <li key={s.n} className="rounded-xl border border-slate-800/60 bg-[#0d1117] p-5">
+              <li key={s.n} className="rounded-xl border border-slate-800/60 bg-panel p-5">
                 <span className="text-xs font-mono text-blue-400">{s.n}</span>
-                <h3 className="mt-2 text-sm font-semibold text-white">{s.title}</h3>
+                <h3 className="mt-2 text-sm font-semibold text-ink">{s.title}</h3>
                 <p className="mt-2 text-xs text-slate-400 leading-relaxed">{s.body}</p>
               </li>
             ))}
@@ -269,7 +277,7 @@ export default function LandingPage() {
 
         {/* ---------- Data types ---------- */}
         <section id="data" className="scroll-mt-14 py-20 border-b border-slate-800/60">
-          <h2 className="text-2xl font-bold text-white">The four baseline data types</h2>
+          <h2 className="text-2xl font-bold text-ink">The four baseline data types</h2>
           <p className="mt-2 text-sm text-slate-400 max-w-2xl">
             Joined by the key the dataset itself specifies &mdash; the
             equipment tag, which the dataset&rsquo;s own documentation calls the
@@ -277,8 +285,8 @@ export default function LandingPage() {
           </p>
           <div className="mt-10 grid gap-4 lg:grid-cols-2">
             {DATA_TYPES.map((d) => (
-              <article key={d.name} className="rounded-xl border border-slate-800/60 bg-[#0d1117] p-5">
-                <h3 className="text-sm font-semibold text-white">{d.name}</h3>
+              <article key={d.name} className="rounded-xl border border-slate-800/60 bg-panel p-5">
+                <h3 className="text-sm font-semibold text-ink">{d.name}</h3>
                 <p className="mt-1 text-xs text-blue-300">{d.detail}</p>
                 <p className="mt-2 text-xs text-slate-500 leading-relaxed">{d.note}</p>
               </article>
@@ -288,15 +296,15 @@ export default function LandingPage() {
 
         {/* ---------- Trust ---------- */}
         <section id="trust" className="scroll-mt-14 py-20 border-b border-slate-800/60">
-          <h2 className="text-2xl font-bold text-white">The trust engine</h2>
+          <h2 className="text-2xl font-bold text-ink">The trust engine</h2>
           <p className="mt-2 text-sm text-slate-400 max-w-2xl">
             Five weighted signals, one score, three badges. The weights are
             properties of document provenance, not of a model&rsquo;s confidence,
             because no model is involved in producing them.
           </p>
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-slate-800/60 bg-[#0d1117] p-5">
-              <h3 className="text-sm font-semibold text-white">Weights</h3>
+            <div className="rounded-xl border border-slate-800/60 bg-panel p-5">
+              <h3 className="text-sm font-semibold text-ink">Weights</h3>
               <div className="mt-4 space-y-2.5">
                 {WEIGHTS.map((w) => (
                   <div key={w.name}>
@@ -318,8 +326,8 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-800/60 bg-[#0d1117] p-5">
-              <h3 className="text-sm font-semibold text-white">What it refuses, and why</h3>
+            <div className="rounded-xl border border-slate-800/60 bg-panel p-5">
+              <h3 className="text-sm font-semibold text-ink">What it refuses, and why</h3>
               <p className="mt-1 text-xs text-slate-500 leading-relaxed">
                 Refusals are the feature, not the failure mode. A hub that
                 answers everything is fluent, not trustworthy.
@@ -338,7 +346,7 @@ export default function LandingPage() {
 
         {/* ---------- Limits ---------- */}
         <section id="limits" className="scroll-mt-14 py-20 border-b border-slate-800/60">
-          <h2 className="text-2xl font-bold text-white">What this system does not claim</h2>
+          <h2 className="text-2xl font-bold text-ink">What this system does not claim</h2>
           <p className="mt-2 text-sm text-slate-400 max-w-2xl">
             Listed here rather than in a footer, because a knowledge-hub demo that
             only shows its strengths is asking to be audited for the rest.
@@ -355,7 +363,7 @@ export default function LandingPage() {
 
         {/* ---------- Demo ---------- */}
         <section id="demo" className="scroll-mt-14 py-20 border-b border-slate-800/60">
-          <h2 className="text-2xl font-bold text-white">The demo path</h2>
+          <h2 className="text-2xl font-bold text-ink">The demo path</h2>
           <p className="mt-2 text-sm text-slate-400 max-w-2xl">
             Nine pages. A judge can see the whole claim in about four minutes:
             ask a question, check its sources, then check whether those sources
@@ -364,7 +372,7 @@ export default function LandingPage() {
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {PAGES.map((p) => (
               <div key={p.page} className="rounded-xl border border-slate-800/60 p-4">
-                <h3 className="text-sm font-semibold text-white font-mono">{p.page}</h3>
+                <h3 className="text-sm font-semibold text-ink font-mono">{p.page}</h3>
                 <p className="mt-1 text-xs text-slate-400 leading-relaxed">{p.what}</p>
               </div>
             ))}
@@ -378,7 +386,7 @@ export default function LandingPage() {
 
         {/* ---------- Stack ---------- */}
         <section className="py-20">
-          <h2 className="text-2xl font-bold text-white">Built with</h2>
+          <h2 className="text-2xl font-bold text-ink">Built with</h2>
           <div className="mt-6 flex flex-wrap gap-2">
             {STACK.map((tech) => (
               <span key={tech} className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-xs text-slate-400 font-mono">
@@ -402,7 +410,7 @@ export default function LandingPage() {
           <p className="text-xs text-slate-600">
             CALIBER 2026 &middot; Case 1 &middot; Manufacturing Knowledge Hub &middot; LLDPE unit, Set 01
           </p>
-          <Link href="/" className="text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white transition-colors">
+          <Link href="/" className="text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-ink transition-colors">
             Open the app
           </Link>
         </div>

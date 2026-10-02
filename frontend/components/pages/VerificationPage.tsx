@@ -31,8 +31,8 @@ export default function VerificationPage() {
 
   return (
     <PageShell
-      title="Verification"
-      subtitle="Do the documents agree with each other? Extraction inventory, cross-confirmed values, and every contradiction found."
+      title="page.verification.title"
+      subtitle="page.verification.subtitle"
     >
       {verification.loading && <Loading label="Comparing documents" />}
       {verification.error !== null && <ErrorState error={verification.error} onRetry={verification.reload} />}
@@ -156,7 +156,7 @@ export default function VerificationPage() {
               {evaluation.data && (
                 <div className="space-y-3">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-semibold text-white tabular-nums">
+                    <span className="text-2xl font-semibold text-ink tabular-nums">
                       {evaluation.data.accuracy_pct.toFixed(1)}%
                     </span>
                     <span className="text-[11px] text-slate-500 font-mono">

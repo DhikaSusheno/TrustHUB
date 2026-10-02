@@ -67,7 +67,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="flex h-full overflow-hidden bg-[#080d14]">
+    <div className="flex h-full overflow-hidden bg-surface">
       <LeftNav activePage={activePage} onNavigate={setActivePage} />
 
       <main className="flex-1 min-w-0 overflow-hidden">
