@@ -9,6 +9,7 @@
 // document, no LLM) are in the first screen rather than in a footnote.
 
 import Link from "next/link";
+import PetroProcessMotif from "@/components/landing/PetroProcessMotif";
 
 // --- What the dataset actually contains -------------------------------------
 // From /api/plant/status and /api/plant/verification with the official
@@ -197,6 +198,8 @@ export default function LandingPage() {
       <main className="max-w-6xl mx-auto px-6">
         {/* ---------- Hero ---------- */}
         <section className="py-20 sm:py-28 border-b border-slate-800/60">
+          <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center">
+            <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-5">
             CALIBER 2026 &middot; Case 1 &middot; Manufacturing Knowledge Hub
           </p>
@@ -221,6 +224,17 @@ export default function LandingPage() {
               What it does not claim
             </a>
           </div>
+            </div>
+            <div className="min-w-0">
+              <PetroProcessMotif className="w-full h-auto" />
+              <p className="mt-4 text-[11px] text-slate-600 leading-relaxed">
+                A polymerisation train as a P&amp;ID draws it: vessels on one
+                pipe run, instrument bubbles above each, tags in the notation the
+                indexed documents use. The unit this hub reads is a linear low
+                density polyethylene line.
+              </p>
+            </div>
+          </div>
           <dl className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-6">
             {FACTS.map((s) => (
               <div key={s.v} className="border-l border-slate-800 pl-4">
@@ -229,6 +243,12 @@ export default function LandingPage() {
               </div>
             ))}
           </dl>
+          <p className="mt-5 text-[11px] text-slate-600 leading-relaxed max-w-3xl">
+            These four figures describe the official CALIBER Case 1 dataset as it
+            was measured when the documents were indexed. A local instance built
+            on a synthetic index reports smaller counters, and its equipment names
+            and documents are examples rather than the plant&rsquo;s own records.
+          </p>
         </section>
 
         {/* ---------- Problem ---------- */}
