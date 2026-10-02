@@ -227,17 +227,17 @@ menutupi judul section begitu anchor diklik.
 
 ## Navigation Pages (9 halaman)
 
-| ID | Label | Komponen | Owner | Status |
+| ID | Label | Komponen | Fungsi | Status |
 |---|---|---|---|---|
-| `overview` | Overview | `OverviewMain` | FE-1 | ✅ Done |
-| `code-graph` | Code Graph | `CodeGraphPage` | FE-1 | ✅ Done |
-| `guardian` | Guardian | `GuardianPage` | FE-1 | ✅ Done |
-| `cortex` | Cortex | `CortexPage` | FE-1 | ✅ Done |
-| `agents` | Agents | `AgentsPage` | FE-1 | ✅ Done |
-| `approvals` | Approvals | `ApprovalsPage` | FE-2 | ✅ Done (Shann) |
-| `operations` | Operations | `OperationsPage` | FE-2 | ✅ Done (Shann) |
-| `security` | Security | `SecurityPage` | FE-1 | ✅ Done |
-| `settings` | Settings | `SettingsPage` | FE-1 | ✅ Done |
+| `ask` | Ask | `AskPage` | AI Q&A Assistant + Semantic Search + Trust Badge & Mandatory Citation | ✅ Active |
+| `equipment` | Equipment | `EquipmentPage` | Equipment-centric Knowledge Graph & Unit view | ✅ Active |
+| `documents` | Documents | `DocumentsPage` | Document Registry (revision, approval status, approver identity) | ✅ Active |
+| `graph` | Graph | `KnowledgeGraphPage` | Interactive Knowledge Graph (134 nodes, 126 links) | ✅ Active |
+| `verification` | Verification | `VerificationPage` | Multi-document cross-source setpoint verification | ✅ Active |
+| `maintenance` | Maintenance | `MaintenancePage` | Failure Memory System (211 work orders, 31 breakdowns) | ✅ Active |
+| `overview` | Overview | `OverviewPage` | Instance status summary & system metrics | ✅ Active |
+| `audit` | Audit | `AuditPage` | Complete question audit trail + trust engine weights | ✅ Active |
+| `dataset` | Dataset | `PlantSettingsPage` | Dataset provenance, dataset contract & LLM posture | ✅ Active |
 
 ---
 

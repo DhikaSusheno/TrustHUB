@@ -2,7 +2,7 @@
 
 Dokumen ini adalah **deliverable #1 (QC-1)** dan **deliverable #5/#6/#7 (QC-2)** sesuai [PRD](./PRD.md).  
 Semua skenario di sini diimplementasi sebagai test case di `security/tests/`.  
-Sumber kebenaran: [`TRUSTHUB.md`](../TRUSTHUB.md) section 2.5, 4.4, 4.5.
+Sumber kebenaran: [`TRUSTHUB.md`](../TRUSTHUB.md) §4 AI output is validated and evaluated, §6 Security, reliability, oversight.
 
 **Owners:**
 - Grup R, C, RB, A → [@pidpid35](https://github.com/pidpid35) (QC-1 · Rule engine)
@@ -10,7 +10,7 @@ Sumber kebenaran: [`TRUSTHUB.md`](../TRUSTHUB.md) section 2.5, 4.4, 4.5.
 
 ---
 
-## Grup R — Rule Engine (TRUSTHUB.md 4.4)
+## Grup R — Rule Engine (TRUSTHUB.md §6 Security, reliability, oversight)
 
 | ID | Tool | Ekspektasi | File |
 |---|---|---|---|
@@ -34,7 +34,7 @@ Sumber kebenaran: [`TRUSTHUB.md`](../TRUSTHUB.md) section 2.5, 4.4, 4.5.
 
 ---
 
-## Grup C — Conflict Detection (TRUSTHUB.md 4.5)
+## Grup C — Conflict Detection (TRUSTHUB.md §6 Security, reliability, oversight)
 
 | ID | Skenario | Ekspektasi | File |
 |---|---|---|---|
@@ -52,7 +52,7 @@ Sumber kebenaran: [`TRUSTHUB.md`](../TRUSTHUB.md) section 2.5, 4.4, 4.5.
 
 ---
 
-## Grup RB — Rollback Verification (TRUSTHUB.md 2.2)
+## Grup RB — Rollback Verification (TRUSTHUB.md §6 Security, reliability, oversight)
 
 | ID | Skenario | Ekspektasi | File |
 |---|---|---|---|
@@ -62,13 +62,13 @@ Sumber kebenaran: [`TRUSTHUB.md`](../TRUSTHUB.md) section 2.5, 4.4, 4.5.
 | RB4 | Execute op yang di-deny | `ok=False`, status tetap `denied` | `test_rollback_verification.py::TestDeniedOperationBlocked` |
 | RB5a | Execute selesai sukses | status ≠ `executing` | `test_rollback_verification.py::TestNoStuckExecuting` |
 | RB5b | Execute selesai gagal | status ≠ `executing` | `test_rollback_verification.py::TestNoStuckExecuting` |
-| RB6 | Rollback op kedua | op pertama yang `verified` tetap ada (bukan impossible state) | `test_rollback_verification.py::TestRollbackStateValidity` |
-| RB7 | End-to-end propose→rollback | < 10 detik (TRUSTHUB.md 2.7) | `test_rollback_verification.py::TestRollbackPerformance` |
+| RB6 | Rollback op interior | op yang `verified` lain tetap ada (bukan impossible state, §7) | `test_rollback_verification.py::TestRollbackStateValidity` |
+| RB7 | End-to-end propose→rollback | < 10 detik (TRUSTHUB.md §6) | `test_rollback_verification.py::TestRollbackPerformance` |
 | RB8 | Execute dua kali (replay) | panggilan kedua `ok=False` | `test_rollback_verification.py::TestDoubleExecuteGuard` |
 
 ---
 
-## Grup A — Adversarial (TRUSTHUB.md 4.5, PRD #3)
+## Grup A — Adversarial (TRUSTHUB.md §4 AI output is validated and evaluated, PRD #3)
 
 | ID | Serangan | Ekspektasi | File |
 |---|---|---|---|
@@ -185,7 +185,7 @@ pytest security/tests/test_demo_reliability.py -v -k "timing or performance or R
 python security/tests/demo_data/seed.py [output_path]
 ```
 
-## Metrics Target (TRUSTHUB.md 2.7)
+## Metrics Target (TRUSTHUB.md §6 Security, reliability, oversight)
 
 | Metric | Target | Test |
 |---|---|---|
