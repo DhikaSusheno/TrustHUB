@@ -26,7 +26,7 @@
     "eslint-config-next": "15.5.24",
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "^7"
   },
   "comments": {
     "next": "15.5.24 adalah versi pertama yang menutup CVE-2026-75604 (unauth RCE di server Windows, CVSS 9.0, CWE-22). Advisory menyatakan tidak ada workaround; 14.2.35 masih berada di rentang rentan >=13.4.0 <15.5.24.",
