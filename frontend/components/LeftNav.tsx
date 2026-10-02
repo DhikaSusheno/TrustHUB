@@ -234,7 +234,7 @@ export default function LeftNav({ activePage, onNavigate }: Props) {
             </Link>
           </div>
 
-          <div className="flex-1 py-2 space-y-0.5 px-2 overflow-y-auto">
+          <div className="flex-1 py-3 space-y-1 px-2.5 overflow-y-auto">
             {NAV_ITEMS.map((item) => {
               const isActive = activePage === item.id;
               return (
@@ -242,10 +242,10 @@ export default function LeftNav({ activePage, onNavigate }: Props) {
                   key={item.id}
                   onClick={() => navigate(item.id)}
                   aria-current={isActive ? "page" : undefined}
-                  className={`w-full min-h-[44px] md:min-h-0 flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
+                  className={`w-full min-h-[44px] md:min-h-0 flex items-center gap-3 px-3 py-2 rounded-lg text-xs tracking-wide transition-all text-left ${
                     isActive
-                      ? "bg-blue-600/20 text-blue-400 font-medium"
-                      : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+                      ? "bg-blue-600/15 text-blue-300 font-semibold border-l-2 border-blue-500 pl-2.5 shadow-sm"
+                      : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 border-l-2 border-transparent pl-2.5"
                   }`}
                 >
                   <NavIcon d={item.d} />

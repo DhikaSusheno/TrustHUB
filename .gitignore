@@ -95,3 +95,7 @@ docs/deck/shots/
 # bahan bukti verify.py) dan TrustHUB-demo.mp4 (deliverable).
 docs/demo/frames/
 docs/demo/captioned/
+
+# Local test screenshots
+frontend/.screenshots/
+frontend/capture_screenshots.mjs

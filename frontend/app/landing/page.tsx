@@ -258,7 +258,7 @@ export default function LandingPage() {
               <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">01</p>
               <h2 className="text-2xl font-bold text-ink leading-tight">The problem</h2>
               <p className="mt-3 text-sm text-slate-400 leading-relaxed">
-                Not "information is hard to find". A plant already has the documents.
+                Not &ldquo;information is hard to find&rdquo;. A plant already has the documents.
                 What it does not have is any way to know which applies, whether it is current,
                 and whether it has been approved.
               </p>
@@ -306,7 +306,7 @@ export default function LandingPage() {
           <h2 className="text-2xl font-bold text-ink">The trust engine</h2>
           <p className="mt-2 text-sm text-slate-400 max-w-2xl leading-relaxed">
             Five weighted signals, one score, three badges. Weights are properties of
-            document provenance, not of a model's confidence, because no model is involved
+            document provenance, not of a model&apos;s confidence, because no model is involved
             in producing them.
           </p>
 
