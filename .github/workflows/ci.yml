@@ -27,6 +27,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          #kedua suite punya requirements-test.txt masing-masing. backend/
+          # butuh pytest-asyncio karena backend/tests/test_model_discovery.py
+          # memakai @pytest.mark.asyncio; tanpa ini 3 test itu DILEWATI
+          # (async def functions are not natively supported) bukan gagal,
+          # jadi suite tetap hijau padahal cakupannya berkurang.
+          pip install -r requirements-test.txt
           pip install -r ../security/requirements-test.txt
 
       - name: Byte-compile (syntax check)
