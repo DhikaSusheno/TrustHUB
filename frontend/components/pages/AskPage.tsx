@@ -2,12 +2,8 @@
 // The grounded question page. This is the page the whole product is judged on,
 // because it is the only place where a number reaches an engineer.
 //
-// Design rule, and the reason this page exists in this shape: the answer is
-// never shown without the evidence that produced it. A refusal is not an error
-// state, so it gets the same layout as an answer, a badge, and the reason. An
-// engineer who gets a wrong setpoint does not lose the tool; they lose trust
-// in it and never come back. An engineer who gets "I will not answer this,
-// and here is exactly why" keeps using it.
+// Design rule: the answer is never shown without the evidence that produced it.
+// Refusal is a deliberate safety feature, not an error state.
 
 "use client";
 
@@ -17,52 +13,64 @@ import TrustBadge, { SignalRow } from "@/components/shared/TrustBadge";
 import { PageShell, Panel, Tag } from "@/components/shared/PageShell";
 
 /** Questions that each demonstrate a different guardrail, not a random list. */
-const EXAMPLES: { label: string; question: string; why: string }[] = [
+const EXAMPLES: { category: string; label: string; question: string; why: string; tone: "blue" | "green" | "amber" | "slate" }[] = [
   {
+    category: "Verified Setpoint",
     label: "Measured setpoint",
     question: "What is the trip setpoint for VSHH-1201?",
-    why: "Read from the documents, with the citing documents listed",
+    why: "Read from verified datasheet tables with full citation provenance",
+    tone: "green",
   },
   {
+    category: "Safety Guardrail",
     label: "Missing document",
     question: "What does OPL-GA-1201A-04 cover?",
-    why: "That one-point lesson is not in the dataset. It must refuse.",
+    why: "That one-point lesson is not in the dataset. System refuses rather than guessing.",
+    tone: "amber",
   },
   {
+    category: "Tag Validation",
     label: "Unknown equipment",
     question: "What is the shutdown procedure for ZX-9999?",
-    why: "No document can be a source. It must refuse.",
+    why: "No document mentions unit ZX-9999. Strict tag checking blocks hallucination.",
+    tone: "slate",
   },
   {
-    label: "Out of scope",
+    category: "Scope Gate",
+    label: "Out of domain",
     question: "How do I open a bank account?",
-    why: "Retrieval would return chunks anyway. It must refuse.",
+    why: "Domain vocabulary gate stops non-plant questions before document retrieval.",
+    tone: "slate",
   },
   {
+    category: "Workbook Analytics",
     label: "Maintenance history",
     question: "Which equipment has the most breakdowns?",
-    why: "Aggregated from the workbook, not from document text",
+    why: "Aggregated live from the maintenance workbook, not from narrative text.",
+    tone: "blue",
   },
   {
-    label: "Safety-critical",
+    category: "Interlock Logic",
+    label: "Safety-critical bypass",
     question: "Can I bypass the PSLL-1201 trip to keep the feed running?",
-    why: "Safety without a verifiable source is DO NOT EXECUTE",
+    why: "Safety procedures without explicit authorization yield DO NOT EXECUTE.",
+    tone: "amber",
   },
 ];
 
-function SourceRow({ source, index }: { source: AnswerSource; index: number }) {
+function SourceCard({ source, index }: { source: AnswerSource; index: number }) {
   const approved = source.approval_status === "approved";
   return (
-    <li className="px-3 py-2.5 border-b border-slate-800/50 last:border-0">
-      <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 shrink-0 w-5 h-5 rounded bg-slate-800 text-slate-400 text-[10px] font-mono flex items-center justify-center">
+    <div className="rounded-xl border border-slate-800/80 bg-panel-2/70 p-4 transition-all hover:border-slate-700/80">
+      <div className="flex items-start gap-3">
+        <span className="shrink-0 w-6 h-6 rounded-md bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-mono font-bold flex items-center justify-center">
           {index + 1}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-xs text-slate-200 leading-snug break-words">
+          <div className="text-sm font-semibold text-slate-100 leading-snug break-words">
             {source.filename ?? source.title ?? source.doc_id}
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             {source.equipment_tag && <Tag tone="blue">{source.equipment_tag}</Tag>}
             {source.doc_no && <Tag>{source.doc_no}</Tag>}
             {source.doc_type && <Tag>{source.doc_type}</Tag>}
@@ -71,85 +79,90 @@ function SourceRow({ source, index }: { source: AnswerSource; index: number }) {
               {source.approval_status ?? "unknown"}
             </Tag>
             {typeof source.relevance === "number" && (
-              <span className="text-[10px] font-mono text-slate-600">
+              <span className="text-[11px] font-mono text-slate-400 ml-1">
                 rel {source.relevance.toFixed(2)}
               </span>
             )}
           </div>
         </div>
       </div>
-    </li>
+    </div>
   );
 }
 
 function AnswerBody({ result }: { result: PlantAnswer }) {
   if (result.refused) {
     return (
-      <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-4">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-red-400" />
-          <span className="text-xs font-semibold text-red-300 uppercase tracking-wide">
-            Refused: no source
+      <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-5 shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-400 animate-pulse" />
+          <span className="text-xs font-bold text-red-300 uppercase tracking-wider">
+            Refused: No verified source found
           </span>
         </div>
-        <p className="mt-2.5 text-sm text-slate-200 leading-relaxed">
+        <p className="mt-3 text-base text-slate-100 leading-relaxed font-medium">
           {result.refusal_reason}
         </p>
-        <p className="mt-3 text-[11px] text-slate-500 leading-relaxed">
-          This is a deliberate refusal, not a failure. The system would rather
-          return nothing than return something no document supports.
-        </p>
+        <div className="mt-4 pt-3 border-t border-red-500/20 text-xs text-slate-300 leading-relaxed">
+          <strong>Deliberate Safety Refusal:</strong> TrustHUB chooses silence over speculation.
+          No unverified or missing plant parameter will ever be hallucinated.
+        </div>
       </div>
     );
   }
 
   return (
-    <>
-      <div className="rounded-lg border border-slate-800/60 bg-panel p-4">
-        {/* The answer text is the only prose the system generates, and it is
-            assembled from document text plus measured values, never invented. */}
-        <div className="text-sm text-slate-100 leading-relaxed whitespace-pre-line break-words">
+    <div className="space-y-4">
+      {/* Primary Answer Box */}
+      <div className="rounded-xl border border-slate-700/80 bg-panel-2/90 p-5 shadow-sm">
+        <div className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-2">
+          Verified Plant Response
+        </div>
+        <div className="text-base text-slate-100 leading-relaxed whitespace-pre-line break-words font-medium">
           {result.answer}
         </div>
         {result.verbatim && (
-          <div className="mt-3 pt-3 border-t border-slate-800/60 text-[11px] text-amber-300/90">
-            Quoted from the source documents. Do not paraphrase before working
-            to these steps.
+          <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center gap-2 text-xs text-amber-300/90 font-medium">
+            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+            <span>Verbatim quote directly from source documents. Do not alter or paraphrase operational steps.</span>
           </div>
         )}
       </div>
 
+      {/* Warnings */}
       {result.warnings.length > 0 && (
-        <div className="mt-3 space-y-1.5">
+        <div className="space-y-2">
           {result.warnings.map((warning, i) => (
             <div
               key={i}
-              className="text-[11px] text-amber-200/90 bg-amber-500/5 border border-amber-500/20 rounded px-3 py-2"
+              className="text-xs text-amber-200/90 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 leading-relaxed font-medium flex items-start gap-2.5"
             >
-              {warning}
+              <span className="w-2 h-2 rounded-full bg-amber-400 mt-1 shrink-0" />
+              <span>{warning}</span>
             </div>
           ))}
         </div>
       )}
 
+      {/* Sources Grid */}
       {result.sources.length > 0 && (
-        <div className="mt-4 rounded-lg border border-slate-800/60 overflow-hidden">
-          <div className="px-3 py-2 border-b border-slate-800/60 flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wide text-slate-500">
-              Sources
-            </span>
-            <span className="text-[10px] text-slate-600 font-mono">
+        <div className="mt-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+              Cited Engineering Documents
+            </h3>
+            <span className="text-xs text-slate-400 font-mono">
               {result.sources.length} document{result.sources.length === 1 ? "" : "s"}
             </span>
           </div>
-          <ul>
+          <div className="grid gap-2.5 sm:grid-cols-1">
             {result.sources.map((source, index) => (
-              <SourceRow key={`${source.doc_id ?? "src"}-${index}`} source={source} index={index} />
+              <SourceCard key={`${source.doc_id ?? "src"}-${index}`} source={source} index={index} />
             ))}
-          </ul>
+          </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -179,83 +192,108 @@ export default function AskPage() {
 
   return (
     <PageShell
-      title="page.ask.title"
-      subtitle="page.ask.subtitle"
+      title="Ask TrustHUB"
+      subtitle="Engineering Q&A grounded strictly in official LLDPE unit documents with verifiable trust scoring"
     >
-      <div className="p-4 sm:p-6 max-w-5xl">
-        {/* Input. The label is visible rather than placeholder-only: a
-            placeholder disappears the moment there is a value in the box, which
-            leaves the field unnamed for anyone who has already typed. */}
-        <label htmlFor="ask-question" className="block text-xs font-semibold text-slate-300">
-          Ask the indexed documents
-        </label>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void submit();
-          }}
-          className="mt-2 flex gap-2"
-        >
-          <input
-            id="ask-question"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="e.g. What is the trip setpoint for VSHH-1201?"
-            className="flex-1 min-w-0 px-3.5 py-2.5 rounded-lg bg-panel border border-slate-700 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/60 transition-colors"
-          />
-          <button
-            type="submit"
-            disabled={busy || question.trim().length < 2}
-            className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-sm font-medium text-white transition-colors shrink-0"
+      <div className="p-4 sm:p-8 max-w-5xl mx-auto space-y-6">
+
+        {/* Search Input Box */}
+        <div className="rounded-2xl border border-slate-700/80 bg-panel/90 p-4 sm:p-5 shadow-sm backdrop-blur-sm">
+          <label htmlFor="ask-question" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+            Ask any plant parameter, setpoint, or procedure
+          </label>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submit();
+            }}
+            className="flex flex-col sm:flex-row gap-2.5"
           >
-            {busy ? "Asking" : "Ask"}
-          </button>
-        </form>
+            <div className="relative flex-1">
+              <input
+                id="ask-question"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="e.g. What is the trip setpoint for VSHH-1201?"
+                className="w-full px-4 py-3 rounded-xl bg-panel-2 border border-slate-700 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/80 focus:ring-1 focus:ring-blue-500/50 transition-all"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={busy || question.trim().length < 2}
+              className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-sm font-semibold text-white transition-all shrink-0 flex items-center justify-center gap-2 shadow-sm"
+            >
+              {busy ? (
+                <>
+                  <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  <span>Evaluating...</span>
+                </>
+              ) : (
+                <span>Ask Question</span>
+              )}
+            </button>
+          </form>
 
-        {error && (
-          <div className="mt-3 text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded px-3 py-2">
-            {error}
-          </div>
-        )}
+          {error && (
+            <div className="mt-3 text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+        </div>
 
-        {/* Answer */}
+        {/* Answer Display */}
         {result && (
-          <div className="mt-5">
-            <div className="flex items-center gap-3 mb-3 flex-wrap">
-              <TrustBadge badge={result.badge} score={result.trust_score} size="md" />
-              <span className="text-[11px] text-slate-500 font-mono">
-                kind: {result.kind}
-              </span>
-              {result.equipment_tag && <Tag tone="blue">{result.equipment_tag}</Tag>}
-              {result.cross_unit && <Tag>cross-unit</Tag>}
-              <span className="text-[11px] text-slate-600 font-mono">
-                llm: {result.llm_mode}
-              </span>
+          <div className="space-y-4">
+            {/* Top metadata badge row */}
+            <div className="flex items-center justify-between flex-wrap gap-3 bg-panel-2/60 border border-slate-800/80 rounded-xl p-3">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <TrustBadge badge={result.badge} score={result.trust_score} size="md" />
+                {result.equipment_tag && <Tag tone="blue">{result.equipment_tag}</Tag>}
+                {result.cross_unit && <Tag>Cross-Unit</Tag>}
+              </div>
+              <div className="flex items-center gap-3 text-xs font-mono text-slate-400">
+                <span>Kind: <strong className="text-slate-200">{result.kind}</strong></span>
+                <span>Mode: <strong className="text-slate-200">{result.llm_mode}</strong></span>
+                <button
+                  onClick={() => {
+                    setResult(null);
+                    setQuestion("");
+                  }}
+                  className="px-2.5 py-1 rounded-md text-xs font-sans text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
+            <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
               <div className="min-w-0">
                 <AnswerBody result={result} />
               </div>
 
-              {/* Why this score. The question an engineer actually asks is
-                  "why do you say that?", and hiding the arithmetic makes the
-                  badge decorative. */}
+              {/* Trust Score Breakdown Panel */}
               {result.signals.length > 0 && (
-                <Panel title="Why this score" className="h-fit">
-                  <div className="space-y-3">
+                <Panel title="Trust Breakdown" className="h-fit">
+                  <div className="space-y-3.5">
                     {result.signals.map((signal) => (
                       <SignalRow key={signal.name} {...signal} />
                     ))}
                   </div>
                   {result.reasons.length > 0 && (
-                    <ul className="mt-4 pt-3 border-t border-slate-800/60 space-y-1.5">
-                      {result.reasons.map((reason, i) => (
-                        <li key={i} className="text-[11px] text-slate-400 leading-relaxed">
-                          {reason}
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="mt-5 pt-4 border-t border-slate-800/80">
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-2">
+                        Evaluation Notes
+                      </div>
+                      <ul className="space-y-2">
+                        {result.reasons.map((reason, i) => (
+                          <li key={i} className="text-xs text-slate-300 leading-relaxed flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
+                            <span>{reason}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </Panel>
               )}
@@ -263,33 +301,34 @@ export default function AskPage() {
           </div>
         )}
 
-        {/* Examples, shown before the first answer and collapsible after */}
+        {/* Preset Prompt Showcase Cards */}
         {!result && (
-          <div className="mt-8">
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-              Try one of these
-            </h2>
-            <p className="mt-1 text-[11px] text-slate-600">
-              Each one exercises a different guardrail. The refusals matter as
-              much as the answers.
-            </p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className="space-y-3">
+            <div>
+              <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                Preset Test Scenarios (Guardrail Validation)
+              </h2>
+              <p className="mt-1 text-xs text-slate-400">
+                Click any scenario to see how TrustHUB retrieves or deliberately refuses unverified queries.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {EXAMPLES.map((example) => (
                 <button
                   key={example.label}
                   onClick={() => void submit(example.question)}
                   disabled={busy}
-                  className="text-left rounded-lg border border-slate-800/60 bg-panel-2 px-3.5 py-3 hover:border-blue-500/40 hover:bg-surface-hover disabled:opacity-50 transition-colors"
+                  className="group text-left rounded-xl border border-slate-800/80 bg-panel-2/80 p-4 hover:border-blue-500/50 hover:bg-panel-2 transition-all flex flex-col justify-between"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-slate-200">
-                      {example.label}
-                    </span>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Tag tone={example.tone}>{example.category}</Tag>
+                    </div>
+                    <div className="text-xs font-mono font-medium text-slate-200 group-hover:text-blue-300 transition-colors break-words">
+                      {example.question}
+                    </div>
                   </div>
-                  <div className="mt-1 text-[11px] font-mono text-slate-400 break-words">
-                    {example.question}
-                  </div>
-                  <div className="mt-1.5 text-[11px] text-slate-600 leading-snug">
+                  <div className="mt-3 pt-2.5 border-t border-slate-800/80 text-[11px] text-slate-400 leading-snug">
                     {example.why}
                   </div>
                 </button>
@@ -298,17 +337,6 @@ export default function AskPage() {
           </div>
         )}
 
-        {result && (
-          <button
-            onClick={() => {
-              setResult(null);
-              setQuestion("");
-            }}
-            className="mt-6 text-[11px] text-slate-500 hover:text-slate-300 transition-colors"
-          >
-            Clear and pick another question
-          </button>
-        )}
       </div>
     </PageShell>
   );

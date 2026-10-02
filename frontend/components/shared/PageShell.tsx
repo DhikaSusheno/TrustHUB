@@ -147,15 +147,24 @@ export function Stat({
 }) {
   const toneClass = {
     default: "text-ink",
-    good: "text-green-400 font-bold",
-    warn: "text-amber-400 font-bold",
-    bad: "text-red-400 font-bold",
+    good: "text-green-400",
+    warn: "text-amber-400",
+    bad: "text-red-400",
   }[tone];
+
+  const toneBar = {
+    default: "bg-blue-500/60",
+    good: "bg-green-500",
+    warn: "bg-amber-500",
+    bad: "bg-red-500",
+  }[tone];
+
   return (
-    <div className="border-t border-slate-800/80 pt-3">
-      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">{label}</div>
-      <div className={`mt-1.5 text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight ${toneClass}`}>{value}</div>
-      {sub && <div className="mt-2 text-[11px] text-slate-400 leading-snug">{sub}</div>}
+    <div className="relative overflow-hidden rounded-xl border border-slate-800/80 bg-panel-2/70 p-4 shadow-sm transition-all hover:border-slate-700/80 hover:bg-panel-2">
+      <div className={`absolute top-0 left-0 h-1 w-full ${toneBar}`} />
+      <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">{label}</div>
+      <div className={`mt-2 text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight ${toneClass}`}>{value}</div>
+      {sub && <div className="mt-2.5 text-xs text-slate-400 leading-snug">{sub}</div>}
     </div>
   );
 }

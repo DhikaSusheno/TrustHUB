@@ -5,111 +5,76 @@
 // Provenance of the four figures below, because the distinction matters to a
 // judge and used to be misstated in this file's header comment. They are the
 // official CALIBER Case 1 dataset's figures, as documented in the Case Book
-// (`TRUSTHUB.md`, the section that lists what each endpoint reports), and each
-// is named here with the endpoint that produces it once the dataset is
-// ingested: `GET /api/plant/status` and `GET /api/plant/verification`.
-//
-// They are NOT what this instance is currently holding. A fresh checkout has
-// no index at all, so a visitor who opens the app sees the Dataset page say so
-// while this page shows the dataset's documented totals. That gap is stated
-// under the figures rather than left for someone to discover.
+// (`TRUSTHUB.md`), and each is named here with the endpoint that produces it
+// once the dataset is ingested: `GET /api/plant/status` and
+// `GET /api/plant/verification`.
 //
 // Nothing here is aspirational: the awkward facts (sample data, one missing
 // document, no LLM) are in the first screen rather than in a footnote.
 
 import Link from "next/link";
+import LogoMark from "@/components/shared/LogoMark";
 import PetroProcessMotif from "@/components/landing/PetroProcessMotif";
 import InteractiveLandingDemo from "@/components/landing/InteractiveLandingDemo";
-import LogoMark from "@/components/shared/LogoMark";
 
 // --- What the dataset actually contains -------------------------------------
-// The official CALIBER Case 1 dataset, not a local instance. See the note above.
+// Official CALIBER Case 1 figures, not a running instance. See header above.
 
 const FACTS = [
-  { k: "95", v: "documents, with real document numbers, revisions and approval records", src: "/api/plant/status" },
-  { k: "8", v: "equipment units, each with a datasheet, GA, interlock diagram and plot plan", src: "/api/plant/status" },
-  { k: "211", v: "work orders joined from the maintenance workbook, 31 of them breakdowns", src: "/api/plant/status" },
-  { k: "0", v: "contradictions among extracted trip set points, out of 105 values extracted", src: "/api/plant/verification" },
-];
-
-// --- The problem, stated as the plant actually experiences it ---------------
+  { k: "95", label: "documents", detail: "with real document numbers, revisions and approval records", src: "/api/plant/status", tone: "blue" },
+  { k: "8", label: "equipment units", detail: "each with datasheet, GA, interlock diagram and plot plan", src: "/api/plant/status", tone: "slate" },
+  { k: "211", label: "work orders", detail: "joined from the maintenance workbook, 31 of them breakdowns", src: "/api/plant/status", tone: "slate" },
+  { k: "0", label: "contradictions", detail: "among extracted trip set points, out of 105 values extracted", src: "/api/plant/verification", tone: "green" },
+] as const;
 
 const PROBLEMS = [
   {
+    n: "01",
     title: "The right document, the wrong revision",
     body: "An engineer finds a set point in a drawing that was superseded two revisions ago. The number is right in the file and wrong for the plant. Nothing in a PDF tells you which revision you are holding.",
   },
   {
+    n: "02",
     title: "The document that is not there",
     body: "The procedure you need was never written, or lives in a drawer. A chat assistant fills the gap with a plausible sentence, and that sentence is indistinguishable from a real one.",
   },
   {
+    n: "03",
     title: "Eleven documents per unit",
     body: "Eight units, five baseline document types each, plus one-point lessons written after individual failures. Nobody holds all of it in their head, and the relevant document is rarely the one already open.",
   },
 ];
 
-// --- The pipeline -----------------------------------------------------------
-
 const PIPELINE = [
   {
     n: "01",
     title: "Ingest once, from the real files",
-    body: "87 single-page PDFs, 8 P&ID drawings and the maintenance workbook are parsed into one SQLite index: 95 documents, 362 text chunks, 211 work orders, 105 measured parameter values.",
+    body: "87 single-page PDFs, 8 P&ID drawings and the maintenance workbook parsed into one SQLite index: 95 documents, 362 text chunks, 211 work orders, 105 measured parameter values.",
   },
   {
     n: "02",
-    title: "Extract, and record where it came from",
-    body: "Trip set points are read from datasheet tables and interlock logic with their operator, value and unit kept intact. Approval status comes from the revision history and signature blocks that are actually present in each document type.",
+    title: "Extract, record provenance",
+    body: "Trip set points are read from datasheet tables and interlock logic with operator, value and unit kept intact. Approval status comes from revision history and signature blocks present in each document.",
   },
   {
     n: "03",
-    title: "Retrieve, then check whether to answer",
-    body: "SQLite FTS5 over the indexed chunks, scoped to the equipment tag in the question where one is named. Before any answer is composed, the question is tested against what the index actually contains.",
+    title: "Retrieve, then decide whether to answer",
+    body: "SQLite FTS5 over indexed chunks, scoped to the equipment tag in the question where one is named. Before any answer is composed, the question is tested against what the index actually contains.",
   },
   {
     n: "04",
-    title: "Score it, badge it, or refuse",
-    body: "Five weighted signals produce one number, the number produces TRUSTED, VERIFY or DO NOT EXECUTE, and the sources behind the answer are listed with their document number, revision and approval status.",
+    title: "Score, badge, or refuse",
+    body: "Five weighted signals produce one number, the number produces TRUSTED, VERIFY or DO NOT EXECUTE, and the sources are listed with their document number, revision and approval status.",
   },
 ];
-
-// --- The four baseline data types ------------------------------------------
-
-const DATA_TYPES = [
-  {
-    name: "Equipment datasheets",
-    detail: "Manufacturer data and physical parameters per unit.",
-    note: "Read from PDF tables, not linear text. Reading these files in text order loses the pairing between a label and its value, which is the only thing that makes them usable.",
-  },
-  {
-    name: "Cause & effect / interlock logic",
-    detail: "Which condition trips which protective function.",
-    note: "The trip set points live here. 31 interlock parameters are extracted as structured values with their operators, not as prose.",
-  },
-  {
-    name: "Operating procedures (GA, OPL, plot plan)",
-    detail: "How to do the work, and what was learned after it went wrong.",
-    note: "55 one-point lessons carry real signature blocks - reviewed and approved by named people - so a procedure can be traced to the person accountable for it.",
-  },
-  {
-    name: "Maintenance history",
-    detail: "Work orders, breakdowns, downtime and cost from the workbook.",
-    note: "19 of 31 breakdowns already have a one-point lesson attached to them. The other 12 are the gap, and the system reports them rather than hiding them.",
-  },
-];
-
-// --- Trust model -----------------------------------------------------------
 
 const WEIGHTS = [
-  { name: "Approval", w: "0.30", body: "Is the source an approved, issued revision?" },
-  { name: "Revision", w: "0.20", body: "Does it carry a revision and an effective date?" },
-  { name: "Agreement", w: "0.20", body: "Do several documents state the same value?" },
-  { name: "Relevance", w: "0.20", body: "How well does the retrieved text match the question?" },
-  { name: "Coverage", w: "0.10", body: "How much of the answer comes from more than one source?" },
+  { name: "Approval", w: 0.30, body: "Is the source an approved, issued revision?" },
+  { name: "Revision", w: 0.20, body: "Does it carry a revision and an effective date?" },
+  { name: "Agreement", w: 0.20, body: "Do several documents state the same value?" },
+  { name: "Relevance", w: 0.20, body: "How well does the retrieved text match the question?" },
+  { name: "Coverage", w: 0.10, body: "How much of the answer comes from more than one source?" },
 ];
-
-// --- Refusals. The part that matters. -------------------------------------
 
 const REFUSALS = [
   {
@@ -130,348 +95,360 @@ const REFUSALS = [
   },
 ];
 
-// --- Limits, stated on the first screen ------------------------------------
-
 const LIMITS = [
   "The dataset is labelled by its own authors as sample data. Trip set points and costs are stated to be dummy training values; the document structure, revision history and approval records are used as given.",
-  "No language model is called by default. Answers are assembled from indexed text and measured values, so nothing is generated and nothing can be hallucinated - but nothing is paraphrased either, and procedural steps are quoted rather than restated.",
+  "No language model is called by default. Answers are assembled from indexed text and measured values, so nothing is generated and nothing can be hallucinated, but nothing is paraphrased either, and procedural steps are quoted rather than restated.",
   "Zero contradictions means the extracted values agree with each other. It does not mean the plant is safe, and it does not mean every parameter in the documents was extracted.",
   "The dataset is not committed to this repository. It is fetched with one command, because its licence does not permit redistribution.",
 ];
 
-// --- The nine pages --------------------------------------------------------
-
 const PAGES = [
-  { page: "Ask", what: "The product. A question, a badge, the documents behind it, and the arithmetic behind the score." },
-  { page: "Equipment", what: "One unit at a time: every document, its full work-order history in date order, and the failures with a linked lesson." },
+  { page: "Ask", what: "A question, a badge, the documents behind it, and the arithmetic behind the score." },
+  { page: "Equipment", what: "One unit at a time: every document, its full work-order history, and failures with linked lessons." },
   { page: "Documents", what: "The register. Document number, revision, effective date, and the approval marker found in the file." },
-  { page: "Graph", what: "How the documents join. 8 units, 8 interlock diagrams, 8 datasheets, 8 plot plans, 55 lessons, 31 breakdowns." },
-  { page: "Verification", what: "Whether the documents agree. Extraction inventory beside the conflict count, because zero conflicts alone means nothing." },
+  { page: "Graph", what: "How the documents join. 8 units, 8 interlock diagrams, 8 datasheets, 55 lessons, 31 breakdowns." },
+  { page: "Verification", what: "Whether the documents agree. Extraction inventory beside the conflict count." },
   { page: "Maintenance", what: "211 work orders and 31 breakdowns, with downtime and cost, and lesson coverage per unit." },
   { page: "Overview", what: "What this instance currently holds, and what it does not claim." },
   { page: "Audit", what: "The weight table printed in full, so any score can be recomputed by hand, plus every question asked." },
   { page: "Dataset", what: "Provenance, the known gaps in the file set, and the LLM policy." },
 ];
 
-const STACK = [
-  "Next.js 15",
-  "React 19",
-  "TypeScript",
-  "Tailwind CSS",
-  "FastAPI",
-  "SQLite",
-  "SQLite FTS5",
-  "pdfplumber",
-  "openpyxl",
-];
+const STACK = ["Next.js 15", "React 19", "TypeScript", "Tailwind CSS", "FastAPI", "SQLite", "SQLite FTS5", "pdfplumber", "openpyxl"];
+
+// Thin colored left accent bar per fact — the color is functional, not decorative:
+// blue = primary data (document count), green = quality metric (zero contradictions)
+const FACT_ACCENT: Record<string, string> = {
+  blue: "bg-blue-500",
+  green: "bg-green-500",
+  slate: "bg-slate-600",
+};
 
 export default function LandingPage() {
   return (
     <div className="h-full overflow-y-auto">
-      {/* ---------- Nav ---------- */}
-      <header className="sticky top-0 z-10 border-b border-slate-800/60 bg-surface/90 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-4">
-          <span className="flex items-center gap-2.5">
+
+      {/* ── Nav ─────────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-10 border-b border-slate-800/60 bg-surface/95 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 h-14 flex items-center gap-4">
+          <span className="flex items-center gap-2.5 shrink-0">
             <span className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center">
               <LogoMark />
             </span>
             <span className="text-sm font-bold text-ink tracking-tight">TrustHUB</span>
           </span>
-          <nav aria-label="Sections" className="hidden md:flex items-center gap-5 text-xs text-slate-400 ml-4">
-            <a href="#problem" className="hover:text-slate-200 transition-colors">Problem</a>
-            <a href="#how" className="hover:text-slate-200 transition-colors">How it works</a>
-            <a href="#data" className="hover:text-slate-200 transition-colors">Data</a>
-            <a href="#trust" className="hover:text-slate-200 transition-colors">Trust</a>
-            <a href="#limits" className="hover:text-slate-200 transition-colors">Limits</a>
-            <a href="#demo" className="hover:text-slate-200 transition-colors">Demo</a>
+          <nav aria-label="Sections" className="hidden md:flex items-center gap-1 text-xs text-slate-400 ml-2">
+            {["problem","how","trust","limits","demo"].map(id => (
+              <a key={id} href={`#${id}`}
+                className="px-2.5 py-1.5 rounded-md hover:bg-slate-800/60 hover:text-slate-200 transition-colors capitalize">
+                {id === "how" ? "How it works" : id.charAt(0).toUpperCase() + id.slice(1)}
+              </a>
+            ))}
           </nav>
           <div className="flex-1" />
-          <Link href="/" className="text-xs font-semibold px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors">
+          <Link href="/"
+            className="text-xs font-semibold px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors">
             Open the app
           </Link>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6">
-        {/* ---------- Hero ---------- */}
-        <section className="py-20 sm:py-28 border-b border-slate-800/60">
-          <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center">
+      <main className="max-w-6xl mx-auto px-5 sm:px-8">
+
+        {/* ── Hero ────────────────────────────────────────────────────────── */}
+        <section className="pt-16 pb-12 sm:pt-24 sm:pb-16 border-b border-slate-800/60">
+          <div className="grid lg:grid-cols-[1fr_420px] gap-12 lg:gap-16 lg:items-start">
+
+            {/* Left: headline + stats */}
             <div>
-          {/* Not a badge and not uppercase-tracked: this is a case reference, so
-              it is set in the same mono as every document number and tag on this
-              page, in sentence case, the way a document header is written. The
-              case number takes the ink because it is the part a judge is
-              scanning for. */}
-          <p className="font-mono text-xs text-slate-400 mb-5">
-            CALIBER 2026, <span className="text-ink">Case 1</span>, Manufacturing Knowledge Hub
-          </p>
-          <h1 className="text-4xl sm:text-5xl font-bold text-ink tracking-tight leading-[1.1] max-w-3xl">
-            An engineering knowledge hub that would rather refuse than guess.
-          </h1>
-          <p className="mt-6 text-base text-slate-400 max-w-2xl leading-relaxed">
-            Datasheets, interlock logic, procedures and maintenance history for
-            one unit of an LLDPE plant, in one index. Every answer carries a
-            trust badge, the documents behind it, and the reason for its score.
-            A question with no supportable source gets a refusal and an
-            explanation, not a sentence.
-          </p>
-          <div className="mt-9 flex flex-wrap items-center gap-3">
-            <Link href="/" className="text-sm font-semibold px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors">
-              Open the app
-            </Link>
-            <a href="#how" className="text-sm px-5 py-2.5 rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-ink transition-colors">
-              How it works
-            </a>
-            <a href="#limits" className="text-sm px-5 py-2.5 rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-ink transition-colors">
-              What it does not claim
-            </a>
-          </div>
-            </div>
-            <div className="min-w-0">
-              <PetroProcessMotif className="w-full h-auto" />
-              <p className="mt-4 text-[11px] text-slate-400 leading-relaxed">
-                A polymerisation train as a P&amp;ID draws it: vessels on one
-                pipe run, instrument bubbles above each, tags in the notation the
-                indexed documents use. The unit this hub reads is a linear low
-                density polyethylene line.
+              {/* Case reference — mono, no pill badge */}
+              <p className="font-mono text-xs text-slate-500 mb-6 tracking-wide">
+                CALIBER 2026 &middot; <span className="text-slate-300">Case 1</span> &middot; Manufacturing Knowledge Hub
+              </p>
+
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-bold text-ink leading-[1.08] tracking-tight max-w-2xl">
+                An engineering knowledge hub that would rather{" "}
+                <span className="text-blue-400">refuse</span> than guess.
+              </h1>
+
+              <p className="mt-6 text-base text-slate-400 max-w-xl leading-relaxed">
+                Datasheets, interlock logic, procedures and maintenance history for
+                one LLDPE plant unit in one index. Every answer carries a trust badge,
+                the documents behind it, and the arithmetic behind its score.
+                A question with no supportable source gets a refusal and an explanation,
+                not a sentence.
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link href="/"
+                  className="text-sm font-semibold px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors">
+                  Open the app
+                </Link>
+                <a href="#how"
+                  className="text-sm px-5 py-2.5 rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-ink transition-colors">
+                  How it works
+                </a>
+                <a href="#limits"
+                  className="text-sm px-5 py-2.5 rounded-lg border border-slate-700 text-slate-300 hover:border-slate-500 hover:text-ink transition-colors">
+                  What it does not claim
+                </a>
+              </div>
+
+              {/* Stat bar — 4 figures with colored left rule */}
+              <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {FACTS.map((f) => (
+                  <div key={f.k} className="flex gap-3">
+                    <div className={`w-0.5 shrink-0 self-stretch rounded-full ${FACT_ACCENT[f.tone]}`} />
+                    <div>
+                      <div className="text-2xl font-bold text-ink tabular-nums leading-none">{f.k}</div>
+                      <div className="mt-1 text-[11px] font-semibold text-slate-300 leading-tight">{f.label}</div>
+                      <div className="mt-1 text-[10px] text-slate-500 leading-snug">{f.detail}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-[11px] text-slate-600 leading-relaxed max-w-xl">
+                Official CALIBER Case 1 dataset totals, labelled with the endpoint that produces each.
+                A fresh checkout has no index; run{" "}
+                <code className="font-mono text-slate-500">python -m plant.fetch_dataset</code> first.
               </p>
             </div>
-          </div>
-          {/* Every readable step on this page is ink-3 or darker. ink-4 measures 4.09:1
-            and ink-5 2.57:1 against the dark surface this page sits on, so the
-            two faintest steps cannot carry a real sentence here, whatever they
-            are used for elsewhere. Hierarchy comes from weight and size instead,
-            which costs nothing and is legible in both themes. */}
-          <p className="mt-14 text-xs font-semibold uppercase tracking-wide text-slate-300">
-            The official dataset, as documented in the Case Book
-          </p>
-          <dl className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-6">
-            {FACTS.map((s) => (
-              <div key={s.v} className="border-l border-slate-800 pl-4">
-                <dt className="text-xl font-bold text-ink tabular-nums">{s.k}</dt>
-                <dd className="text-xs text-slate-400 mt-1 leading-snug">{s.v}</dd>
-                {/* ink-4 rather than ink-5: this is a real sentence at 10px, and ink-5 sits
-                    at 3.98:1 on the dark surface, which is below AA for text this
-                    small. The endpoint is meta, but meta is still read. */}
-                <dd className="mt-1.5 text-[10px] font-mono text-slate-400">{s.src}</dd>
+
+            {/* Right: P&ID motif */}
+            <div className="flex flex-col gap-4">
+              <div className="rounded-xl border border-slate-800/60 bg-panel/80 p-3 overflow-hidden">
+                <PetroProcessMotif className="w-full h-auto" />
               </div>
-            ))}
-          </dl>
-          <p className="mt-5 text-xs text-slate-400 leading-relaxed max-w-3xl">
-            These four figures are the official CALIBER Case 1 dataset&rsquo;s
-            totals, taken from the Case Book and labelled with the endpoint that
-            produces each one. They are not what this instance is holding right
-            now: a fresh checkout has no plant index, so the app opens on an
-            empty Dataset page until the dataset is fetched with{" "}
-            <code className="font-mono text-slate-400">python -m plant.fetch_dataset</code>.
-            What a given instance holds is on the Dataset page, not here.
-          </p>
-        </section>
+              <p className="text-[11px] text-slate-500 leading-relaxed px-1">
+                A polymerisation train as a P&amp;ID draws it: vessels on one pipe run,
+                instrument bubbles above each, tags in the notation the indexed documents use.
+              </p>
 
-        {/* ---------- Problem ---------- */}
-        <section id="problem" className="scroll-mt-14 py-20 border-b border-slate-800/60">
-          <h2 className="text-2xl font-bold text-ink">The problem</h2>
-          <p className="mt-2 text-sm text-slate-400 max-w-2xl">
-            Not &ldquo;information is hard to find&rdquo;. A plant already has
-            the documents. What it does not have is any way to know which of
-            them applies, whether it is current, and whether it has been approved.
-          </p>
-          {/* Three columns with nothing between them but space. The problems
-              are not objects, they are the same problem seen three ways, and a
-              border around each one would say they were three separate features. */}
-          <div className="mt-12 grid gap-8 sm:grid-cols-3">
-            {PROBLEMS.map((p) => (
-              <article key={p.title}>
-                <h3 className="text-base font-semibold text-ink leading-snug">{p.title}</h3>
-                <p className="mt-3 text-sm text-slate-400 leading-relaxed">{p.body}</p>
-              </article>
-            ))}
+              {/* Trust badge trio — shown here as a real preview, not decoration */}
+              <div className="rounded-xl border border-slate-800/60 bg-panel p-4">
+                <p className="text-[10px] font-mono text-slate-500 mb-3 uppercase tracking-wider">
+                  Three possible outcomes per question
+                </p>
+                <div className="space-y-2.5">
+                  {[
+                    { badge: "TRUSTED", score: "0.84", desc: "Approved, revisioned, corroborated by several documents.", cls: "border-green-500/30 bg-green-500/8", dot: "bg-green-400", text: "text-green-300" },
+                    { badge: "VERIFY", score: "0.61", desc: "Usable, but confirm against the cited document before acting.", cls: "border-amber-500/30 bg-amber-500/8", dot: "bg-amber-400", text: "text-amber-300" },
+                    { badge: "DO NOT EXECUTE", score: "0.23", desc: "No trustworthy source. Do not act on this answer.", cls: "border-red-500/30 bg-red-500/8", dot: "bg-red-400", text: "text-red-300" },
+                  ].map(b => (
+                    <div key={b.badge} className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 ${b.cls}`}>
+                      <span className={`mt-1 w-1.5 h-1.5 rounded-full shrink-0 ${b.dot}`} />
+                      <div className="min-w-0">
+                        <div className={`text-xs font-bold tracking-wide ${b.text}`}>
+                          {b.badge} <span className="font-mono font-normal opacity-70">{b.score}</span>
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-slate-400 leading-snug">{b.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* ---------- How it works ---------- */}
+        {/* ── Problem ─────────────────────────────────────────────────────── */}
+        <section id="problem" className="scroll-mt-14 py-20 border-b border-slate-800/60">
+          <div className="grid lg:grid-cols-[280px_1fr] gap-10 lg:gap-16">
+            <div>
+              <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">01</p>
+              <h2 className="text-2xl font-bold text-ink leading-tight">The problem</h2>
+              <p className="mt-3 text-sm text-slate-400 leading-relaxed">
+                Not "information is hard to find". A plant already has the documents.
+                What it does not have is any way to know which applies, whether it is current,
+                and whether it has been approved.
+              </p>
+            </div>
+            <div className="space-y-0 divide-y divide-slate-800/60">
+              {PROBLEMS.map((p) => (
+                <div key={p.n} className="flex gap-5 py-6 first:pt-0 last:pb-0">
+                  <span className="font-mono text-sm text-slate-700 shrink-0 mt-0.5 w-8">{p.n}</span>
+                  <div>
+                    <h3 className="text-base font-semibold text-ink leading-snug">{p.title}</h3>
+                    <p className="mt-2 text-sm text-slate-400 leading-relaxed">{p.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── How it works ────────────────────────────────────────────────── */}
         <section id="how" className="scroll-mt-14 py-20 border-b border-slate-800/60">
+          <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">02</p>
           <h2 className="text-2xl font-bold text-ink">How it works</h2>
-          <p className="mt-2 text-sm text-slate-400 max-w-2xl">
-            Four steps, in this order. The check for whether an answer is
-            permitted at all happens before anything is written, not after.
+          <p className="mt-2 text-sm text-slate-400 max-w-2xl leading-relaxed">
+            Four steps, in this order. The check for whether an answer is permitted at all
+            happens before anything is written, not after.
           </p>
-          {/* This is the one genuinely ordered list on the page, so it is the one
-              place a number earns its place. The rule and the step token carry
-              the sequence; four identical boxes would not have. */}
-          <ol className="mt-12 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+          <ol className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {PIPELINE.map((s) => (
-              <li key={s.n} className="border-t border-slate-800/70 pt-4">
-                <span className="font-mono text-xs text-blue-300">{s.n}</span>
-                <h3 className="mt-3 text-sm font-semibold text-ink leading-snug">{s.title}</h3>
-                <p className="mt-2 text-xs text-slate-400 leading-relaxed">{s.body}</p>
+              <li key={s.n}
+                className="relative rounded-xl border border-slate-800/60 bg-panel p-5 flex flex-col gap-3">
+                <span className="font-mono text-3xl font-bold text-slate-800 leading-none select-none absolute top-4 right-4">
+                  {s.n}
+                </span>
+                <span className="w-6 h-0.5 bg-blue-500 rounded-full" />
+                <h3 className="text-sm font-semibold text-ink leading-snug pr-8">{s.title}</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">{s.body}</p>
               </li>
             ))}
           </ol>
         </section>
 
-        {/* ---------- Data types ---------- */}
-        <section id="data" className="scroll-mt-14 py-20 border-b border-slate-800/60">
-          <h2 className="text-2xl font-bold text-ink">The four baseline data types</h2>
-          <p className="mt-2 text-sm text-slate-400 max-w-2xl">
-            Joined by the key the dataset itself specifies: the
-            equipment tag, which the dataset&rsquo;s own documentation calls the
-            join key to all other documents.
-          </p>
-          {/* Set like a datasheet: the type name and what it carries share one
-              baseline, because they are two properties of the same row rather
-              than a heading and a subtitle. */}
-          <div className="mt-12 grid gap-x-10 gap-y-8 lg:grid-cols-2">
-            {DATA_TYPES.map((d) => (
-              <article key={d.name} className="border-t border-slate-800/70 pt-4">
-                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <h3 className="text-sm font-semibold text-ink">{d.name}</h3>
-                  <p className="text-xs text-blue-300">{d.detail}</p>
-                </div>
-                <p className="mt-2.5 text-xs text-slate-400 leading-relaxed">{d.note}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        {/* ---------- Trust ---------- */}
+        {/* ── Trust engine ────────────────────────────────────────────────── */}
         <section id="trust" className="scroll-mt-14 py-20 border-b border-slate-800/60">
+          <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">03</p>
           <h2 className="text-2xl font-bold text-ink">The trust engine</h2>
-          <p className="mt-2 text-sm text-slate-400 max-w-2xl">
-            Five weighted signals, one score, three badges. The weights are
-            properties of document provenance, not of a model&rsquo;s confidence,
-            because no model is involved in producing them.
+          <p className="mt-2 text-sm text-slate-400 max-w-2xl leading-relaxed">
+            Five weighted signals, one score, three badges. Weights are properties of
+            document provenance, not of a model's confidence, because no model is involved
+            in producing them.
           </p>
-          <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-slate-800/60 bg-panel p-5">
-              <h3 className="text-sm font-semibold text-ink">Weights</h3>
-              <div className="mt-4 space-y-2.5">
+
+          <div className="mt-10 grid lg:grid-cols-[1fr_1fr] gap-6">
+
+            {/* Weights panel */}
+            <div className="rounded-xl border border-slate-800/60 bg-panel p-6">
+              <h3 className="text-sm font-bold text-ink mb-5">Signal weights</h3>
+              <div className="space-y-4">
                 {WEIGHTS.map((w) => (
                   <div key={w.name}>
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-xs text-slate-300">{w.name}</span>
-                      <span className="text-xs font-mono text-slate-400">{w.w}</span>
+                    <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                      <span className="text-xs font-semibold text-slate-300">{w.name}</span>
+                      <span className="text-xs font-mono text-blue-400">{w.w.toFixed(2)}</span>
                     </div>
-                    <div className="mt-1 h-1 rounded-full bg-slate-800 overflow-hidden">
-                      <div className="h-full bg-blue-500" style={{ width: `${parseFloat(w.w) * 100 / 0.3}%` }} />
+                    <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full"
+                        style={{ width: `${(w.w / 0.30) * 100}%` }}
+                      />
                     </div>
-                    <p className="mt-1 text-[10px] text-slate-400">{w.body}</p>
+                    <p className="mt-1 text-[11px] text-slate-500 leading-snug">{w.body}</p>
                   </div>
                 ))}
               </div>
-              <div className="mt-5 pt-4 border-t border-slate-800/60 space-y-1.5 text-[11px]">
-                <p><span className="text-green-300 font-semibold">TRUSTED</span> at 0.80: approved, revisioned, corroborated.</p>
-                <p><span className="text-amber-300 font-semibold">VERIFY</span> at 0.50: usable after checking the cited document.</p>
-                <p><span className="text-red-300 font-semibold">DO NOT EXECUTE</span> below 0.50, or refused outright when no source supports the question.</p>
+              <div className="mt-6 pt-4 border-t border-slate-800/60 grid gap-2">
+                {[
+                  { label: "TRUSTED", threshold: "0.80+", note: "Approved, revisioned, corroborated.", cls: "text-green-300", bar: "bg-green-500" },
+                  { label: "VERIFY", threshold: "0.50", note: "Usable after checking the cited document.", cls: "text-amber-300", bar: "bg-amber-500" },
+                  { label: "DO NOT EXECUTE", threshold: "<0.50", note: "No trustworthy source or outright refusal.", cls: "text-red-300", bar: "bg-red-500" },
+                ].map(b => (
+                  <div key={b.label} className="flex items-center gap-2.5">
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${b.bar}`} />
+                    <span className={`text-xs font-bold ${b.cls}`}>{b.label}</span>
+                    <span className="text-[10px] font-mono text-slate-600">{b.threshold}</span>
+                    <span className="text-[11px] text-slate-500 leading-snug">{b.note}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-800/60 bg-panel p-5">
-              <h3 className="text-sm font-semibold text-ink">What it refuses, and why</h3>
-              <p className="mt-1 text-xs text-slate-400 leading-relaxed">
-                Refusals are the feature, not the failure mode. A hub that
-                answers everything is fluent, not trustworthy.
+            {/* Refusals panel */}
+            <div className="rounded-xl border border-slate-800/60 bg-panel p-6">
+              <h3 className="text-sm font-bold text-ink mb-1">What it refuses, and why</h3>
+              <p className="text-xs text-slate-400 leading-relaxed mb-5">
+                Refusals are the feature, not the failure mode. A hub that answers everything
+                is fluent, not trustworthy.
               </p>
-              <ul className="mt-4 space-y-3">
+              <ul className="space-y-4">
                 {REFUSALS.map((r) => (
-                  <li key={r.q}>
-                    <p className="text-xs font-mono text-slate-200 break-words">{r.q}</p>
-                    <p className="mt-0.5 text-[11px] text-slate-400 leading-relaxed">{r.why}</p>
+                  <li key={r.q} className="border-l-2 border-red-500/40 pl-3">
+                    <p className="text-xs font-mono text-slate-200 break-words leading-snug">{r.q}</p>
+                    <p className="mt-1 text-[11px] text-slate-500 leading-relaxed">{r.why}</p>
                   </li>
                 ))}
               </ul>
             </div>
           </div>
+
+          {/* Interactive demo inline */}
           <div className="mt-8">
             <InteractiveLandingDemo />
           </div>
         </section>
 
-        {/* ---------- Limits ---------- */}
+        {/* ── Limits ──────────────────────────────────────────────────────── */}
         <section id="limits" className="scroll-mt-14 py-20 border-b border-slate-800/60">
+          <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">04</p>
           <h2 className="text-2xl font-bold text-ink">What this system does not claim</h2>
-          <p className="mt-2 text-sm text-slate-400 max-w-2xl">
+          <p className="mt-2 text-sm text-slate-400 max-w-2xl leading-relaxed">
             Listed here rather than in a footer, because a knowledge-hub demo that
             only shows its strengths is asking to be audited for the rest.
           </p>
-          {/* The marker is a vertical rule, not a dash glyph. It carries the same
-              role as the rule on each of the four figures above, so the section
-              reuses the page's one repeated gesture instead of introducing a
-              second one. */}
-          <ul className="mt-8 space-y-3 max-w-3xl">
-            {LIMITS.map((limit) => (
-              <li key={limit} className="flex gap-3 text-sm text-slate-400 leading-relaxed">
-                <span className="w-0.5 h-4 bg-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
-                <span>{limit}</span>
+          <ul className="mt-10 grid sm:grid-cols-2 gap-4 max-w-5xl">
+            {LIMITS.map((limit, i) => (
+              <li key={i}
+                className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-5 py-4">
+                <span className="font-mono text-[10px] text-amber-500/60 block mb-2">NOTE {String(i + 1).padStart(2, "0")}</span>
+                <p className="text-sm text-slate-300 leading-relaxed">{limit}</p>
               </li>
             ))}
           </ul>
         </section>
 
-        {/* ---------- Demo ---------- */}
+        {/* ── Demo path ───────────────────────────────────────────────────── */}
         <section id="demo" className="scroll-mt-14 py-20 border-b border-slate-800/60">
+          <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-3">05</p>
           <h2 className="text-2xl font-bold text-ink">The demo path</h2>
-          <p className="mt-2 text-sm text-slate-400 max-w-2xl">
+          <p className="mt-2 text-sm text-slate-400 max-w-2xl leading-relaxed">
             Nine pages. A judge can see the whole claim in about four minutes:
-            ask a question, check its sources, then check whether those sources
-            agree.
+            ask a question, check its sources, then check whether those sources agree.
           </p>
-          {/* Rows under a hairline rule, not nine bordered boxes. These are nine steps of
-             one walkthrough, and a grid of identical boxes says "parallel
-             features" instead; the rule is also the gesture the register pages in
-             the app already use, so the landing page matches the product it
-             describes. */}
-          <div className="mt-10 grid gap-x-10 sm:grid-cols-2">
+          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {PAGES.map((p) => (
-              <div key={p.page} className="flex gap-4 border-t border-slate-800/70 py-3">
-                <h3 className="w-24 shrink-0 text-xs font-semibold text-blue-300 font-mono">
-                  {p.page}
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed min-w-0">{p.what}</p>
+              <div key={p.page}
+                className="rounded-xl border border-slate-800/60 bg-panel px-4 py-4 hover:border-blue-500/30 hover:bg-panel-2 transition-colors">
+                <h3 className="text-xs font-mono font-bold text-blue-300">{p.page}</h3>
+                <p className="mt-1.5 text-xs text-slate-400 leading-relaxed">{p.what}</p>
               </div>
             ))}
           </div>
-          <div className="mt-10">
-            <Link href="/" className="inline-block text-sm font-semibold px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors">
+          <div className="mt-8">
+            <Link href="/"
+              className="inline-block text-sm font-semibold px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors">
               Open the app
             </Link>
           </div>
         </section>
 
-        {/* ---------- Stack ---------- */}
-        {/* One line of set, not nine pills. A cloud of chips says "we also used these"
-              and carries no information a reader can act on; the sentence
-              underneath is the part that matters, because it explains why
-              there is no vector database and no API key. */}
-        <section className="py-20">
-          <h2 className="text-2xl font-bold text-ink">Built with</h2>
-          <p className="mt-6 font-mono text-xs text-slate-400 max-w-3xl leading-relaxed">
-            {STACK.join("  ")}
-          </p>
-          <p className="mt-8 text-sm text-slate-400 leading-relaxed max-w-2xl">
+        {/* ── Stack ───────────────────────────────────────────────────────── */}
+        <section className="py-16">
+          <h2 className="text-lg font-bold text-ink">Built with</h2>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {STACK.map(s => (
+              <span key={s} className="font-mono text-xs text-slate-400 bg-panel border border-slate-800/60 px-3 py-1.5 rounded-md">
+                {s}
+              </span>
+            ))}
+          </div>
+          <p className="mt-6 text-sm text-slate-400 leading-relaxed max-w-2xl">
             Retrieval is SQLite FTS5 rather than a hosted vector database, so the
-            whole system runs on one machine with no API key and no external
-            service. The dataset is fetched with{" "}
-            <code className="font-mono text-xs text-slate-300">python -m plant.fetch_dataset</code>{" "}
-            and is not committed, because its licence does not permit
-            redistribution.
+            whole system runs on one machine with no API key and no external service.
+            The dataset is fetched with{" "}
+            <code className="font-mono text-xs text-slate-300 bg-panel border border-slate-800/60 px-1.5 py-0.5 rounded">
+              python -m plant.fetch_dataset
+            </code>{" "}
+            and is not committed, because its licence does not permit redistribution.
           </p>
         </section>
       </main>
 
       <footer className="border-t border-slate-800/60">
-        {/* No fourth "Open the app". The header button is sticky, so it is on
-            screen for every one of these lines already; a fourth identical
-            button at the bottom is repetition with no new destination. What a
-            reader who has reached the end actually wants is the one command
-            that changes the state of the app, so that is what closes the page. */}
-        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-6 justify-between">
-          <p className="text-xs text-slate-400">
-            CALIBER 2026, Case 1, Manufacturing Knowledge Hub, LLDPE unit Set 01
-          </p>
-          <p className="font-mono text-xs text-slate-400">
-            python -m plant.fetch_dataset
-          </p>
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
+          <div className="flex items-center gap-3">
+            <span className="w-6 h-6 rounded-md bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+              <LogoMark />
+            </span>
+            <p className="text-xs text-slate-500">
+              CALIBER 2026, Case 1 &middot; Manufacturing Knowledge Hub &middot; LLDPE Set 01
+            </p>
+          </div>
+          <p className="font-mono text-xs text-slate-600">python -m plant.fetch_dataset</p>
         </div>
       </footer>
     </div>
