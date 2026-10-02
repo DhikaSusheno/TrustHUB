@@ -102,7 +102,15 @@ by_type = Counter(n["type"] for n in nodes)
 # nodes in one circle are unreadable. The deck quotes both totals, so both are
 # measured here rather than one being assumed from the other.
 ring_nodes = by_type["equipment"] + by_type["interlock"] + by_type["breakdown"]
-ring_relations = sum(1 for l in links if l["label"] in ("interlock", "breakdown"))
+# Counted the way the Graph page actually filters, not by link label. The page
+# hides document nodes, and KnowledgeGraphPage drops any link whose endpoint is
+# hidden, so the 8 interlock-to-document edges go with them. Counting by label
+# alone reports 47 and flags the deck's 39 as stale, when 39 is what the screen
+# shows. A verification gate that misreads the page it checks is worse than none.
+ring_ids = {n["id"] for n in nodes if n["type"] != "document"}
+ring_relations = sum(
+    1 for l in links if l["source"] in ring_ids and l["target"] in ring_ids
+)
 
 
 def drifts(deck_claim, api_value, dp=None):
@@ -213,8 +221,8 @@ print()
 print("=== claims stated in words rather than as bare figures ===")
 # "55 of 95 documents carry a named approver" and "16 of 95 have unknown
 # approval" must agree with each other and with the status route.
-approvals = st["approved_documents"]
-unknown = get("/status")["approval_breakdown"]["unknown"]
+approvals = st["counts"]["approved_documents"]
+unknown = st["approval_breakdown"]["unknown"]
 for label, needle in (
     ("approver evidence", "55 of 95 documents carry a named approver"),
     ("unknown approval", "16 of 95 documents have unknown approval"),
@@ -224,10 +232,10 @@ for label, needle in (
         bad.append((label, needle, "absent"))
     print(f"  {'ok  ' if present else 'MISS'} {label}: '{needle}'")
 
-consistent = approvals + unknown == st["documents"]
+consistent = approvals + unknown == st["counts"]["documents"]
 print(
     f"  {'ok  ' if consistent else 'FAIL'} approved {approvals} + unknown {unknown}"
-    f" == documents {st['documents']}"
+    f" == documents {st['counts']['documents']}"
 )
 if not consistent:
     bad.append(("approval split", "95", approvals + unknown))

@@ -69,16 +69,25 @@ C:\Users\dhika\Downloads\Case 1_ Manufacturing Knowledge Hub-20260925T172658Z-1-
 
 ### 2.2 Per equipment (dataset-derived, siap dipakai untuk slide "Data we used")
 
-| Tag | Nama | WO | Breakdown | Downtime (h) | Biaya (IDR) |
-|---|---|---|---|---|---|
-| YD-2301 | POLYMER FLUID BED DRAYER | 28 | 5 | 68,5 | 94.728.000 |
-| KC-4501 | RECYCLE GAS COMPRESSOR | 27 | 2 | 38,0 | 50.603.000 |
-| CT-7801 | COOLING TOWER CELL FAN | 27 | 3 | 46,0 | 53.757.000 |
-| DC-3401A | CATALYST REDUCTION REACTOR | 27 | 5 | 60,0 | 71.795.000 |
-| LV-6701 | SEPARATOR LEVEL CONTROL VALVE | 26 | 4 | 21,0 | 72.233.000 |
-| GA-1201A | HEXANE FEED PUMP | 26 | 1 | 6,5 | 29.794.000 |
-| EA-5601 | SOLVENT HEATER | 25 | 6 | **124,0** | **123.580.000** |
-| FA-8901 | REFLUX ACCUMULATOR DRUM | 25 | 5 | 70,0 | 41.280.000 |
+Kedua angka biaya di bawah **bukan scope yang sama**, jadi dipisah agar tidak
+tercampur: kolom "Biaya breakdown" hanya menjumlahkan 31 baris `Breakdown=yes`
+(total IDR 413.345.000, sama dengan `/failure-memory`), sedangkan "Biaya total
+WO" menjumlahkan seluruh 211 WO (IDR 537.770.000). Kolom WO dan Downtime juga
+beda scope: WO = semua pekerjaan, Downtime = breakdown saja.
+
+| Tag | Nama | WO | Breakdown | Downtime breakdown (h) | Biaya breakdown (IDR) | Biaya total WO (IDR) |
+|---|---|---|---|---|---|---|
+| YD-2301 | POLYMER FLUID BED DRAYER | 28 | 5 | 68,5 | 81.049.000 | 94.728.000 |
+| KC-4501 | RECYCLE GAS COMPRESSOR | 27 | 2 | 38,0 | 37.673.000 | 50.603.000 |
+| CT-7801 | COOLING TOWER CELL FAN | 27 | 3 | 46,0 | 41.874.000 | 53.757.000 |
+| DC-3401A | CATALYST REDUCTION REACTOR | 27 | 5 | 60,0 | 46.118.000 | 71.795.000 |
+| LV-6701 | SEPARATOR LEVEL CONTROL VALVE | 26 | 4 | 21,0 | 59.257.000 | 72.233.000 |
+| GA-1201A | HEXANE FEED PUMP | 26 | 1 | 6,5 | 12.630.000 | 29.794.000 |
+| EA-5601 | SOLVENT HEATER | 25 | 6 | **124,0** | **104.167.000** | 123.580.000 |
+| FA-8901 | REFLUX ACCUMULATOR DRUM | 25 | 5 | 70,0 | 30.577.000 | 41.280.000 |
+
+Semua kolom dihitung ulang dari `Maintenance History (All Equipment).xlsx`, bukan
+disalin dari `/failure-memory` yang hanya memuat breakdown-scope.
 
 Work type: Preventive 68, Corrective 53, Predictive 42, Inspection 30, Calibration 12, Overhaul 6.
 Discipline: Mechanical 110, Instrument 75, Electrical 24, Process 2.
