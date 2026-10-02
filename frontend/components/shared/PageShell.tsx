@@ -34,13 +34,14 @@ export function PageShell({ title, subtitle, actions, children, className = "" }
   const { t } = useI18n();
   return (
     <div className={`flex flex-col h-full overflow-hidden ${className}`}>
-      {/* `flex-wrap` so page actions drop below the title instead of colliding
-          with it once the sidebar stops stealing 208px of a phone screen, and
-          the tighter padding below sm buys back most of what that costs. */}
-      <header className="px-4 sm:px-6 py-4 border-b border-slate-800/60 flex flex-wrap items-start justify-between gap-x-4 gap-y-3 shrink-0">
-        <div className="min-w-0">
-          <h1 className="text-lg font-semibold text-ink tracking-tight">{resolve(title, t)}</h1>
-          {subtitle && <p className="mt-1 text-xs text-slate-400 leading-relaxed">{resolve(subtitle, t)}</p>}
+      {/* Google Stitch clean top header bar with subtle border bottom */}
+      <header className="px-4 sm:px-6 py-4 border-b border-slate-800/80 bg-surface/80 backdrop-blur-sm flex flex-wrap items-center justify-between gap-x-4 gap-y-3 shrink-0">
+        <div className="min-w-0 flex items-center gap-3">
+          <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
+          <div>
+            <h1 className="text-lg font-bold text-ink tracking-tight">{resolve(title, t)}</h1>
+            {subtitle && <p className="mt-0.5 text-xs text-slate-400 leading-relaxed">{resolve(subtitle, t)}</p>}
+          </div>
         </div>
         {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
       </header>
@@ -53,8 +54,8 @@ export function Loading({ label }: { label?: string }) {
   const { t } = useI18n();
   return (
     <div className="flex items-center justify-center h-64" role="status" aria-live="polite">
-      <div className="flex items-center gap-3 text-sm text-slate-500">
-        <span className="w-3 h-3 rounded-full border-2 border-slate-600 border-t-blue-400 animate-spin" />
+      <div className="flex items-center gap-3 text-sm text-slate-400 font-medium">
+        <span className="w-4 h-4 rounded-full border-2 border-slate-700 border-t-blue-400 animate-spin" />
         {label ?? t("state.loading")}&hellip;
       </div>
     </div>
@@ -70,21 +71,21 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
   return (
     <div className="p-6">
       <div
-        className={`max-w-2xl rounded-lg border p-5 ${
-          needsIndex ? "border-amber-500/30 bg-amber-500/5" : "border-red-500/30 bg-red-500/5"
+        className={`max-w-2xl rounded-xl border p-5 ${
+          needsIndex ? "border-amber-500/40 bg-amber-500/10 shadow-lg" : "border-red-500/40 bg-red-500/10 shadow-lg"
         }`}
       >
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${needsIndex ? "bg-amber-400" : "bg-red-400"}`} />
+          <span className={`w-2.5 h-2.5 rounded-full ${needsIndex ? "bg-amber-400 animate-pulse" : "bg-red-400 animate-pulse"}`} />
           <h2 className="text-sm font-semibold text-ink">
             {needsIndex ? t("state.no_index") : t("state.load_failed")}
           </h2>
         </div>
-        <p className="mt-2 text-sm text-slate-300 leading-relaxed whitespace-pre-line">{detail}</p>
+        <p className="mt-2.5 text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line font-mono bg-slate-950/40 p-3 rounded-lg border border-slate-800">{detail}</p>
         {onRetry && (
           <button
             onClick={onRetry}
-            className="mt-4 text-xs px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+            className="mt-4 text-xs font-semibold px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors"
           >
             {t("state.try_again")}
           </button>
@@ -97,8 +98,8 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
 export function EmptyState({ title, hint }: { title: string; hint?: string }) {
   return (
     <div className="p-10 text-center">
-      <p className="text-sm text-slate-400">{title}</p>
-      {hint && <p className="mt-1 text-xs text-slate-600 max-w-md mx-auto">{hint}</p>}
+      <p className="text-sm font-medium text-slate-400">{title}</p>
+      {hint && <p className="mt-1 text-xs text-slate-500 max-w-md mx-auto">{hint}</p>}
     </div>
   );
 }
@@ -116,11 +117,11 @@ interface PanelProps {
 
 export function Panel({ title, hint, actions, children, className = "", flush = false }: PanelProps) {
   return (
-    <section className={`rounded-lg border border-slate-800/60 bg-panel-2 ${className}`}>
+    <section className={`rounded-xl border border-slate-800/80 bg-panel-2/90 shadow-sm transition-all hover:border-slate-700/80 ${className}`}>
       {title && (
-        <div className="px-4 py-3 border-b border-slate-800/60 flex items-center justify-between gap-3">
+        <div className="px-4 py-3 border-b border-slate-800/80 flex items-center justify-between gap-3 bg-slate-900/40">
           <div className="min-w-0 flex items-baseline gap-3">
-            <h2 className="text-xs font-semibold text-slate-300 uppercase tracking-wide whitespace-nowrap">
+            <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider whitespace-nowrap">
               {title}
             </h2>
             {hint && <span className="text-[11px] text-slate-400 truncate">{hint}</span>}
@@ -133,16 +134,6 @@ export function Panel({ title, hint, actions, children, className = "", flush = 
   );
 }
 
-/** A labelled number. Used for every count shown on the overview.
- *
- *  This is a ruled entry rather than a card, and it is used 37 times across six
- *  pages, which is what decided it. Thirty-seven identical rounded boxes read as
- *  a card kit and give every count the same weight, when the only thing anyone
- *  came for is the number. A hairline over the group does the separating, the
- *  value takes the size, and the numbers in a row land on a shared baseline.
- *
- *  ink-3 for the label and the sub, not ink-4: ink-4 measures 3.98:1 on the panel
- *  this sits on, and both are real sentences at 11px. */
 export function Stat({
   label,
   value,
@@ -156,29 +147,28 @@ export function Stat({
 }) {
   const toneClass = {
     default: "text-ink",
-    good: "text-green-300",
-    warn: "text-amber-300",
-    bad: "text-red-300",
+    good: "text-green-400 font-bold",
+    warn: "text-amber-400 font-bold",
+    bad: "text-red-400 font-bold",
   }[tone];
   return (
-    <div className="border-t border-slate-800/70 pt-2.5">
-      <div className="text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
-      <div className={`mt-1.5 text-2xl font-semibold tabular-nums leading-none ${toneClass}`}>{value}</div>
+    <div className="border-t border-slate-800/80 pt-3">
+      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">{label}</div>
+      <div className={`mt-1.5 text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight ${toneClass}`}>{value}</div>
       {sub && <div className="mt-2 text-[11px] text-slate-400 leading-snug">{sub}</div>}
     </div>
   );
 }
 
-/** Small monospace tag, e.g. an equipment tag or a document number. */
 export function Tag({ children, tone = "slate" }: { children: ReactNode; tone?: "slate" | "blue" | "green" | "amber" }) {
   const tones = {
-    slate: "bg-slate-800/60 text-slate-300 border-slate-700",
-    blue: "bg-blue-500/10 text-blue-300 border-blue-500/30",
-    green: "bg-green-500/10 text-green-300 border-green-500/30",
-    amber: "bg-amber-500/10 text-amber-300 border-amber-500/30",
+    slate: "bg-slate-800/80 text-slate-300 border-slate-700/80",
+    blue: "bg-blue-500/15 text-blue-300 border-blue-500/40",
+    green: "bg-green-500/15 text-green-300 border-green-500/40",
+    amber: "bg-amber-500/15 text-amber-300 border-amber-500/40",
   };
   return (
-    <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-mono border ${tones[tone]}`}>
+    <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-mono border ${tones[tone]}`}>
       {children}
     </span>
   );
