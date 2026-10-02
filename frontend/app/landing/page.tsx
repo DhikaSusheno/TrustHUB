@@ -19,6 +19,7 @@
 
 import Link from "next/link";
 import PetroProcessMotif from "@/components/landing/PetroProcessMotif";
+import InteractiveLandingDemo from "@/components/landing/InteractiveLandingDemo";
 import LogoMark from "@/components/shared/LogoMark";
 
 // --- What the dataset actually contains -------------------------------------
@@ -380,6 +381,9 @@ export default function LandingPage() {
                 ))}
               </ul>
             </div>
+          </div>
+          <div className="mt-8">
+            <InteractiveLandingDemo />
           </div>
         </section>
 
