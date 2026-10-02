@@ -60,7 +60,7 @@ butuh kerja yang sama dengan diff yang lebih buruk.
 | `--surface-hover` | `#131a24` | `#dde1e4` |
 | `--deep` | `#0f172a` | `#d8dcdf` |
 | `--line` | `#1e293b` | `#c6ccd2` |
-| `--ink-1` s/d `--ink-5` | `#f1f5f9` → `#475569` | `#0f1722` → `#8a9bad` |
+| `--ink-1` s/d `--ink-5` | `#f1f5f9` → `#475569` | `#0a0f1c` → `#586a7d` |
 
 **Tidak ada putih murni di tema terang.** Panel lama `#f9fafb` putih dalam nama saja,
 dan bidang besar yang mendekati putih melelahkan untuk shift panjang. Semua
@@ -73,9 +73,18 @@ biru 5.81, hijau 6.19, merah 5.61, amber 6.15 — semua lolos AA. Hijau `#15803d
 (4.35) dan amber `#b45309` (4.36) sebenarnya sudah gagal pada panel putih lama
 dan hanya lolos pada langkah yang lebih gelap yang dipakai sekarang.
 
-Dua langkah muted ada di 3.91 dan 2.47, di bawah tema gelap sekarang (3.98 dan
-2.50) dan sengaja dibiarkan begitu: keduanya untuk placeholder dan meta, bukan
-body copy.
+**Seluruh ramp terang kini lolos AA.** Ramp pertamanya memang gagal: `--ink-4`
+ada di 3.91 (hanya large-text) dan `--ink-5` di 2.47 (gagal). Keduanya dipakai
+untuk kalimat sungguhan — `text-slate-500` melintasi 64 file dan `text-slate-600`
+melintasi 45 — jadi alasan "kan cuma abu-abu placeholder" tidak benar.
+
+`--ink-4` harus bergerak lebih jauh daripada `--ink-5`, justru karena `--ink-5`
+yang lebih pudar dan tetap harus tembus 4.5. Menggelapkan hanya dasar ramp
+itulah yang menyisakan 2.47 di sana pada percobaan pertama.
+
+Terhadap panel abu-abu `#edeff1`, keenam langkah sekarang: 16.59, 14.11, 10.44,
+7.83, 5.96, 4.83. Ramp masih terbaca sebagai ramp; jarak terkecil ada di
+`--ink-4` ke `--ink-5` dengan rasio luminansi 0.74.
 
 Nama label **tidak** ikut berubah. Opsi itu tetap terbaca `Light` / `Terang`
 meskipun warnanya abu-abu, karena yang dijanjikan switcher adalah mode terang

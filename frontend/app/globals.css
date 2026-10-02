@@ -79,12 +79,25 @@
   --line: 198 204 210;       /* #c6ccd2 default border */
   --line-2: 154 163 171;     /* #9aa3ab emphasised border */
 
-  --ink-1: 15 23 34;
-  --ink-1b: 30 41 59;
-  --ink-2: 51 65 85;
-  --ink-3: 70 88 107;
-  --ink-4: 100 121 141;
-  --ink-5: 138 155 173;
+  /* The whole ramp is darker than the first light palette, and the reason is
+     access rather than taste. ink-4 sat at 3.91 and ink-5 at 2.47 against this
+     panel: one was large-text-only and the other failed outright. Both are used
+     for real sentences, in text-slate-500 across 64 files and text-slate-600
+     across 45, so "it is only placeholder grey" was not true.
+
+     ink-4 had to move further than ink-5 to get there, because ink-5 is the
+     fainter of the two and still has to clear 4.5. Darkening only the bottom of
+     the ramp is what left 2.47 in it the first time.
+
+     Every step now passes AA on this panel: 16.59, 14.11, 10.44, 7.83, 5.96,
+     4.83. The ramp still reads as a ramp, with the smallest gap left between
+     ink-4 and ink-5 at a 0.74 luminance ratio. */
+  --ink-1: 10 15 28;
+  --ink-1b: 23 32 51;
+  --ink-2: 43 55 73;
+  --ink-3: 59 74 94;
+  --ink-4: 74 92 112;
+  --ink-5: 88 106 125;
 
   /* Light accents run darker than their Tailwind shade names suggest. In light,
      "softer" means closer to white, and closer to white means less contrast, so
