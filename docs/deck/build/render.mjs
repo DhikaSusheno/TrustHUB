@@ -31,6 +31,13 @@ const pdf = path.join(ROOT, "TrustHUB-CALIBER2026-Case1.pdf");
 const shotDir = path.join(ROOT, "shots");
 
 fs.mkdirSync(shotDir, { recursive: true });
+// Clear stale shots first. The deck used to be 15 slides and is now 13, so
+// slide-14.png and slide-15.png survived the rewrite. Leaving them in place
+// makes the folder claim a longer deck than the PDF actually has, which is
+// the same class of drift the audit exists to catch.
+for (const f of fs.readdirSync(shotDir)) {
+  if (f.endsWith(".png")) fs.unlinkSync(path.join(shotDir, f));
+}
 
 const browser = await puppeteer.launch({
   executablePath: CHROME,
