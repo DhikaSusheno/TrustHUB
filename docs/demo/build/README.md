@@ -1,8 +1,9 @@
 # Demo video build
 
-`../TrustHUB-demo.mp4` is the submission deliverable: **2 min 26 s**, 1280x720,
-H.264, 4.1 MB. It is built, not recorded, so every frame can be checked against
-the running system before anyone watches it.
+`../TrustHUB-demo.mp4` is the base video: **2 min 26 s**, 1280x720, H.264,
+4.1 MB. It is built, not recorded, so every frame can be checked against the
+running system before anyone watches it. It also ships with a narration track
+laid over it as `../TrustHUB-demo-vo.mp4`; see `../remotion/README.md`.
 
 ```
 npm install
@@ -30,9 +31,18 @@ The second reason is that a recording is unrepeatable. This is.
 
 ## Why the captions are baked in
 
-Judges watch muted. There is no narration because a synthesised voice reading
-technical prose is worse than silence, so the caption carries it instead. No
-music either, for the same reason, plus the licensing question.
+Judges watch muted. So the caption carries the argument, not a voice, and the
+captions stay legible with the sound off no matter what happens to the audio.
+
+No music either, for the same reason, plus the licensing question.
+
+The video was built with no narration at all, on the grounds that a synthesised
+voice reading technical prose is worse than silence. That judgement was made
+without hearing one, so it was left as a test rather than a rule: `../vo/` renders
+one line per beat with Windows SAPI, offline, and `../remotion/` lays them under
+the video. Both are additions to the original, not replacements, so if the voice
+turns out to flatten the argument then `../TrustHUB-demo.mp4` is still the file
+to ship.
 
 ## The beat list is the argument
 

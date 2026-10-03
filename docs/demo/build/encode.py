@@ -9,6 +9,13 @@ Two things this deliberately does not do:
     worse than silence, and a licensed track is not something to ship quietly.
   - it does not add a fake voiceover. The captions carry the narration.
 
+The second one was a judgement made without hearing a synthesised voice, so it
+was kept as a test rather than a rule: ../vo/ and ../remotion/ now render one
+narration line per beat and lay them under this MP4 as TrustHUB-demo-vo.mp4,
+without touching a frame. XFADE and HOLD_PAD below are still the numbers that
+decides where each line may sit, which is why ../remotion/scripts/gen-timeline.mjs
+parses them out of this file instead of copying them.
+
 Crossfades between beats, because a hard cut every seven seconds reads as a
 slideshow and a crossfade reads as navigation. No zoom: judges have to be able
 to read a table of numbers, and a drifting image makes that harder.

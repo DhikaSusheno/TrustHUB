@@ -96,6 +96,18 @@ docs/deck/shots/
 docs/demo/frames/
 docs/demo/captioned/
 
+# Audio narasi demo, 3,7 MB untuk 14 WAV. Artefak build: dibuat ulang dengan
+# `powershell -ExecutionPolicy Bypass -File docs/demo/vo/build_vo.ps1`, tanpa
+# jaringan. Yang ikut commit: script.json (teks narasi, bahan review) dan MP4
+# TrustHUB-demo-vo.mp4 yang sudah jadi deliverable.
+docs/demo/vo/wav/
+
+# Salinan media untuk Remotion. Remotion hanya menyajikan berkas dari public/,
+# jadi isinya harus ada di sana saat render, tapi salinan kedua dari MP4 dan WAV
+# yang sama tidak perlu disimpan. Dibuat oleh `npm run assets` di
+# docs/demo/remotion.
+docs/demo/remotion/public/
+
 # Local test screenshots
 frontend/.screenshots/
 frontend/capture_screenshots.mjs

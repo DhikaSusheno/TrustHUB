@@ -1,0 +1,35 @@
+{
+  "name": "demo-narration",
+  "version": "1.0.0",
+  "description": "Narration and chapter overlay for docs/demo/TrustHUB-demo.mp4",
+  "repository": {},
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@remotion/cli": "4.0.532",
+    "@remotion/media": "4.0.532",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.532"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.532",
+    "@types/react": "19.2.7",
+    "@types/web": "0.0.166",
+    "eslint": "9.39.5",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "assets": "node scripts/sync-assets.mjs",
+    "timeline": "node scripts/gen-timeline.mjs",
+    "dev": "npm run assets && remotion studio",
+    "build": "npm run assets && remotion bundle",
+    "render:intermediate": "npm run assets && remotion render Narration out/intermediate-vo.mp4 --crf=10",
+    "finalize": "node scripts/finalize.mjs",
+    "render": "npm run render:intermediate && npm run finalize",
+    "still": "npm run assets && remotion still Narration",
+    "upgrade": "remotion upgrade",
+    "lint": "eslint src && tsc && node scripts/gen-timeline.mjs --check"
+  }
+}

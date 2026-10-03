@@ -1,0 +1,96 @@
+{
+  "_comment": [
+    "Voice-over script for the demo video. One line per beat, written to fit",
+    "the slot encode.py gives that beat (seconds + HOLD_PAD, minus the 0.5 s",
+    "crossfade that already elapsed).",
+    "",
+    "This is an addition to a video that was deliberately built without",
+    "narration. encode.py said a synthesised voice reading technical prose is",
+    "worse than silence. That judgement was made without hearing it, so this",
+    "file exists to let a human decide: render it, listen to beat 4 and beat 7,",
+    "and if the voice flattens the argument, delete vo/ and keep the original.",
+    "",
+    "Rules the text follows:",
+    "  - only numbers that are on screen during that beat",
+    "  - units spelled out, because SAPI reads 'mm/s' as letters",
+    "  - equipment tags spaced out, because 'VSHH-1201' read as a word is a",
+    "    guess about how to pronounce it",
+    "  - no claim the page does not already make"
+  ],
+  "voice": "Microsoft David Desktop",
+  "rate": 0,
+  "lead_in_seconds": 0.45,
+  "tail_seconds": 0.35,
+  "beats": [
+    {
+      "n": 1,
+      "chapter": "What this is",
+      "text": "TrustHUB. It answers from the plant's own documents, and refuses when no document supports the answer."
+    },
+    {
+      "n": 2,
+      "chapter": "What is indexed",
+      "text": "Ninety-five documents, two hundred and eleven work orders, eight units. The trust model is published."
+    },
+    {
+      "n": 3,
+      "chapter": "Six guardrails",
+      "text": "Six questions, one per guardrail. The refusals matter as much as the answers."
+    },
+    {
+      "n": 4,
+      "chapter": "A read value",
+      "text": "The trip setpoint for V S H H twelve zero one is seven point one millimetres per second. Six documents state it, so the badge is verify."
+    },
+    {
+      "n": 5,
+      "chapter": "Missing document",
+      "text": "That one-point lesson is not in the dataset. The system refuses instead of substituting a different document."
+    },
+    {
+      "n": 6,
+      "chapter": "Out of scope",
+      "text": "Out of scope, so it refuses again, and it says which guardrail stopped it. That refusal is a decision, not a failure."
+    },
+    {
+      "n": 7,
+      "chapter": "Asking to bypass a limit",
+      "text": "Asking how to bypass a safety trip. The score is high, and the badge is still do not execute. It reads intent, not topic."
+    },
+    {
+      "n": 8,
+      "chapter": "Eight units",
+      "text": "Eight units, each with interlock logic and maintenance history. G A twelve zero one A carries the most documents."
+    },
+    {
+      "n": 9,
+      "chapter": "How it connects",
+      "text": "The graph holds one hundred and thirty-four nodes. The ring draws the forty-seven that are not documents."
+    },
+    {
+      "n": 10,
+      "chapter": "Do they agree",
+      "text": "The locked test set runs as this page opens, so sixty-three out of sixty-three cannot drift from the deck. Seven groups are cross-confirmed, and the page states what that does not prove."
+    },
+    {
+      "n": 11,
+      "chapter": "Failure memory",
+      "text": "Failure memory. Thirty-one breakdowns, four hundred and thirty-four hours of downtime, and twelve breakdowns with no lesson written."
+    },
+    {
+      "n": 12,
+      "chapter": "Provenance",
+      "text": "Provenance for every answer asked, not only the ones the system was happy to answer."
+    },
+    {
+      "n": 13,
+      "chapter": "Read from the file",
+      "text": "Revision and approval are read from the documents themselves, not from a filename."
+    },
+    {
+      "n": 14,
+      "chapter": "Provenance and licence",
+      "text": "Where the data came from, and the licence note printed on every document. The dataset is committee sample data, and the limits in it are training values."
+    }
+  ]
+}
