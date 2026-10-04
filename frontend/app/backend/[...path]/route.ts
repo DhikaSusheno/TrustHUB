@@ -35,6 +35,7 @@
 // TRUSTHUB_PROXY_ALLOWED_ORIGINS untuk daftar origin yang memang diizinkan.
 
 import { NextRequest } from "next/server";
+import { STATIC_DEMO, staticReply } from "@/lib/staticDemo";
 import {
   crossSiteDenial,
   missingTokenDenial,
@@ -119,6 +120,26 @@ function jsonError(status: number, error: string, hint?: string): Response {
 }
 
 async function proxy(request: NextRequest, context: RouteContext): Promise<Response> {
+  // Static demo mode: answer from the bundled snapshot, no backend or token.
+  if (STATIC_DEMO) {
+    const segs = (await context.params)?.path ?? [];
+    const method = request.method.toUpperCase();
+    let question: string | null = null;
+    if (method === "POST") {
+      try {
+        const payload = (await request.json()) as { question?: unknown };
+        question = typeof payload.question === "string" ? payload.question : null;
+      } catch {
+        question = null;
+      }
+    }
+    const reply = staticReply(segs, method, question);
+    return new Response(JSON.stringify(reply.body), {
+      status: reply.status,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    });
+  }
+
   // #63: gagal-cepat kalau server tidak punya token. Tanpa guard ini proxy
   // meneruskan request apa adanya ke backend dan hopeful tidak di-401.
   const tokenDenied = missingTokenDenial(TOKEN);
