@@ -33,7 +33,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useBackendStatus, type BackendMode } from "@/hooks/useBackendStatus";
-import { STATIC_DEMO } from "@/lib/staticDemo";
 import { usePlatformSettings } from "@/lib/usePlatformSettings";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 import LogoMark from "@/components/shared/LogoMark";
@@ -262,7 +261,7 @@ export default function LeftNav({ activePage, onNavigate }: Props) {
             <ThemeSwitcher />
             <div className="flex items-center gap-1.5" role="status">
               <span className={`w-1.5 h-1.5 rounded-full inline-block shrink-0 ${footer.dot} ${mode === "checking" ? "animate-pulse" : ""}`} />
-              <span className={`text-xs truncate ${footer.text}`}>{STATIC_DEMO ? "Static snapshot" : t(FOOTER_LABEL[mode])}</span>
+              <span className={`text-xs truncate ${footer.text}`}>{t(FOOTER_LABEL[mode])}</span>
             </div>
           </div>
         </nav>

@@ -18,7 +18,6 @@
 // trust in everything else on screen.
 
 import { useBackendStatus } from "@/hooks/useBackendStatus";
-import { STATIC_BANNER_TEXT, STATIC_DEMO } from "@/lib/staticDemo";
 
 const ICONS = {
   live: "●",
@@ -52,23 +51,6 @@ const MESSAGES = {
 
 export default function BackendStatusBanner() {
   const { mode, problem } = useBackendStatus();
-
-  // Static demo build: always say so, never imply a live backend.
-  if (STATIC_DEMO) {
-    return (
-      <div
-        className="shrink-0 px-4 py-2.5 bg-blue-500/20 text-blue-300 border-blue-500/30 border-b border-solid"
-        role="status"
-      >
-        <div className="max-w-7xl mx-auto flex items-center gap-2.5 min-w-0">
-          <span className="text-xs font-semibold uppercase tracking-wide shrink-0">
-            STATIC DEMO
-          </span>
-          <span className="text-xs text-slate-300/80">{STATIC_BANNER_TEXT}</span>
-        </div>
-      </div>
-    );
-  }
 
   // Nothing to warn about when the index is live.
   if (mode === "live") return null;
