@@ -66,6 +66,7 @@ const HOP_BY_HOP = new Set([
   "referer",
   "cookie",
   "content-length",
+  "content-encoding",
 ]);
 
 // Header milik klien yang TIDAK boleh diteruskan ke backend. Authorization
