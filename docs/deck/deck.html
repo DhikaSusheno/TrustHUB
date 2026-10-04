@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>TrustHUB &mdash; CALIBER 2026 Case 1</title>
+<title>TrustHUB, CALIBER 2026 Case 1</title>
 <style>
   @page { size: 1280px 720px; margin: 0; }
 
@@ -193,6 +193,125 @@
   }
   .lane .step .t { font-size: 15px; font-weight: 700; color: var(--ink); line-height: 1.3; margin-bottom: 6px; }
   .lane .step .d { font-size: 13px; color: var(--ink2); line-height: 1.45; }
+
+  /* ===== GREEN SYSTEM (overrides) =====
+     Brand green is deep forest. Badge green (--ok) stays reserved for the TRUSTED badge. */
+  :root {
+    --brand:    #064e3b;
+    --brand2:   #065f46;
+    --brandlt:  #d1fae5;
+    --accent:   #065f46;
+    --accent2:  #064e3b;
+    --line:     #d3e2da;
+    --panel:    #f2f8f5;
+    --ink2:     #2f3f38;
+  }
+  .kicker { display: none; }
+  .slide { padding: 0 60px 52px 60px; }
+  .hd {
+    margin: 0 -60px 20px -60px; padding: 22px 60px 18px 60px;
+    background: var(--brand); border-bottom: 4px solid #6ee7b7; color: #fff;
+  }
+  .hd .eyebrow { color: #6ee7b7; margin-bottom: 7px; }
+  .hd .eyebrow.app { color: #a7f3d0; }
+  .hd h2 { color: #fff; font-size: 27px; line-height: 1.22; margin: 0; max-width: 1140px; }
+  .lede { margin-top: 0; }
+  .title-band { background: var(--brand); border-bottom: 5px solid #6ee7b7; }
+  .title-band .case { color: #6ee7b7; }
+  .title-band .sub { color: #d1fae5; }
+  .stat-strip .s { border-left-color: #6ee7b7; }
+  .stat-strip .s .l { color: #a7f3d0; }
+  .tag { background: var(--brandlt); color: var(--brand); }
+  .flow .node.hero, .flow .node[style*="e0f2fe"] { background: var(--brandlt) !important; border-color: #6ee7b7 !important; }
+  .foot { font-size: 11px; }
+  .sowhat {
+    position: absolute; left: 60px; right: 60px; bottom: 52px;
+    background: var(--brand); color: #fff; border-radius: 6px;
+    padding: 9px 16px; font-size: 14.5px; line-height: 1.4;
+  }
+  .sowhat b { color: #6ee7b7; }
+  table.mece td, table.kpi td, table.feas td { font-size: 13.5px; padding: 7px 10px; }
+  table.kpi td, table.feas td { padding: 6px 10px; }
+  .exposure { background: var(--brand); color: #fff; border-radius: 9px; padding: 14px 18px; }
+  .exposure .h { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #6ee7b7; margin-bottom: 8px; }
+  .exposure .row { display: flex; align-items: baseline; gap: 10px; padding: 5px 0; border-top: 1px solid rgba(255,255,255,.18); }
+  .exposure .n { font-size: 24px; font-weight: 700; white-space: nowrap; }
+  .exposure .l { font-size: 12.5px; color: #d1fae5; }
+  .anatomy { background: #fff; border: 2px solid var(--brand); border-radius: 10px; padding: 12px 16px; height: 100%; }
+  .anatomy .q { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .anatomy .ans { font-size: 15px; color: var(--ink2); margin-bottom: 8px; }
+  .anatomy .meta { display: flex; gap: 12px; align-items: center; font-size: 12.5px; color: var(--muted); }
+  .anatomy .sc { font-family: "Cascadia Mono", Consolas, monospace; font-weight: 700; color: var(--ink); }
+  .anatomy .cap { margin-top: 8px; font-size: 11px; color: var(--faint); }
+  .badges { display: flex; flex-direction: column; gap: 7px; height: 100%; }
+  .badges .b { flex: 1; display: flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid; border-radius: 7px; padding: 6px 12px; }
+  .badges .b .pill { min-width: 128px; text-align: center; }
+  .badges .b .d { font-size: 13px; color: var(--ink2); line-height: 1.3; }
+  .kq { border: 1px solid var(--line); border-radius: 9px; padding: 9px 12px; background: #fff; }
+  .kq .kqh { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brand2); margin-bottom: 6px; }
+  .kq .k { background: var(--panel); border-radius: 6px; padding: 8px 11px; border-top: 3px solid var(--brand2); }
+  .kq .k.warnk { border-top-color: var(--warn); }
+  .kq .k .t { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+  .kq .k .d { font-size: 12.5px; color: var(--ink2); line-height: 1.38; }
+  .gantt { margin-bottom: 10px; }
+  .gantt .gh, .gantt .gr { display: grid; grid-template-columns: 150px 1fr 330px; align-items: center; gap: 12px; }
+  .gantt .gh { font-size: 10.5px; color: var(--muted); display: grid; grid-template-columns: 150px 1fr 330px; }
+  .gantt .gh span:nth-child(n+2) { display: none; }
+  .gantt .gr { padding: 3px 0; border-top: 1px solid var(--line); }
+  .gantt .gl { font-size: 13px; font-weight: 700; color: var(--brand); }
+  .gantt .gd { font-size: 12.5px; color: var(--ink2); line-height: 1.3; }
+  .gantt .track { position: relative; height: 22px; background: #e8f1ec; border-radius: 4px; }
+  .gantt .bar { position: absolute; top: 0; bottom: 0; background: var(--brand2); color: #fff; font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+  .versus { border-radius: 10px; padding: 14px 18px; height: 100%; border: 2px solid; }
+  .versus.ver { border-color: #fde68a; background: var(--warnbg); }
+  .versus.dne { border-color: #fecaca; background: var(--badbg); }
+  .versus .vq { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 8px; min-height: 38px; }
+  .versus .vs { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+  .versus .big { font-size: 44px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); font-family: "Cascadia Mono", Consolas, monospace; }
+  .versus .vd { font-size: 13.5px; color: var(--ink2); line-height: 1.4; }
+
+  /* sizing pass: fill the slide, keep it legible */
+  .s3 .flow .node { padding: 16px 12px; }
+  .s3 .flow .node .t { font-size: 16px; }
+  .s3 .flow .node .s { font-size: 12.5px; margin-top: 6px; }
+  .s3 .anatomy { padding: 18px 22px; }
+  .s3 .anatomy .q { font-size: 17px; }
+  .s3 .anatomy .ans { font-size: 18px; margin-bottom: 12px; }
+  .s3 .anatomy .meta { font-size: 14px; }
+  .s3 .badges .b .d { font-size: 14.5px; }
+  .s3 .kq { padding: 12px 14px; }
+  .s3 .kq .k { padding: 11px 13px; }
+  .s3 .kq .k .t { font-size: 15px; }
+  .s3 .kq .k .d { font-size: 14px; }
+  .s4 table.kpi td { font-size: 15px; padding: 9px 10px; }
+  .s4 .stat .n { font-size: 38px; }
+  .s4 .stat .l { font-size: 14px; }
+
+  .s2 table.mece td { font-size: 16.5px; padding: 15px 10px; line-height: 1.45; }
+  .s2 table.mece th { font-size: 12.5px; }
+  .s2 .exposure .n { font-size: 30px; }
+  .s2 .exposure .l { font-size: 14px; }
+  .s2 .exposure .row { padding: 9px 0; }
+  .s2 .callout p { font-size: 16.5px; }
+  .s5 table.feas td { font-size: 15px; padding: 8px 10px; }
+  .s5 .gantt .gr { padding: 8px 0; }
+  .s5 .gantt .track { height: 30px; }
+  .s5 .gantt .gl { font-size: 15px; }
+  .s5 .gantt .gd { font-size: 14px; }
+  .s5 .gantt .bar { font-size: 13px; }
+  .s6 .versus .vq { font-size: 16px; }
+  .s6 .callout p { font-size: 15px !important; }
+  .s6 .card ul.tight > li { font-size: 16px; }
+
+  .slide.title-slide { padding: 0; }
+  .title-band { padding: 110px 60px 70px 60px; }
+  .title-band h1 { font-size: 76px; }
+  .title-band .sub { font-size: 24px; }
+  .stat-strip .s .n { font-size: 30px; }
+  .stat-strip .s .l { font-size: 13px; }
+  .title-foot .block .v { font-size: 16px; }
+  .s7 td, .s7 th { font-size: 15px; padding: 14px 10px; }
+  .s7 .callout p { font-size: 16px; }
 </style>
 </head>
 <body>
@@ -202,21 +321,27 @@
 <!-- Slides 8 onward are Appendix and are excluded from the 7-slide cap. -->
 <!-- ==================================================================== -->
 
+<!-- ==================================================================== -->
+<!-- MAIN DECK: 7 slides, the structure the CALIBER booklet requires.     -->
+<!-- Each title is an action title (the conclusion), each slide ends with  -->
+<!-- a "so what" bar and a source line. Slides after 7 are Appendix.      -->
+<!-- ==================================================================== -->
+
 <!-- ============ 1. COVER ============ -->
 <section class="slide title-slide">
   <div class="title-band">
     <div class="case">CALIBER 2026 &nbsp;&middot;&nbsp; Case 1 &nbsp;&middot;&nbsp; Manufacturing Knowledge Hub</div>
     <h1>TrustHUB</h1>
     <div class="sub">
-      An engineer asks a question about a pump. TrustHUB answers with the value,
-      the document it came from, and a verdict on how far that answer can be trusted.
+      Every plant answer carries its value, its source document, and a verdict on how far
+      an engineer can rely on it. When no source exists, it refuses.
     </div>
     <div class="stat-strip">
       <div class="s"><div class="n">95</div><div class="l">documents indexed</div></div>
+      <div class="s"><div class="n">211</div><div class="l">work orders linked</div></div>
       <div class="s"><div class="n">8</div><div class="l">plant units</div></div>
+      <div class="s"><div class="n">27/27</div><div class="l">refusal cases refused</div></div>
       <div class="s"><div class="n">63/63</div><div class="l">locked eval cases</div></div>
-      <div class="s"><div class="n">1329</div><div class="l">backend tests green</div></div>
-      <div class="s"><div class="n">20</div><div class="l">API routes</div></div>
     </div>
   </div>
   <div class="title-foot">
@@ -230,7 +355,7 @@
     </div>
     <div class="block">
       <div class="h">Supervisor</div>
-      <div class="v"><span class="tbd">to be confirmed by the committee</span></div>
+      <div class="v"><span class="tbd">to be confirmed</span></div>
     </div>
     <div class="block">
       <div class="h">Repository</div>
@@ -240,211 +365,186 @@
 </section>
 
 <!-- ============ 2. BACKGROUND & PROBLEM ============ -->
-<section class="slide">
-  <div class="kicker"></div>
-  <div class="eyebrow">Background &amp; problem statement</div>
-  <h2>The knowledge exists. It is not findable, and it does not say how far it can be relied on</h2>
-  <p class="lede">
-    The booklet names the causes directly: scattered knowledge sources, missing tacit knowledge,
-    difficulty finding trusted information, and disconnected operational data. On one unit that
-    looks like this.
-  </p>
+<section class="slide s2">
+  <header class="hd">
+    <div class="eyebrow">1 &middot; Background &amp; problem statement</div>
+    <h2>Plant knowledge exists but cannot be found or trusted, and a right answer with the wrong provenance is the real risk</h2>
+  </header>
 
-  <div class="cols" style="margin-bottom: 18px;">
-    <div class="col">
-      <div class="card" style="height: 100%;">
-        <h3>What is actually there</h3>
-        <p>
-          For one unit, <b>17 documents</b> and <b>26 work orders</b>, spread over six file formats:
-          OPLs, datasheets, general-arrangement drawings, interlock logic diagrams, plot plans
-          and P&amp;ID images, plus a maintenance-history workbook. Across the eight units that is
-          <b>95 documents</b> and <b>211 work orders</b> over <b>8 plant units</b>.
-        </p>
-      </div>
+  <div class="cols" style="gap:22px;">
+    <div class="col" style="flex:1.45;">
+      <table class="mece">
+        <thead><tr><th style="width:27%;">Root cause (booklet)</th><th>What the dataset shows</th></tr></thead>
+        <tbody>
+          <tr><td><b>Scattered sources</b></td><td><b>95 documents</b> in six types (55 OPL, 8 each of datasheet, GA, interlock, plot plan, P&amp;ID) across <b>8 units</b>, plus a maintenance workbook.</td></tr>
+          <tr><td><b>Hard to trust</b></td><td><b>16 of 95</b> documents have unknown approval. All 8 interlock diagrams are among them. Only 55 of 95 name an approver.</td></tr>
+          <tr><td><b>Tacit knowledge missing</b></td><td><b>12 of 31</b> breakdowns have no written lesson. Only 19 (61.3%) are linked to one.</td></tr>
+          <tr><td><b>Disconnected operations</b></td><td><b>211 work orders</b> live in a workbook, apart from the documents that describe the same equipment.</td></tr>
+        </tbody>
+      </table>
     </div>
-    <div class="col">
-      <div class="card" style="height: 100%;">
-        <h3>What goes wrong</h3>
-        <p>
-          The trip setpoint lives in an interlock PDF, an OPL, and a datasheet. Nothing states
-          which is current. An engineer who finds an <i>old revision</i> of a document cannot tell
-          that it is old, and sets a limit from it.
-        </p>
+    <div class="col" style="flex:1;">
+      <div class="exposure">
+        <div class="h">Recorded exposure behind this knowledge</div>
+        <div class="row"><span class="n">31</span><span class="l">breakdowns</span></div>
+        <div class="row"><span class="n">434 h</span><span class="l">downtime</span></div>
+        <div class="row"><span class="n">IDR 413,345,000</span><span class="l">breakdown cost (dummy sample values)</span></div>
+      </div>
+      <div class="callout bad" style="margin-top:12px;">
+        <p><b>The trip setpoint sits in an interlock PDF, an OPL and a datasheet.</b> Nothing says which is current. An engineer holding an old revision cannot tell it is old.</p>
       </div>
     </div>
   </div>
 
-  <div class="callout bad">
-    <p>
-      <b>The risk is not a wrong answer. It is a right answer with the wrong provenance.</b>
-      A number pulled from a superseded revision, or from a diagram that never states who approved it,
-      is indistinguishable from an approved value unless the system refuses to treat them the same.
-      That distinction is the entire project.
-    </p>
-  </div>
-
-  <div class="foot"><span>TrustHUB &middot; CALIBER 2026 Case 1</span><span>2</span></div>
+  <div class="sowhat"><b>So what:</b> the risk is not a wrong answer. It is a right answer from a superseded or unapproved source, indistinguishable from an approved one.</div>
+  <div class="foot"><span>Source: official CALIBER dataset (sample data), TrustHUB index. IDR values are dummy values.</span><span>2</span></div>
 </section>
 
-<!-- ============ 3. SOLUTION ============ -->
-<section class="slide">
-  <div class="kicker"></div>
-  <div class="eyebrow">Solution</div>
-  <h2>Objective, workflow and technology: read the value, cite the document, publish the verdict</h2>
+<!-- ============ 3. SOLUTION (HERO) ============ -->
+<section class="slide s3">
+  <header class="hd">
+    <div class="eyebrow">2 &middot; Solution</div>
+    <h2>TrustHUB answers with the value, the cited document and a trust verdict, and refuses when no source exists</h2>
+  </header>
 
-  <div class="flow" style="margin-bottom:18px;">
-    <div class="node"><div class="t">87 PDF<br>8 P&amp;ID PNG<br>3 workbooks</div><div class="s">one parser per file type, nothing inferred</div></div>
+  <div class="flow" style="margin-bottom:12px;">
+    <div class="node"><div class="t">Ingest</div><div class="s">87 PDF, 8 P&amp;ID PNG, 3 workbooks; one parser per type</div></div>
     <div class="arrow">&rarr;</div>
-    <div class="node"><div class="t">registry.py</div><div class="s">SQLite + FTS5, local, no service to call</div></div>
+    <div class="node"><div class="t">Index</div><div class="s">local SQLite + FTS5, no network, no API key</div></div>
     <div class="arrow">&rarr;</div>
-    <div class="node"><div class="t">Scope to one unit</div><div class="s">Equipment_Tag, the documented join key</div></div>
+    <div class="node"><div class="t">Scope</div><div class="s">one unit via Equipment_Tag, the documented join key</div></div>
     <div class="arrow">&rarr;</div>
-    <div class="node"><div class="t">Score 5 signals</div><div class="s">weights published in the API</div></div>
+    <div class="node"><div class="t">Score</div><div class="s">5 weighted signals, weights published in the API</div></div>
     <div class="arrow">&rarr;</div>
-    <div class="node" style="background:#e0f2fe; border-color:#7dd3fc;"><div class="t">Answer + verdict</div><div class="s">value, source, revision, approver</div></div>
+    <div class="node hero"><div class="t">Answer + badge</div><div class="s">value, source, revision, approver</div></div>
   </div>
 
-  <div style="display:flex; gap:14px; margin-bottom:16px;">
-    <div class="stat" style="flex:1; border-left:4px solid var(--ok);">
-      <div class="n" style="color:var(--ok);">TRUSTED</div>
-      <div class="l">Score &ge; 0.80, approved and mutually corroborating sources.</div>
-    </div>
-    <div class="stat" style="flex:1; border-left:4px solid var(--warn);">
-      <div class="n" style="color:var(--warn);">VERIFY</div>
-      <div class="l">Score 0.50&ndash;0.80. Confirm against the named document before acting.</div>
-    </div>
-    <div class="stat" style="flex:1; border-left:4px solid var(--bad);">
-      <div class="n" style="color:var(--bad);">DO NOT EXECUTE</div>
-      <div class="l">Below 0.50, or a safety limit someone is asking to move. Not an authorisation.</div>
-    </div>
-  </div>
-
-  <div class="cols">
-    <div class="col">
-      <div class="callout">
-        <p>
-          <b>The join key is documented, not guessed.</b> The dataset's own <code>Explanation</code>
-          sheet states <code>Equipment_Tag</code> is the join key to all other documents, corroborated by
-          <code>Functional_Location</code>, <code>Related_Interlock</code> and <code>P&amp;ID Ref</code>.
-          One column anchors the whole graph.
-        </p>
+  <div class="cols" style="gap:16px; margin-bottom:12px;">
+    <div class="col" style="flex:1.15;">
+      <div class="anatomy">
+        <div class="q">"What is the trip setpoint for VSHH-1201?"</div>
+        <div class="ans"><code>VSHH-1201</code> trip at <b>7.1 mm/s</b>, read from the documents, not generated.</div>
+        <div class="meta"><span class="pill verify">VERIFY</span><span class="sc">score 0.7795</span><span>6 sources</span><span>5 signals shown</span></div>
+        <div class="cap">Static demo preset, same values as the live system.</div>
       </div>
     </div>
-    <div class="col">
-      <div class="callout ok">
-        <p>
-          <b>No model hallucinating a table.</b> Every extracted value is read out of the file by a
-          parser chosen for that file type. Truncated source text is quoted as-is and marked, never
-          completed, because a plausible completion would be indistinguishable from a real one.
-        </p>
+    <div class="col" style="flex:1;">
+      <div class="badges">
+        <div class="b" style="border-left-color:var(--ok);"><span class="pill trusted">TRUSTED</span><span class="d">score 0.80 or higher, approved and corroborated</span></div>
+        <div class="b" style="border-left-color:var(--warn);"><span class="pill verify">VERIFY</span><span class="d">0.50 to 0.80, confirm in the named document</span></div>
+        <div class="b" style="border-left-color:var(--bad);"><span class="pill bad">DO NOT EXECUTE</span><span class="d">below 0.50, or a request to change a safety limit</span></div>
       </div>
     </div>
   </div>
 
-  <div class="foot"><span>TrustHUB &middot; CALIBER 2026 Case 1</span><span>3</span></div>
+  <div class="kq">
+    <div class="kqh">The three Case 1 key questions, answered</div>
+    <div class="cols" style="gap:12px;">
+      <div class="col k"><div class="t">Industrial Data Ops foundation</div><div class="d">One key, <code>Equipment_Tag</code>, joins 95 documents and 211 work orders into a graph of <b>134 nodes, 126 links</b>.</div></div>
+      <div class="col k"><div class="t">AI trusted Q&amp;A</div><div class="d">Every answer has a badge. <b>27/27</b> refusal cases refused, <b>63/63</b> locked cases pass, 98.0% on a 102-question holdout.</div></div>
+      <div class="col k warnk"><div class="t">Integration with operational systems</div><div class="d">EDMS, AIMS, Digital Twin: <b>not built</b>, no mock connector. Adapter keys are <code>Functional_Location</code> and <code>P&amp;ID Ref</code>.</div></div>
+    </div>
+  </div>
+
+  <div class="sowhat"><b>So what:</b> the solution is not a better search box. It is a verdict attached to every answer, and it is allowed to say no.</div>
+  <div class="foot"><span>Source: backend trust engine, locked evaluation spec v1.2, API <code>/api/plant/trust/weights</code>.</span><span>3</span></div>
 </section>
 
 <!-- ============ 4. BUSINESS IMPACT ============ -->
-<section class="slide">
-  <div class="kicker"></div>
-  <div class="eyebrow">Business impact</div>
-  <h2>The exposure is measurable. The time saving is not yet, and we say which is which</h2>
+<section class="slide s4">
+  <header class="hd">
+    <div class="eyebrow">3 &middot; Business impact</div>
+    <h2>Impact leads with safety: wrong-source risk is measured today, time saved needs a plant pilot</h2>
+  </header>
 
-  <div style="display:flex; gap:12px; margin-bottom:16px;">
-    <div class="stat" style="flex:1;"><div class="n">211</div><div class="l">work orders ingested</div></div>
-    <div class="stat" style="flex:1;"><div class="n">31</div><div class="l">breakdowns</div></div>
-    <div class="stat" style="flex:1;"><div class="n">434.0</div><div class="l">hours of downtime</div></div>
-    <div class="stat" style="flex:1; border-left:4px solid var(--ok);"><div class="n" style="color:var(--ok);">63/63</div><div class="l">locked eval cases, spec v1.2</div></div>
-    <div class="stat" style="flex:1;"><div class="n">98.0%</div><div class="l">102-question holdout</div></div>
+  <div style="display:flex; gap:12px; margin-bottom:14px;">
+    <div class="stat" style="flex:1;"><div class="n">31</div><div class="l">breakdowns in 211 work orders</div></div>
+    <div class="stat" style="flex:1;"><div class="n">434 h</div><div class="l">recorded downtime</div></div>
+    <div class="stat" style="flex:1.5;"><div class="n">IDR 413,345,000</div><div class="l">breakdown cost, dummy sample values</div></div>
+    <div class="stat" style="flex:1;"><div class="n">12</div><div class="l">breakdowns with no lesson written</div></div>
   </div>
 
-  <div class="callout" style="margin-bottom:15px;">
-    <p style="font-size:16.5px; text-align:center;">
-      <b>Hours saved / year</b> &nbsp;=&nbsp; engineers &times; searches per day
-      &times; (minutes before &minus; minutes after) &divide; 60 &times; working days
-    </p>
-  </div>
-
-  <table style="margin-bottom:15px;">
-    <thead><tr><th style="width:26%;">Factor</th><th style="width:16%;">Basis</th><th>What we actually have</th></tr></thead>
+  <table class="kpi" style="margin-bottom:12px;">
+    <thead><tr><th style="width:22%;">KPI</th><th style="width:34%;">Success metric</th><th style="width:24%;">Today</th><th>Status</th></tr></thead>
     <tbody>
-      <tr><td>Wrong-execution exposure</td><td><span class="tag meas">DATASET-DERIVED</span></td><td><b>434.0 h</b> of recorded downtime and <b>IDR 413,345,000</b> of breakdown cost across <b>31</b> breakdowns. This is the quantity a provenance error would inflate.</td></tr>
-      <tr><td>Refusal precision</td><td><span class="tag meas">MEASURED</span></td><td>27 of 27 refusal cases refused for the stated reason, including a bypass request the retriever had already scored high.</td></tr>
-      <tr><td>Engineer headcount</td><td><span class="tag assume">ASSUMPTION</span></td><td>Not present in the dataset. Must come from a plant pilot.</td></tr>
-      <tr><td>Minutes before / after</td><td><span class="tag assume">ASSUMPTION</span></td><td>Requires timed observation of the current process. <b>We have not measured this and will not guess it in a deck.</b></td></tr>
+      <tr><td><b>Refusal precision</b></td><td>Share of unanswerable questions refused with a reason</td><td><b>27 / 27</b></td><td><span class="tag meas">MEASURED</span></td></tr>
+      <tr><td><b>Answer correctness</b></td><td>Locked set pass rate; holdout accuracy</td><td><b>63 / 63</b>; <b>98.0%</b> of 102</td><td><span class="tag meas">MEASURED</span></td></tr>
+      <tr><td><b>Lesson coverage</b></td><td>Breakdowns with an approved lesson</td><td><b>19 of 31</b> (61.3%)</td><td><span class="tag meas">DATASET</span> target: 31 of 31</td></tr>
+      <tr><td><b>Approval visibility</b></td><td>Documents with known approval state</td><td><b>79 approved</b>, 16 unknown of 95</td><td><span class="tag meas">DATASET</span> target: 0 unknown</td></tr>
+      <tr><td><b>Search time saved</b></td><td>Minutes before minus after, per search</td><td>not measured</td><td><span class="tag assume">PILOT, PHASE 1</span></td></tr>
     </tbody>
   </table>
 
-  <div class="callout warn">
-    <p>
-      <b>The part we can defend today is the safety side.</b> A superseded revision and a current one
-      produce identical text. TrustHUB distinguishes them, and the evaluation set requires it to
-      refuse 27 cases it could plausibly have answered.
-    </p>
+  <div class="callout" style="padding:9px 14px;">
+    <p style="font-size:14px;"><b>Hours saved per year</b> = engineers &times; searches per day &times; (minutes before &minus; minutes after) &divide; 60 &times; working days. Two inputs are unmeasured, so we claim no hours-saved figure.</p>
   </div>
 
-  <div class="foot"><span>TrustHUB &middot; CALIBER 2026 Case 1</span><span>4</span></div>
+  <div class="sowhat"><b>So what:</b> the defensible value today is fewer wrong-source executions; the productivity case is a hypothesis with a four-week test.</div>
+  <div class="foot"><span>Source: maintenance-history workbook, TrustHUB locked evaluation. IDR values are dummy values. Costs of 31 breakdowns only.</span><span>4</span></div>
 </section>
 
 <!-- ============ 5. FEASIBILITY & ROADMAP ============ -->
-<section class="slide">
-  <div class="kicker"></div>
-  <div class="eyebrow">Feasibility &amp; roadmap</div>
-  <h2>What is proven, what is assumed, and what the next three phases add</h2>
+<section class="slide s5">
+  <header class="hd">
+    <div class="eyebrow">4 &middot; Feasibility &amp; roadmap</div>
+    <h2>The core is demonstrated; three phases over 18 weeks turn assumptions into measurements</h2>
+  </header>
 
-  <table style="margin-bottom:16px;">
-    <thead><tr><th style="width:20%;">Dimension</th><th style="width:14%;">Readiness</th><th>Basis</th></tr></thead>
+  <table class="feas" style="margin-bottom:12px;">
+    <thead><tr><th style="width:19%;">Dimension</th><th style="width:15%;">Readiness</th><th>Basis</th></tr></thead>
     <tbody>
-      <tr><td><b>Technical</b></td><td><span class="pill trusted">DEMONSTRATED</span></td><td>Running prototype: 95 documents and 211 work orders indexed, 20 API routes, 1329 backend tests green on CI. Extraction is deterministic, not model-generated.</td></tr>
-      <tr><td><b>Operational</b></td><td><span class="pill verify">PILOT NEEDED</span></td><td>Scoring is calibrated on one dataset only. Thresholds must be re-measured per unit before an operator relies on a badge.</td></tr>
-      <tr><td><b>Legal &amp; data governance</b></td><td><span class="pill verify">CONDITIONAL</span></td><td>The dataset is sample data released for CALIBER only. Plant deployment needs document-level access control and an audit trail, which we specify rather than ship.</td></tr>
-      <tr><td><b>Cybersecurity</b></td><td><span class="pill trusted">NO EGRESS</span></td><td>Retrieval is SQLite FTS5 on the local machine. No embedding service, no API key. An external LLM mode exists but is off by default and unused for any figure here.</td></tr>
-      <tr><td><b>Organisational</b></td><td><span class="pill verify">SME LOAD</span></td><td>19 of 31 breakdowns already have a linked lesson. The missing 12 need an SME to write and approve them, which is the real adoption dependency.</td></tr>
-      <tr><td><b>EDMS / AIMS integration</b></td><td><span class="pill bad">NOT BUILT</span></td><td>Required component 5. We left it unbuilt and added no mock connector. <code>Functional_Location</code> and <code>P&amp;ID Ref</code> are the realistic adapter keys.</td></tr>
+      <tr><td><b>Technical</b></td><td><span class="pill trusted">DEMONSTRATED</span></td><td>Running prototype on 95 documents and 211 work orders. Extraction is deterministic, not model-generated.</td></tr>
+      <tr><td><b>Cybersecurity</b></td><td><span class="pill trusted">NO EGRESS</span></td><td>Local SQLite retrieval, no API key. Server-side token, route allowlist. No role-based access yet.</td></tr>
+      <tr><td><b>Operational</b></td><td><span class="pill verify">PILOT NEEDED</span></td><td>Thresholds are calibrated on one dataset; re-measure per unit before an operator relies on a badge.</td></tr>
+      <tr><td><b>Data governance</b></td><td><span class="pill verify">CONDITIONAL</span></td><td>Sample data only. A plant needs document-level access control and an audit trail, specified but not shipped.</td></tr>
+      <tr><td><b>Organisational</b></td><td><span class="pill verify">SME LOAD</span></td><td>The 12 missing lessons need an SME to write and approve them.</td></tr>
+      <tr><td><b>EDMS / AIMS / Digital Twin</b></td><td><span class="pill bad">NOT BUILT</span></td><td>No mock connector. SME write-back is not implemented either.</td></tr>
     </tbody>
   </table>
 
-  <div class="lane">
-    <div class="step">
-      <div class="w">Phase 1 &middot; 4 weeks</div>
-      <div class="t">Time-and-motion pilot on one unit</div>
-      <div class="d">Measures search duration before and after, converting the two assumption rows on the impact slide into measured rows.</div>
-    </div>
-    <div class="step">
-      <div class="w">Phase 2 &middot; 6 weeks</div>
-      <div class="t">Close the 12-lesson gap</div>
-      <div class="d">Draft the missing lessons from failure records and route them to an SME for approval, growing the trust graph with evidence rather than documents.</div>
-    </div>
-    <div class="step">
-      <div class="w">Phase 3 &middot; 8 weeks</div>
-      <div class="t">EDMS adapter and P&amp;ID topology</div>
-      <div class="d">Write the adapter against a real EDMS schema, then measure write-back. Read line topology so the hub can answer what an interlock acts on.</div>
-    </div>
+  <div class="gantt">
+    <div class="gh"><span></span><span>Wk 1</span><span>4</span><span>8</span><span>12</span><span>16</span><span>18</span></div>
+    <div class="gr"><span class="gl">Phase 1 &middot; Pilot</span><div class="track"><div class="bar" style="left:0; width:22.2%;">4 wk</div></div><span class="gd">Time-and-motion pilot on one unit</span></div>
+    <div class="gr"><span class="gl">Phase 2 &middot; Lessons</span><div class="track"><div class="bar" style="left:22.2%; width:33.3%;">6 wk</div></div><span class="gd">Close the 12-lesson gap with SME-approved lessons</span></div>
+    <div class="gr"><span class="gl">Phase 3 &middot; Integrate</span><div class="track"><div class="bar" style="left:55.5%; width:44.5%;">8 wk</div></div><span class="gd">EDMS adapter and P&amp;ID topology</span></div>
   </div>
 
-  <div class="foot"><span>TrustHUB &middot; CALIBER 2026 Case 1</span><span>5</span></div>
+  <div class="sowhat"><b>So what:</b> the one unbuilt component is also the last phase, and Phase 1 first converts the unmeasured impact inputs into data.</div>
+  <div class="foot"><span>Source: TrustHUB repository, TRUSTHUB.md. Timeline is a plan, not a delivered result.</span><span>5</span></div>
 </section>
 
 <!-- ============ 6. CONCLUSION ============ -->
-<section class="slide">
-  <div class="kicker"></div>
-  <div class="eyebrow">Conclusion</div>
-  <h2>Knowledge that cannot say how far it can be trusted is not knowledge an engineer can act on</h2>
-  <p class="lede">
-    TrustHUB turns scattered plant documents into one answer that a technician can audit in a
-    glance: the value, the revision it came from, the human who approved it, and a verdict that
-    is allowed to say no.
-  </p>
+<section class="slide s6">
+  <header class="hd">
+    <div class="eyebrow">5 &middot; Conclusion</div>
+    <h2>A higher score earned a lower badge: TrustHUB separates reading a safety limit from changing it</h2>
+  </header>
 
-  <div class="cols" style="margin-bottom:18px;">
+  <div class="cols" style="gap:16px; margin-bottom:14px;">
+    <div class="col">
+      <div class="versus ver">
+        <div class="vq">"What is the trip setpoint for VSHH-1201?"</div>
+        <div class="vs"><span class="big">0.7795</span><span class="pill verify">VERIFY</span></div>
+        <div class="vd">Reading a limit: confirm in the named document.</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="versus dne">
+        <div class="vq">"How do I raise the trip setpoint for VSHH-1201 above 12 mm/s?"</div>
+        <div class="vs"><span class="big">0.8055</span><span class="pill bad">DO NOT EXECUTE</span></div>
+        <div class="vd">Score is above 0.80, yet the badge is capped because the request changes a safety limit.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cols" style="gap:16px; margin-bottom:12px;">
     <div class="col">
       <div class="card" style="height:100%;">
         <h3>Key value</h3>
         <ul class="tight" style="margin-top:4px;">
-          <li><strong>Provenance is first class.</strong> Superseded and current documents produce identical text; we separate them.</li>
-          <li><strong>Refusal is a feature.</strong> The system says no when the evidence is absent, and names why.</li>
-          <li><strong>Nothing is generated.</strong> Every value is parsed out of a source file and quoted.</li>
-          <li><strong>Calibration is published.</strong> Five weights and three thresholds are in the API, not buried in code.</li>
+          <li><strong>Provenance first.</strong> Revision and approver travel with every value.</li>
+          <li><strong>Refusal is a feature.</strong> No source, no answer, with a stated reason.</li>
+          <li><strong>Nothing is generated.</strong> Values are parsed from files and quoted.</li>
         </ul>
       </div>
     </div>
@@ -452,37 +552,34 @@
       <div class="card" style="height:100%;">
         <h3>Expected outcomes</h3>
         <ul class="tight" style="margin-top:4px;">
-          <li><strong>Fewer provenance errors</strong> on restart and setpoint work, because approval state travels with the value.</li>
-          <li><strong>Tacit knowledge captured.</strong> Past failures surface with the next question about that unit.</li>
-          <li><strong>Coverage gaps made visible.</strong> 12 breakdowns with no lesson are listed, not dropped.</li>
-          <li><strong>Audit-ready answers.</strong> Every response cites document, revision, and approver.</li>
+          <li><strong>Fewer wrong-source actions</strong> on setpoint and restart work.</li>
+          <li><strong>Tacit knowledge surfaced</strong> with the next question on that unit.</li>
+          <li><strong>Gaps made visible:</strong> 12 breakdowns with no lesson are listed.</li>
         </ul>
       </div>
     </div>
   </div>
 
-  <div class="callout ok">
-    <p>
-      <b>What we are not claiming.</b> Two of the three inputs to the hours-saved formula are not yet
-      measured, and the EDMS integration is not built. A system that quotes its own gaps is the only
-      kind whose unquoted claims are worth reading.
-    </p>
+  <div class="callout warn" style="padding:9px 14px;">
+    <p style="font-size:14px;"><b>What we do not claim.</b> No hours-saved figure, no EDMS, AIMS or Digital Twin integration, no SME write-back. The 98.0% holdout shares an author with the system.</p>
   </div>
 
-  <div class="foot"><span>TrustHUB &middot; CALIBER 2026 Case 1</span><span>6</span></div>
+  <div class="sowhat"><b>So what:</b> an engineer can act on an answer only when it states how far to trust it.</div>
+  <div class="foot"><span>Source: locked evaluation, run on the official dataset (sample data).</span><span>6</span></div>
 </section>
 
 <!-- ============ 7. TEAM PROFILE ============ -->
-<section class="slide">
-  <div class="kicker"></div>
-  <div class="eyebrow">Team profile</div>
-  <h2>Who built it</h2>
+<section class="slide s7">
+  <header class="hd">
+    <div class="eyebrow">6 &middot; Team profile</div>
+    <h2>A team built around one discipline: nothing is claimed that the evidence cannot show</h2>
+  </header>
 
-  <table style="margin-bottom:16px;">
+  <table style="margin-bottom:14px;">
     <thead>
       <tr>
-        <th style="width:4%;">No.</th><th style="width:17%;">Name</th><th style="width:15%;">Major</th>
-        <th style="width:9%;">Semester</th><th style="width:22%;">Area of expertise</th><th>Contribution</th>
+        <th style="width:4%;">No.</th><th style="width:17%;">Name</th><th style="width:16%;">Major</th>
+        <th style="width:9%;">Semester</th><th style="width:21%;">Area of expertise</th><th>Contribution</th>
       </tr>
     </thead>
     <tbody>
@@ -490,50 +587,27 @@
         <td>1</td><td>Dhika Susheno</td><td>Sistem Informasi (Information Systems)</td>
         <td class="tbd">to be confirmed</td>
         <td>Backend, retrieval index, evaluation harness</td>
-        <td>Formulated the provenance-first framing; built the ingest pipeline, the SQLite FTS5 registry and the 63-case locked evaluation set.</td>
+        <td>Provenance-first framing; ingest pipeline, SQLite FTS5 registry, 63-case locked evaluation set.</td>
       </tr>
       <tr>
-        <td>2</td><td class="tbd">member 2 name to be confirmed</td><td class="tbd">major to be confirmed</td>
-        <td class="tbd">to be confirmed</td><td class="tbd">to be confirmed</td>
-        <td class="tbd">Contribution to be confirmed.</td>
+        <td>2</td><td class="tbd">name to be confirmed</td><td class="tbd">to be confirmed</td>
+        <td class="tbd">to be confirmed</td><td class="tbd">to be confirmed</td><td class="tbd">to be confirmed</td>
       </tr>
       <tr>
-        <td>3</td><td class="tbd">member 3 name to be confirmed</td><td class="tbd">major to be confirmed</td>
-        <td class="tbd">to be confirmed</td><td class="tbd">to be confirmed</td><td class="tbd">Contribution to be confirmed.</td>
+        <td>3</td><td class="tbd">name to be confirmed</td><td class="tbd">to be confirmed</td>
+        <td class="tbd">to be confirmed</td><td class="tbd">to be confirmed</td><td class="tbd">to be confirmed</td>
       </tr>
       <tr>
         <td colspan="3" style="background:var(--panel);"><b>Supervisor</b></td>
-        <td colspan="3" class="tbd">name to be confirmed by the committee</td>
+        <td colspan="3" class="tbd">name to be confirmed</td>
       </tr>
     </tbody>
   </table>
 
-  <div class="cols">
-    <div class="col">
-      <div class="callout">
-        <p>
-          <b>Institution</b><br>
-          Telkom University Jakarta, Indonesia
-        </p>
-      </div>
-    </div>
-    <div class="col">
-      <div class="callout">
-        <p>
-          <b>Repository and reproduction</b><br>
-          github.com/DhikaSusheno/TrustHUB<br>
-          <code>python -m plant.fetch_dataset</code> then <code>uvicorn main:app</code>
-        </p>
-      </div>
-    </div>
-    <div class="col">
-      <div class="callout warn">
-        <p>
-          <b>Demo video and mockup</b><br>
-          <span class="tbd">Link to be added on submission</span>
-        </p>
-      </div>
-    </div>
+  <div class="cols" style="gap:14px;">
+    <div class="col"><div class="callout"><p><b>Institution</b><br>Telkom University Jakarta, Indonesia</p></div></div>
+    <div class="col"><div class="callout"><p><b>Repository</b><br>github.com/DhikaSusheno/TrustHUB</p></div></div>
+    <div class="col"><div class="callout warn"><p><b>Demo video and mockup</b><br><span class="tbd">links to be added on submission</span></p></div></div>
   </div>
 
   <div class="foot"><span>TrustHUB &middot; CALIBER 2026 Case 1</span><span>7</span></div>
@@ -546,9 +620,7 @@
 
 <!-- ============ A1. TRUST ENGINE ============ -->
 <section class="slide">
-  <div class="kicker"></div>
-  <div class="eyebrow app">Appendix A1 &middot; the trust engine</div>
-  <h2>Five signals, weighted, with the weights published</h2>
+  <header class="hd"><div class="eyebrow app">Appendix A1 &middot; the trust engine</div><h2>Five signals, weighted, with the weights published</h2></header>
   <p class="lede">
     The score is not a vibe. Each signal is printed in the API response and in the UI, so a
     reviewer can see exactly why an answer earned the badge it earned.
@@ -611,9 +683,7 @@
 
 <!-- ============ A2. GUARDRAILS ============ -->
 <section class="slide">
-  <div class="kicker"></div>
-  <div class="eyebrow app">Appendix A2 &middot; reducing wrong execution</div>
-  <h2>A score is not a decision. Two rules override the arithmetic</h2>
+  <header class="hd"><div class="eyebrow app">Appendix A2 &middot; reducing wrong execution</div><h2>A score is not a decision. Two rules override the arithmetic</h2></header>
 
   <div class="callout bad" style="margin-bottom:14px;">
     <p>
@@ -681,9 +751,7 @@
 
 <!-- ============ A3. LIVE EVIDENCE ============ -->
 <section class="slide">
-  <div class="kicker"></div>
-  <div class="eyebrow app">Appendix A3 &middot; live evidence</div>
-  <h2>Three questions, three different correct behaviours</h2>
+  <header class="hd"><div class="eyebrow app">Appendix A3 &middot; live evidence</div><h2>Three questions, three different correct behaviours</h2></header>
   <p class="lede">Verbatim from the running system against the official dataset.</p>
 
   <div style="display:flex; flex-direction:column; gap:13px;">
@@ -723,9 +791,7 @@
 
 <!-- ============ A4. FAILURE MEMORY ============ -->
 <section class="slide">
-  <div class="kicker"></div>
-  <div class="eyebrow app">Appendix A4 &middot; failure memory</div>
-  <h2>Maintenance history, turned into a lesson before the next failure</h2>
+  <header class="hd"><div class="eyebrow app">Appendix A4 &middot; failure memory</div><h2>Maintenance history, turned into a lesson before the next failure</h2></header>
 
   <div style="display:flex; gap:12px; margin-bottom:16px;">
     <div class="stat" style="flex:1;"><div class="n">211</div><div class="l">work orders ingested</div></div>
@@ -772,9 +838,7 @@
 
 <!-- ============ A5. VALIDATION ============ -->
 <section class="slide">
-  <div class="kicker"></div>
-  <div class="eyebrow app">Appendix A5 &middot; validation</div>
-  <h2>63 locked cases, 100%, and three defects we found inside our own test set</h2>
+  <header class="hd"><div class="eyebrow app">Appendix A5 &middot; validation</div><h2>63 locked cases, 100%, and three defects we found inside our own test set</h2></header>
 
   <div style="display:flex; gap:12px; margin-bottom:14px;">
     <div class="stat" style="flex:1; border-left:4px solid var(--ok);">
@@ -783,7 +847,7 @@
     <div class="stat" style="flex:1;"><div class="n">27/27</div><div class="l">refusal cases refused</div></div>
     <div class="stat" style="flex:1;"><div class="n">36/36</div><div class="l">answer cases answered</div></div>
     <div class="stat" style="flex:1;"><div class="n">98.0%</div><div class="l">102-question holdout</div></div>
-    <div class="stat" style="flex:1;"><div class="n">1329</div><div class="l">backend tests, CI green</div></div>
+    <div class="stat" style="flex:1;"><div class="n">2</div><div class="l">documented holdout failures</div></div>
   </div>
 
   <div class="cols" style="margin-bottom:13px;">
@@ -830,9 +894,7 @@
 
 <!-- ============ A6. INGESTION & GRAPH ============ -->
 <section class="slide">
-  <div class="kicker"></div>
-  <div class="eyebrow app">Appendix A6 &middot; ingestion and graph shape</div>
-  <h2>Six formats, one registry, one tag ties 134 nodes together</h2>
+  <header class="hd"><div class="eyebrow app">Appendix A6 &middot; ingestion and graph shape</div><h2>Six formats, one registry, one tag ties 134 nodes together</h2></header>
 
   <div class="flow" style="margin-bottom:16px;">
     <div class="node"><div class="t">87 PDF</div><div class="s">pdfplumber tables + linear text</div></div>
@@ -841,7 +903,7 @@
     <div class="arrow">&rarr;</div>
     <div class="node"><div class="t">3 workbooks</div><div class="s">openpyxl, per sheet</div></div>
     <div class="arrow">&rarr;</div>
-    <div class="node" style="background:#e0f2fe; border-color:#7dd3fc;"><div class="t">extract.py</div><div class="s">95/95 files, 0 errors</div></div>
+    <div class="node" style="background:#d1fae5; border-color:#6ee7b7;"><div class="t">extract.py</div><div class="s">95/95 files, 0 errors</div></div>
     <div class="arrow">&rarr;</div>
     <div class="node"><div class="t">registry.py</div><div class="s">SQLite + FTS5 index</div></div>
   </div>
