@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import { PlantApiError } from "@/lib/plantApi";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { STRINGS, type StringKey } from "@/lib/i18n/dictionary";
+import { STATIC_DEMO } from "@/lib/staticDemo";
 
 /** A dictionary key for static chrome, or a literal for computed text. */
 type Chrome = string | StringKey;
@@ -62,8 +63,48 @@ export function Loading({ label }: { label?: string }) {
   );
 }
 
+/** Headline figures from the verified number table, each with its scope. */
+const STATIC_FIGURES: { label: string; value: string }[] = [
+  { label: "Documents indexed", value: "95" },
+  { label: "Work orders", value: "211" },
+  { label: "Breakdowns", value: "31" },
+  { label: "Knowledge graph (full)", value: "134 nodes, 126 links" },
+  { label: "Locked evaluation", value: "63 / 63" },
+];
+
+/** Shown instead of an error when this build is the static demo snapshot. */
+function StaticLivePanel() {
+  return (
+    <div className="p-6">
+      <div className="max-w-2xl rounded-xl border border-slate-700/80 bg-panel-2/80 p-5 shadow-lg">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+          <h2 className="text-sm font-semibold text-ink">Live system only</h2>
+        </div>
+        <p className="mt-2.5 text-sm text-slate-300 leading-relaxed">
+          This view reads the indexed dataset, which is not included in this static snapshot.
+          The live system is shown in the demo video. The Ask and Overview views work here
+          with captured results.
+        </p>
+        <dl className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 border-t border-slate-800/80 pt-4">
+          {STATIC_FIGURES.map((f) => (
+            <div key={f.label} className="flex items-baseline justify-between gap-3">
+              <dt className="text-xs text-slate-400">{f.label}</dt>
+              <dd className="text-xs font-mono text-slate-200">{f.value}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-3 text-[11px] text-slate-500">
+          Figures from the official CALIBER-provided dataset, labelled sample data.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
   const { t } = useI18n();
+  if (STATIC_DEMO) return <StaticLivePanel />;
   const isApi = error instanceof PlantApiError;
   const needsIndex = isApi && error.needsIndex;
   const detail = isApi ? (error as PlantApiError).detail : String(error);
