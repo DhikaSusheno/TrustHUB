@@ -16,7 +16,7 @@
 //    array, not a paginated envelope, and that asymmetry is typed here so
 //    callers cannot get it wrong.
 
-const BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? "/backend";
+const BASE = "/backend";
 const PLANT = `${BASE}/api/plant`;
 
 // ---------------------------------------------------------------------------
