@@ -15,7 +15,7 @@
     "next": "15.5.24",
     "react": "^19",
     "react-dom": "^19",
-    "react-force-graph-2d": "^1.25.5"
+    "react-force-graph-2d": "^1.29.2"
   },
   "devDependencies": {
     "@types/node": "^20",
